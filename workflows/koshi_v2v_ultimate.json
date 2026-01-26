@@ -1,0 +1,165 @@
+{
+  "last_node_id": 10,
+  "last_link_id": 14,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "CheckpointLoaderSimple",
+      "pos": [50, 50],
+      "size": [315, 98],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {"name": "MODEL", "type": "MODEL", "links": [1], "slot_index": 0},
+        {"name": "CLIP", "type": "CLIP", "links": [2, 3], "slot_index": 1},
+        {"name": "VAE", "type": "VAE", "links": [4], "slot_index": 2}
+      ],
+      "properties": {"Node name for S&R": "CheckpointLoaderSimple"},
+      "widgets_values": ["flux1-dev-fp8.safetensors"]
+    },
+    {
+      "id": 2,
+      "type": "CLIPTextEncode",
+      "pos": [400, 50],
+      "size": [400, 100],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [{"name": "clip", "type": "CLIP", "link": 2}],
+      "outputs": [{"name": "CONDITIONING", "type": "CONDITIONING", "links": [5], "slot_index": 0}],
+      "title": "Positive Prompt",
+      "properties": {},
+      "widgets_values": ["cinematic, highly detailed, sharp focus, professional color grading"]
+    },
+    {
+      "id": 3,
+      "type": "CLIPTextEncode",
+      "pos": [400, 180],
+      "size": [400, 100],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [{"name": "clip", "type": "CLIP", "link": 3}],
+      "outputs": [{"name": "CONDITIONING", "type": "CONDITIONING", "links": [6], "slot_index": 0}],
+      "title": "Negative Prompt",
+      "properties": {},
+      "widgets_values": ["blurry, low quality, distorted, ugly"]
+    },
+    {
+      "id": 4,
+      "type": "VHS_LoadVideo",
+      "pos": [50, 200],
+      "size": [315, 250],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "outputs": [
+        {"name": "IMAGE", "type": "IMAGE", "links": [7], "slot_index": 0},
+        {"name": "frame_count", "type": "INT", "links": null},
+        {"name": "audio", "type": "AUDIO", "links": [10], "slot_index": 2},
+        {"name": "video_info", "type": "VHS_VIDEOINFO", "links": null}
+      ],
+      "title": "Load Input Video",
+      "properties": {},
+      "widgets_values": ["input.mp4", 0, 60, 0, "Resize by short side", 768, true, true, 1]
+    },
+    {
+      "id": 5,
+      "type": "LoadImage",
+      "pos": [50, 480],
+      "size": [315, 250],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "outputs": [
+        {"name": "IMAGE", "type": "IMAGE", "links": [8], "slot_index": 0},
+        {"name": "MASK", "type": "MASK", "links": null}
+      ],
+      "title": "Init/Reference Image (Optional)",
+      "properties": {},
+      "widgets_values": ["init.png", "image"]
+    },
+    {
+      "id": 6,
+      "type": "Koshi_V2VProcessor",
+      "pos": [850, 50],
+      "size": [380, 450],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {"name": "images", "type": "IMAGE", "link": 7},
+        {"name": "model", "type": "MODEL", "link": 1},
+        {"name": "positive", "type": "CONDITIONING", "link": 5},
+        {"name": "negative", "type": "CONDITIONING", "link": 6},
+        {"name": "vae", "type": "VAE", "link": 4},
+        {"name": "reference_image", "type": "IMAGE", "link": 8}
+      ],
+      "outputs": [{"name": "processed", "type": "IMAGE", "links": [9], "slot_index": 0}],
+      "title": "V2V Ultimate - Motion + Temporal + Init",
+      "properties": {},
+      "widgets_values": [
+        "ultimate",
+        0.5,
+        20,
+        3.5,
+        42,
+        0.7,
+        0.3,
+        0.5,
+        1.0,
+        0.3
+      ]
+    },
+    {
+      "id": 7,
+      "type": "VHS_VideoCombine",
+      "pos": [1280, 50],
+      "size": [315, 350],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {"name": "images", "type": "IMAGE", "link": 9},
+        {"name": "audio", "type": "AUDIO", "link": 10}
+      ],
+      "outputs": [{"name": "Filenames", "type": "VHS_FILENAMES", "links": null}],
+      "title": "Save Output Video",
+      "properties": {},
+      "widgets_values": [24, 0, "koshi_v2v_ultimate", "video/h264-mp4", false, true, "", "", 1]
+    }
+  ],
+  "links": [
+    [1, 1, 0, 6, 1, "MODEL"],
+    [2, 1, 1, 2, 0, "CLIP"],
+    [3, 1, 1, 3, 0, "CLIP"],
+    [4, 1, 2, 6, 4, "VAE"],
+    [5, 2, 0, 6, 2, "CONDITIONING"],
+    [6, 3, 0, 6, 3, "CONDITIONING"],
+    [7, 4, 0, 6, 0, "IMAGE"],
+    [8, 5, 0, 6, 5, "IMAGE"],
+    [9, 6, 0, 7, 0, "IMAGE"],
+    [10, 4, 2, 7, 1, "AUDIO"]
+  ],
+  "groups": [
+    {"title": "Koshi V2V Ultimate - Motion + Temporal + Init", "bounding": [30, 20, 1590, 740], "color": "#c0392b"}
+  ],
+  "config": {},
+  "extra": {
+    "info": {
+      "name": "Koshi V2V Ultimate",
+      "description": "Combines all techniques: optical flow warping, temporal blending, init image, and LAB color matching",
+      "preset": "klein_v2v_ultimate",
+      "params": {
+        "mode": "ultimate",
+        "denoise": 0.5,
+        "denoise_first": 0.7,
+        "temporal_blend": 0.3,
+        "flow_blend": 0.5,
+        "ref_blend": 0.3
+      }
+    }
+  },
+  "version": 0.4
+}

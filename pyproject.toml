@@ -1,0 +1,39 @@
+[project]
+name = "comfyui-koshi-nodes"
+version = "0.1.0"
+description = "Koshi ComfyUI Nodes - Image processing, FLUX motion, audio, and more"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+
+dependencies = [
+    "torch>=2.0",
+    "numpy",
+]
+
+[project.optional-dependencies]
+flux = [
+    "transformers>=4.36.0",
+    "diffusers>=0.25.0",
+    "accelerate",
+    "sentencepiece",
+]
+audio = [
+    "librosa",
+    "soundfile",
+]
+all = [
+    "comfyui-koshi-nodes[flux,audio]",
+]
+
+[tool.comfyui]
+PublisherId = "koshi"
+DisplayName = "Koshi Nodes"
+Icon = ""
+
+[tool.comfyui.dependencies]
+# Core always available
+# Optional flux_motion only if [flux] installed
+
+[[tool.comfyui.models]]
+# Optional model definitions

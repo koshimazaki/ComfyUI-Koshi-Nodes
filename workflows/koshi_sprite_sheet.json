@@ -1,0 +1,129 @@
+{
+  "last_node_id": 8,
+  "last_link_id": 9,
+  "nodes": [
+    {
+      "id": 1,
+      "type": "VHS_LoadVideo",
+      "pos": [50, 50],
+      "size": [315, 250],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "outputs": [
+        {"name": "IMAGE", "type": "IMAGE", "links": [1], "slot_index": 0},
+        {"name": "frame_count", "type": "INT", "links": null},
+        {"name": "audio", "type": "AUDIO", "links": null},
+        {"name": "video_info", "type": "VHS_VIDEOINFO", "links": null}
+      ],
+      "title": "Load Animation Frames",
+      "properties": {},
+      "widgets_values": ["animation.mp4", 0, 16, 0, "Resize by short side", 64, true, true, 1]
+    },
+    {
+      "id": 2,
+      "type": "Koshi_PixelScaler",
+      "pos": [400, 50],
+      "size": [300, 180],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        {"name": "images", "type": "IMAGE", "link": 1}
+      ],
+      "outputs": [
+        {"name": "scaled", "type": "IMAGE", "links": [2], "slot_index": 0}
+      ],
+      "title": "Scale Frames to 64x64",
+      "properties": {},
+      "widgets_values": ["Custom", 64, 64, "lanczos", true, "black"]
+    },
+    {
+      "id": 3,
+      "type": "Koshi_Bayer",
+      "pos": [750, 50],
+      "size": [280, 150],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {"name": "image", "type": "IMAGE", "link": 2}
+      ],
+      "outputs": [
+        {"name": "dithered", "type": "IMAGE", "links": [3], "slot_index": 0}
+      ],
+      "title": "Dither to 1-bit",
+      "properties": {},
+      "widgets_values": ["4x4", 2, true]
+    },
+    {
+      "id": 4,
+      "type": "Koshi_SpriteSheet",
+      "pos": [1080, 50],
+      "size": [300, 180],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [
+        {"name": "images", "type": "IMAGE", "link": 3}
+      ],
+      "outputs": [
+        {"name": "sprite_sheet", "type": "IMAGE", "links": [4, 5], "slot_index": 0},
+        {"name": "cols", "type": "INT", "links": [6], "slot_index": 1},
+        {"name": "rows", "type": "INT", "links": [7], "slot_index": 2},
+        {"name": "frame_count", "type": "INT", "links": [8], "slot_index": 3}
+      ],
+      "title": "Create Sprite Sheet",
+      "properties": {},
+      "widgets_values": ["grid", 4, 4, 1, "black"]
+    },
+    {
+      "id": 5,
+      "type": "PreviewImage",
+      "pos": [1430, 50],
+      "size": [300, 250],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        {"name": "images", "type": "IMAGE", "link": 4}
+      ],
+      "title": "Preview Sprite Sheet",
+      "properties": {}
+    },
+    {
+      "id": 6,
+      "type": "SaveImage",
+      "pos": [1430, 330],
+      "size": [300, 150],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {"name": "images", "type": "IMAGE", "link": 5}
+      ],
+      "title": "Save Sprite Sheet PNG",
+      "properties": {},
+      "widgets_values": ["sprite_sheet", "PNG", "", false, 100]
+    }
+  ],
+  "links": [
+    [1, 1, 0, 2, 0, "IMAGE"],
+    [2, 2, 0, 3, 0, "IMAGE"],
+    [3, 3, 0, 4, 0, "IMAGE"],
+    [4, 4, 0, 5, 0, "IMAGE"],
+    [5, 4, 0, 6, 0, "IMAGE"]
+  ],
+  "groups": [
+    {"title": "Koshi Sprite Sheet Generator", "bounding": [30, 20, 1720, 480], "color": "#e74c3c"}
+  ],
+  "config": {},
+  "extra": {
+    "info": {
+      "name": "Koshi Sprite Sheet Generator",
+      "description": "Load video/frames, scale, dither, and combine into sprite sheet for game dev or embedded displays",
+      "usage": "1. Load animation frames 2. Scale to target size 3. Optional dither 4. Generate sprite sheet"
+    }
+  },
+  "version": 0.4
+}

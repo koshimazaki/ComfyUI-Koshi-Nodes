@@ -1,0 +1,7 @@
+torch>=2.0
+numpy
+Pillow
+# Optional dependencies (install with pip install .[flux] or .[all])
+# moderngl  # For GPU-accelerated effects
+# transformers>=4.36.0  # For FLUX motion
+# diffusers>=0.25.0  # For FLUX motion
