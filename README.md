@@ -174,6 +174,7 @@ Image → Koshi_PixelScaler (128x64) → Koshi_Dither (bayer, 2 levels)
 ## Credits
 
 - Generated using [VibeComfy Tools](https://github.com/peteromallet/VibeComfy)
+- Uses [FLUX](https://github.com/black-forest-labs/flux) by Black Forest Labs
 - [alien.js](https://github.com/alienkitty/alien.js) by Patrick Schroen - Chromatic aberration, bloom shaders (MIT)
 - Hologram based on [CreaturesSite](https://github.com/koshimazaki/CreaturesSite)
 - SIDKIT Edition for [SIDKIT Synthesizer](https://github.com/koshimazaki/SIDKIT)
