@@ -6,7 +6,7 @@
 ██║  ██╗╚██████╔╝███████║██║  ██║██║    ██║ ╚████║╚██████╔╝██████╔╝███████╗███████║
 ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝    ╚═╝  ╚═══╝ ╚═════╝ ╚═════╝ ╚══════╝╚══════╝
 ```
-░░░█**Custom nodes for ComfyUI** - Flux Motion V2V | SIDKIT OLED | Post-FX | Generators█░░
+░░█ **Custom nodes for ComfyUI** - Flux Motion V2V | SIDKIT OLED | Post-FX | Generators █░░
 
 ---
 
