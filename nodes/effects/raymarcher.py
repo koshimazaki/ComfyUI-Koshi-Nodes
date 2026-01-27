@@ -78,7 +78,7 @@ class DitheringRaymarcher:
 
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "render"
-    CATEGORY = "Koshi/Effects"
+    CATEGORY = "Koshi/Generators"
 
     def cleanup_resources(self):
         """Explicitly cleanup OpenGL resources"""
@@ -284,5 +284,5 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "KoshiDitheringRaymarcher": "Dithering Raymarcher 🌊"
+    "KoshiDitheringRaymarcher": "▄█▄ KN Raymarcher"
 }

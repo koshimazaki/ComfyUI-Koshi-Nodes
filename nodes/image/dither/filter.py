@@ -430,5 +430,5 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_DitheringFilter": "░▒░ KN Dithering Filter"
+    "Koshi_DitheringFilter": "░▀░ KN Dithering Filter"
 }

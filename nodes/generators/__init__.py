@@ -13,4 +13,12 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "Koshi_NoiseDisplace": "▄█▄ KN Noise Displace",
 }
 
+# Import raymarcher from effects folder (generates content)
+try:
+    from ..effects.raymarcher import DitheringRaymarcher
+    NODE_CLASS_MAPPINGS["Koshi_Raymarcher"] = DitheringRaymarcher
+    NODE_DISPLAY_NAME_MAPPINGS["Koshi_Raymarcher"] = "▄█▄ KN Raymarcher"
+except ImportError:
+    pass
+
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]

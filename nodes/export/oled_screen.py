@@ -224,17 +224,19 @@ class KoshiSpriteSheet:
 
 class KoshiOLEDScreen:
     """
-    Enhanced OLED screen emulator with multiple display modes.
-    Simulates real hardware characteristics including pixel gaps, color tints, and burn-in.
-    Supports region presets for placing content in specific screen areas.
+    OLED Screen Viewer - Real-time WebGL preview of how images look on OLED displays.
+
+    This is a VIEW-ONLY node. It passes images through unchanged.
+    The WebGL preview shows OLED simulation (pixel grid, color tint, glow).
+    Use Koshi_Dither or Koshi_Greyscale nodes upstream for actual processing.
     """
     COLOR = "#FF9F43"
     BGCOLOR = "#1a1a1a"
 
     CATEGORY = "Koshi/Export"
-    FUNCTION = "emulate"
-    RETURN_TYPES = ("IMAGE", "IMAGE")
-    RETURN_NAMES = ("preview", "raw_screen")
+    FUNCTION = "view"
+    RETURN_TYPES = ("IMAGE",)
+    RETURN_NAMES = ("image",)
     OUTPUT_NODE = True
 
     @classmethod
@@ -242,234 +244,61 @@ class KoshiOLEDScreen:
         return {
             "required": {
                 "images": ("IMAGE",),
-                "screen_preset": (["SSD1363 256x128", "SSD1306 128x64", "Custom"],),
-                "region": (list(REGION_PRESETS.keys()),),
-                "custom_x": ("INT", {"default": 0, "min": 0, "max": 256, "step": 8}),
-                "custom_y": ("INT", {"default": 0, "min": 0, "max": 128, "step": 8}),
-                "custom_w": ("INT", {"default": 128, "min": 8, "max": 256, "step": 8}),
-                "custom_h": ("INT", {"default": 128, "min": 8, "max": 128, "step": 8}),
-                "color_mode": (["grayscale", "green_mono", "blue_mono", "amber_mono", "rgb"],),
-                "bit_depth": (["1-bit", "2-bit", "4-bit", "8-bit"],),
-                "dither_type": (["none", "bayer_2x2", "bayer_4x4", "bayer_8x8", "floyd_steinberg"],),
-                "preview_scale": ("INT", {"default": 4, "min": 1, "max": 8}),
-                "show_pixel_grid": ("BOOLEAN", {"default": True}),
-                "pixel_gap": ("FLOAT", {"default": 0.15, "min": 0.0, "max": 0.5, "step": 0.05}),
+                "screen_preset": (["SSD1363 256x128", "SSD1306 128x64", "SSD1306 128x32", "Custom"],),
+                "custom_width": ("INT", {"default": 256, "min": 32, "max": 512, "step": 8}),
+                "custom_height": ("INT", {"default": 128, "min": 32, "max": 256, "step": 8}),
+                "resize_to_screen": ("BOOLEAN", {"default": True}),
             },
             "optional": {
-                "bezel": ("BOOLEAN", {"default": False}),
-                "bezel_color": (["black", "silver", "gold"],),
+                # These control the WebGL preview only (not image processing)
+                "color_mode": (["grayscale", "green_mono", "blue_mono", "amber_mono", "white_mono", "yellow_mono"],),
+                "show_pixel_grid": ("BOOLEAN", {"default": True}),
+                "pixel_gap": ("FLOAT", {"default": 0.15, "min": 0.0, "max": 0.5, "step": 0.05}),
+                "bloom_glow": ("BOOLEAN", {"default": False}),
+                "bloom_intensity": ("FLOAT", {"default": 0.3, "min": 0.0, "max": 1.0, "step": 0.05}),
             }
         }
 
-    def _bayer_matrix(self, n: int) -> np.ndarray:
-        """Generate Bayer dither matrix of size n x n."""
-        if n == 2:
-            return np.array([[0, 2], [3, 1]], dtype=np.float32) / 4.0
-        smaller = self._bayer_matrix(n // 2)
-        return np.block([
-            [4 * smaller, 4 * smaller + 2],
-            [4 * smaller + 3, 4 * smaller + 1]
-        ]) / (n * n)
-
-    def _floyd_steinberg_dither(self, img: np.ndarray, levels: int) -> np.ndarray:
-        """Apply Floyd-Steinberg error diffusion dithering."""
-        h, w = img.shape
-        result = img.astype(np.float32).copy()
-
-        for y in range(h):
-            for x in range(w):
-                old_val = result[y, x]
-                new_val = np.round(old_val * (levels - 1)) / (levels - 1)
-                result[y, x] = new_val
-                error = old_val - new_val
-
-                if x + 1 < w:
-                    result[y, x + 1] += error * 7 / 16
-                if y + 1 < h:
-                    if x > 0:
-                        result[y + 1, x - 1] += error * 3 / 16
-                    result[y + 1, x] += error * 5 / 16
-                    if x + 1 < w:
-                        result[y + 1, x + 1] += error * 1 / 16
-
-        return np.clip(result, 0, 1)
-
-    def _apply_dither(self, gray: np.ndarray, dither_type: str, levels: int) -> np.ndarray:
-        """Apply dithering to grayscale image."""
-        if dither_type == "none":
-            return np.floor(gray * (levels - 1) + 0.5) / (levels - 1)
-        elif dither_type == "floyd_steinberg":
-            return self._floyd_steinberg_dither(gray, levels)
-        else:
-            # Bayer dithering
-            size = int(dither_type.split("_")[1].split("x")[0])
-            bayer = self._bayer_matrix(size)
-            h, w = gray.shape
-            tile_y = (h + size - 1) // size
-            tile_x = (w + size - 1) // size
-            threshold_map = np.tile(bayer, (tile_y, tile_x))[:h, :w]
-            dithered = gray + (threshold_map - 0.5) / levels
-            return np.clip(np.floor(dithered * (levels - 1) + 0.5) / (levels - 1), 0, 1)
-
-    def _apply_color_mode(self, gray: np.ndarray, color_mode: str) -> np.ndarray:
-        """Apply color tint based on display type."""
-        h, w = gray.shape
-
-        if color_mode == "grayscale":
-            # True OLED: slight blue tint on whites
-            r = gray * 0.95
-            g = gray * 1.0
-            b = gray * 1.02
-        elif color_mode == "green_mono":
-            r = gray * 0.1
-            g = gray * 1.0
-            b = gray * 0.1
-        elif color_mode == "blue_mono":
-            r = gray * 0.2
-            g = gray * 0.4
-            b = gray * 1.0
-        elif color_mode == "amber_mono":
-            r = gray * 1.0
-            g = gray * 0.6
-            b = gray * 0.1
-        else:  # rgb - pass through
-            return np.stack([gray, gray, gray], axis=-1)
-
-        return np.clip(np.stack([r, g, b], axis=-1), 0, 1)
-
-    def emulate(
+    def view(
         self,
         images: torch.Tensor,
         screen_preset: str,
-        region: str,
-        custom_x: int,
-        custom_y: int,
-        custom_w: int,
-        custom_h: int,
-        color_mode: str,
-        bit_depth: str,
-        dither_type: str,
-        preview_scale: int,
-        show_pixel_grid: bool,
-        pixel_gap: float,
-        bezel: bool = False,
-        bezel_color: str = "black",
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
-        if not PIL_AVAILABLE:
-            return (images, images)
-
+        custom_width: int,
+        custom_height: int,
+        resize_to_screen: bool,
+        color_mode: str = "grayscale",
+        show_pixel_grid: bool = True,
+        pixel_gap: float = 0.15,
+        bloom_glow: bool = False,
+        bloom_intensity: float = 0.3,
+    ) -> Tuple[torch.Tensor]:
+        """
+        Pass-through viewer. WebGL preview shows OLED simulation.
+        Optionally resizes to screen dimensions.
+        """
         # Get screen size from preset
         screen_sizes = {
             "SSD1363 256x128": (256, 128),
             "SSD1306 128x64": (128, 64),
-            "Custom": (256, 128),
+            "SSD1306 128x32": (128, 32),
+            "Custom": (custom_width, custom_height),
         }
         screen_w, screen_h = screen_sizes.get(screen_preset, (256, 128))
 
-        # Get region (where to place content)
-        if region == "custom":
-            reg_x, reg_y, reg_w, reg_h = custom_x, custom_y, custom_w, custom_h
-        else:
-            reg_x, reg_y, reg_w, reg_h = REGION_PRESETS.get(region, (0, 0, screen_w, screen_h))
-            # Scale region if screen is not 256x128
-            if screen_w != 256 or screen_h != 128:
-                scale_x, scale_y = screen_w / 256, screen_h / 128
-                reg_x = int(reg_x * scale_x)
-                reg_y = int(reg_y * scale_y)
-                reg_w = int(reg_w * scale_x)
-                reg_h = int(reg_h * scale_y)
+        if not resize_to_screen or not PIL_AVAILABLE:
+            # Pass through unchanged
+            return (images,)
 
-        # Clamp region to screen bounds
-        reg_w = min(reg_w, screen_w - reg_x)
-        reg_h = min(reg_h, screen_h - reg_y)
-
-        # Parse bit depth
-        levels = {"1-bit": 2, "2-bit": 4, "4-bit": 16, "8-bit": 256}[bit_depth]
-
-        previews = []
-        raw_screens = []
-
+        # Resize to screen dimensions
+        results = []
         for b in range(images.shape[0]):
             img_np = images[b].cpu().numpy()
-
-            # Resize input to region size
             pil_img = PILImage.fromarray((img_np * 255).astype(np.uint8))
-            pil_img = pil_img.resize((reg_w, reg_h), PILImage.LANCZOS)
-            img_resized = np.array(pil_img).astype(np.float32) / 255.0
+            pil_img = pil_img.resize((screen_w, screen_h), PILImage.LANCZOS)
+            result_np = np.array(pil_img).astype(np.float32) / 255.0
+            results.append(torch.from_numpy(result_np))
 
-            # Convert to grayscale (for non-RGB modes)
-            if color_mode != "rgb":
-                if len(img_resized.shape) == 3:
-                    gray = 0.299 * img_resized[:, :, 0] + 0.587 * img_resized[:, :, 1] + 0.114 * img_resized[:, :, 2]
-                else:
-                    gray = img_resized
-
-                # Apply dithering
-                gray = self._apply_dither(gray, dither_type, levels)
-                region_data = gray
-            else:
-                # RGB mode - quantize each channel
-                region_data = np.zeros((reg_h, reg_w), dtype=np.float32)
-                for c in range(3):
-                    region_data += self._apply_dither(img_resized[:, :, c], dither_type, levels) / 3
-
-            # Create full screen canvas (black background for OLED)
-            screen_gray = np.zeros((screen_h, screen_w), dtype=np.float32)
-
-            # Place region content on canvas
-            screen_gray[reg_y:reg_y + reg_h, reg_x:reg_x + reg_w] = region_data
-
-            # Raw screen output (grayscale, ready for export)
-            raw_screen = np.stack([screen_gray, screen_gray, screen_gray], axis=-1)
-            raw_screens.append(torch.from_numpy(raw_screen.astype(np.float32)))
-
-            # Apply color mode for preview
-            colored = self._apply_color_mode(screen_gray, color_mode)
-
-            # Scale up for preview
-            output_h = screen_h * preview_scale
-            output_w = screen_w * preview_scale
-
-            if show_pixel_grid and preview_scale >= 2:
-                # Render with pixel gaps
-                gap = max(1, int(pixel_gap * preview_scale))
-                output = np.zeros((output_h, output_w, 3), dtype=np.float32)
-                output[:] = 0.01  # OLED black
-
-                for y in range(screen_h):
-                    for x in range(screen_w):
-                        pixel_color = colored[y, x]
-                        y1, y2 = y * preview_scale, (y + 1) * preview_scale - gap
-                        x1, x2 = x * preview_scale, (x + 1) * preview_scale - gap
-
-                        if y2 > y1 and x2 > x1:
-                            output[y1:y2, x1:x2] = pixel_color
-            else:
-                pil_preview = PILImage.fromarray((colored * 255).astype(np.uint8))
-                pil_preview = pil_preview.resize((output_w, output_h), PILImage.NEAREST)
-                output = np.array(pil_preview).astype(np.float32) / 255.0
-
-            # Add bezel if requested
-            if bezel:
-                bezel_width = max(preview_scale * 2, 4)
-                bezel_colors = {
-                    "black": [0.05, 0.05, 0.05],
-                    "silver": [0.6, 0.6, 0.65],
-                    "gold": [0.7, 0.55, 0.3],
-                }
-                bc = bezel_colors.get(bezel_color, [0.05, 0.05, 0.05])
-
-                bezeled = np.zeros((output_h + bezel_width * 2, output_w + bezel_width * 2, 3), dtype=np.float32)
-                bezeled[:] = bc
-                bezeled[bezel_width:-bezel_width, bezel_width:-bezel_width] = output
-                output = bezeled
-
-            previews.append(torch.from_numpy(output))
-
-        return (
-            torch.stack(previews).to(images.device),
-            torch.stack(raw_screens).to(images.device),
-        )
+        return (torch.stack(results).to(images.device),)
 
 
 class KoshiXBMExport:

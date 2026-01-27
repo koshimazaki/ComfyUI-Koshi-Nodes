@@ -227,56 +227,307 @@ const GREYSCALE_SHADER = `
     }
 `;
 
-// OLED Screen Emulation (256x128, 4-bit greyscale with pixel grid)
+// OLED Screen Emulation with full dithering support
+// Uses exact SIDKIT Bayer matrices for consistency with React Three Fiber version
+// Matches KoshiOLEDScreen Python node parameters
 const OLED_EMULATION_SHADER = `
-    precision mediump float;
+    precision highp float;
     uniform sampler2D u_image;
     uniform vec2 u_resolution;
-    uniform vec2 u_screenSize;  // 256x128
-    uniform float u_bitDepth;   // 4 = 16 levels
-    uniform float u_pixelGap;
-    uniform float u_brightness;
-    uniform float u_contrast;
+    uniform vec2 u_screenSize;      // e.g., 256x128
+    uniform float u_bitDepth;       // 1, 2, 4, or 8
+    uniform float u_pixelGap;       // 0.0 - 0.5
+    uniform float u_brightness;     // -1.0 to 1.0
+    uniform float u_contrast;       // 0.5 to 2.0
+    uniform float u_ditherType;     // 0=none, 1=bayer2x2, 2=bayer4x4, 3=bayer8x8, 4=floyd_steinberg
+    uniform float u_ditherStrength; // 0.0 - 1.0
+    uniform float u_colorMode;      // 0=grayscale, 1=green, 2=blue, 3=amber, 4=white, 5=yellow, 6=rgb
+    uniform float u_bloomEnabled;   // 0 or 1
+    uniform float u_bloomIntensity; // 0.0 - 1.0
+    uniform float u_invert;         // 0 or 1
     varying vec2 v_texCoord;
-    
+
+    // Bayer 2x2 matrix (SIDKIT compatible)
+    float bayer2(vec2 pos) {
+        int x = int(mod(pos.x, 2.0));
+        int y = int(mod(pos.y, 2.0));
+        int idx = y * 2 + x;
+        // [0, 2, 3, 1] / 4.0
+        if (idx == 0) return 0.0;
+        if (idx == 1) return 2.0 / 4.0;
+        if (idx == 2) return 3.0 / 4.0;
+        return 1.0 / 4.0;
+    }
+
+    // Bayer 4x4 matrix - exact SIDKIT values
+    float bayer4(vec2 pos) {
+        int x = int(mod(pos.x, 4.0));
+        int y = int(mod(pos.y, 4.0));
+        int idx = y * 4 + x;
+
+        // Exact SIDKIT Bayer 4x4 matrix
+        if (idx == 0) return 0.0 / 16.0;
+        if (idx == 1) return 8.0 / 16.0;
+        if (idx == 2) return 2.0 / 16.0;
+        if (idx == 3) return 10.0 / 16.0;
+        if (idx == 4) return 12.0 / 16.0;
+        if (idx == 5) return 4.0 / 16.0;
+        if (idx == 6) return 14.0 / 16.0;
+        if (idx == 7) return 6.0 / 16.0;
+        if (idx == 8) return 3.0 / 16.0;
+        if (idx == 9) return 11.0 / 16.0;
+        if (idx == 10) return 1.0 / 16.0;
+        if (idx == 11) return 9.0 / 16.0;
+        if (idx == 12) return 15.0 / 16.0;
+        if (idx == 13) return 7.0 / 16.0;
+        if (idx == 14) return 13.0 / 16.0;
+        return 5.0 / 16.0;
+    }
+
+    // Bayer 8x8 matrix - exact SIDKIT values
+    float bayer8(vec2 pos) {
+        int x = int(mod(pos.x, 8.0));
+        int y = int(mod(pos.y, 8.0));
+        int idx = y * 8 + x;
+
+        // SIDKIT Bayer 8x8 - row by row
+        // Row 0
+        if (idx == 0) return 0.0 / 64.0;
+        if (idx == 1) return 32.0 / 64.0;
+        if (idx == 2) return 8.0 / 64.0;
+        if (idx == 3) return 40.0 / 64.0;
+        if (idx == 4) return 2.0 / 64.0;
+        if (idx == 5) return 34.0 / 64.0;
+        if (idx == 6) return 10.0 / 64.0;
+        if (idx == 7) return 42.0 / 64.0;
+        // Row 1
+        if (idx == 8) return 48.0 / 64.0;
+        if (idx == 9) return 16.0 / 64.0;
+        if (idx == 10) return 56.0 / 64.0;
+        if (idx == 11) return 24.0 / 64.0;
+        if (idx == 12) return 50.0 / 64.0;
+        if (idx == 13) return 18.0 / 64.0;
+        if (idx == 14) return 58.0 / 64.0;
+        if (idx == 15) return 26.0 / 64.0;
+        // Row 2
+        if (idx == 16) return 12.0 / 64.0;
+        if (idx == 17) return 44.0 / 64.0;
+        if (idx == 18) return 4.0 / 64.0;
+        if (idx == 19) return 36.0 / 64.0;
+        if (idx == 20) return 14.0 / 64.0;
+        if (idx == 21) return 46.0 / 64.0;
+        if (idx == 22) return 6.0 / 64.0;
+        if (idx == 23) return 38.0 / 64.0;
+        // Row 3
+        if (idx == 24) return 60.0 / 64.0;
+        if (idx == 25) return 28.0 / 64.0;
+        if (idx == 26) return 52.0 / 64.0;
+        if (idx == 27) return 20.0 / 64.0;
+        if (idx == 28) return 62.0 / 64.0;
+        if (idx == 29) return 30.0 / 64.0;
+        if (idx == 30) return 54.0 / 64.0;
+        if (idx == 31) return 22.0 / 64.0;
+        // Row 4
+        if (idx == 32) return 3.0 / 64.0;
+        if (idx == 33) return 35.0 / 64.0;
+        if (idx == 34) return 11.0 / 64.0;
+        if (idx == 35) return 43.0 / 64.0;
+        if (idx == 36) return 1.0 / 64.0;
+        if (idx == 37) return 33.0 / 64.0;
+        if (idx == 38) return 9.0 / 64.0;
+        if (idx == 39) return 41.0 / 64.0;
+        // Row 5
+        if (idx == 40) return 51.0 / 64.0;
+        if (idx == 41) return 19.0 / 64.0;
+        if (idx == 42) return 59.0 / 64.0;
+        if (idx == 43) return 27.0 / 64.0;
+        if (idx == 44) return 49.0 / 64.0;
+        if (idx == 45) return 17.0 / 64.0;
+        if (idx == 46) return 57.0 / 64.0;
+        if (idx == 47) return 25.0 / 64.0;
+        // Row 6
+        if (idx == 48) return 15.0 / 64.0;
+        if (idx == 49) return 47.0 / 64.0;
+        if (idx == 50) return 7.0 / 64.0;
+        if (idx == 51) return 39.0 / 64.0;
+        if (idx == 52) return 13.0 / 64.0;
+        if (idx == 53) return 45.0 / 64.0;
+        if (idx == 54) return 5.0 / 64.0;
+        if (idx == 55) return 37.0 / 64.0;
+        // Row 7
+        if (idx == 56) return 63.0 / 64.0;
+        if (idx == 57) return 31.0 / 64.0;
+        if (idx == 58) return 55.0 / 64.0;
+        if (idx == 59) return 23.0 / 64.0;
+        if (idx == 60) return 61.0 / 64.0;
+        if (idx == 61) return 29.0 / 64.0;
+        if (idx == 62) return 53.0 / 64.0;
+        return 21.0 / 64.0;
+    }
+
+    // Pseudo-random noise for Floyd-Steinberg approximation (SIDKIT style)
+    float noise(vec2 pos) {
+        return fract(sin(dot(pos, vec2(12.9898, 78.233))) * 43758.5453);
+    }
+
+    // Quantize value to N levels
+    float quantize(float value, float levels) {
+        float step = 1.0 / (levels - 1.0);
+        return floor(value / step + 0.5) * step;
+    }
+
+    // Apply dithering - SIDKIT compatible algorithm
+    float applyDither(float gray, vec2 pixelPos, float levels) {
+        float ditherThreshold = 0.0;
+
+        if (u_ditherType < 0.5) {
+            // No dithering - simple quantization
+            return quantize(gray, levels);
+        } else if (u_ditherType < 1.5) {
+            // Bayer 2x2
+            ditherThreshold = bayer2(pixelPos);
+        } else if (u_ditherType < 2.5) {
+            // Bayer 4x4 (SIDKIT default)
+            ditherThreshold = bayer4(pixelPos);
+        } else if (u_ditherType < 3.5) {
+            // Bayer 8x8
+            ditherThreshold = bayer8(pixelPos);
+        } else {
+            // Floyd-Steinberg approximation with noise
+            ditherThreshold = noise(pixelPos);
+        }
+
+        // Apply dither with strength control (SIDKIT algorithm)
+        float ditherOffset = (ditherThreshold - 0.5) * u_ditherStrength;
+
+        if (levels <= 2.0) {
+            // 1-bit: threshold comparison
+            float threshold = 0.5 + ditherOffset * 0.5;
+            return gray > threshold ? 1.0 : 0.0;
+        } else if (levels <= 4.0) {
+            // 2-bit: 4 levels
+            float dithered = gray + ditherOffset * 0.25;
+            return quantize(clamp(dithered, 0.0, 1.0), 4.0);
+        } else if (levels <= 16.0) {
+            // 4-bit: 16 levels
+            float dithered = gray + ditherOffset * 0.0625;
+            return quantize(clamp(dithered, 0.0, 1.0), 16.0);
+        } else {
+            // 8-bit: 256 levels (minimal dithering effect)
+            float dithered = gray + ditherOffset * 0.004;
+            return quantize(clamp(dithered, 0.0, 1.0), 256.0);
+        }
+    }
+
+    // Apply color mode tint
+    vec3 applyColorMode(float gray) {
+        vec3 color;
+
+        if (u_colorMode < 0.5) {
+            // Grayscale - slight blue tint for OLED authenticity
+            color = vec3(gray * 0.95, gray, gray * 1.02);
+        } else if (u_colorMode < 1.5) {
+            // Green monochrome (classic terminal/Nokia)
+            color = vec3(gray * 0.1, gray, gray * 0.1);
+        } else if (u_colorMode < 2.5) {
+            // Blue monochrome
+            color = vec3(gray * 0.2, gray * 0.4, gray);
+        } else if (u_colorMode < 3.5) {
+            // Amber monochrome (vintage display)
+            color = vec3(gray, gray * 0.6, gray * 0.1);
+        } else if (u_colorMode < 4.5) {
+            // White (pure, no tint)
+            color = vec3(gray);
+        } else if (u_colorMode < 5.5) {
+            // Yellow (warm)
+            color = vec3(gray, gray * 0.9, gray * 0.3);
+        } else {
+            // RGB passthrough
+            color = vec3(gray);
+        }
+
+        return color;
+    }
+
+    // Bloom/glow effect for OLED emulation
+    vec3 applyBloom(vec2 uv, vec3 baseColor, float gray) {
+        if (u_bloomEnabled < 0.5 || gray < 0.3) return baseColor;
+
+        vec2 texelSize = 1.0 / u_screenSize;
+        vec3 bloom = vec3(0.0);
+        float samples = 0.0;
+
+        // Sample surrounding pixels for glow (5x5 kernel)
+        for (float x = -2.0; x <= 2.0; x += 1.0) {
+            for (float y = -2.0; y <= 2.0; y += 1.0) {
+                vec2 offset = vec2(x, y) * texelSize * 2.0;
+                vec4 s = texture2D(u_image, uv + offset);
+                float sg = dot(s.rgb, vec3(0.299, 0.587, 0.114));
+                if (sg > 0.4) {
+                    bloom += applyColorMode(sg);
+                    samples += 1.0;
+                }
+            }
+        }
+
+        if (samples > 0.0) {
+            bloom /= samples;
+            return baseColor + bloom * u_bloomIntensity * 0.4;
+        }
+        return baseColor;
+    }
+
     void main() {
-        // Map to screen pixels
         vec2 screenUV = v_texCoord;
         vec2 pixelCoord = floor(screenUV * u_screenSize);
-        vec2 pixelUV = pixelCoord / u_screenSize;
-        
-        // Sample and convert to greyscale
-        vec4 color = texture2D(u_image, pixelUV + 0.5 / u_screenSize);
+        vec2 pixelUV = (pixelCoord + 0.5) / u_screenSize;
+
+        // Sample and convert to grayscale
+        vec4 color = texture2D(u_image, pixelUV);
         float gray = dot(color.rgb, vec3(0.299, 0.587, 0.114));
-        
+
         // Apply brightness/contrast
         gray = (gray - 0.5) * u_contrast + 0.5 + u_brightness;
         gray = clamp(gray, 0.0, 1.0);
-        
-        // Quantize to bit depth (4-bit = 16 levels)
+
+        // Apply invert if enabled
+        if (u_invert > 0.5) {
+            gray = 1.0 - gray;
+        }
+
+        // Calculate levels from bit depth
         float levels = pow(2.0, u_bitDepth);
-        gray = floor(gray * (levels - 1.0) + 0.5) / (levels - 1.0);
-        
-        // OLED pixel effect - pixels are slightly separated
+
+        // Apply dithering
+        gray = applyDither(gray, pixelCoord, levels);
+
+        // Apply color mode
+        vec3 oledColor = applyColorMode(gray);
+
+        // Apply bloom if enabled
+        oledColor = applyBloom(pixelUV, oledColor, gray);
+
+        // OLED pixel grid effect
         vec2 pixelPos = fract(screenUV * u_screenSize);
         float pixelMask = 1.0;
-        if (u_pixelGap > 0.0) {
+
+        if (u_pixelGap > 0.001) {
             float gap = u_pixelGap;
-            if (pixelPos.x < gap || pixelPos.x > 1.0 - gap ||
-                pixelPos.y < gap || pixelPos.y > 1.0 - gap) {
-                pixelMask = 0.1;  // Dark gap between pixels
-            }
+            // Create pixel separation - darker at edges (OLED subpixel effect)
+            float edgeX = smoothstep(0.0, gap, pixelPos.x) * smoothstep(0.0, gap, 1.0 - pixelPos.x);
+            float edgeY = smoothstep(0.0, gap, pixelPos.y) * smoothstep(0.0, gap, 1.0 - pixelPos.y);
+            pixelMask = edgeX * edgeY;
+
+            // OLED true black in gaps
+            pixelMask = mix(0.02, 1.0, pixelMask);
         }
-        
-        // OLED: true black when off, slight blue tint on bright
-        vec3 oledColor;
+
+        // OLED: true black when pixel is off
         if (gray < 0.01) {
-            oledColor = vec3(0.0);  // True black
-        } else {
-            // Slight cool tint for OLED look
-            oledColor = vec3(gray * 0.95, gray, gray * 1.02);
+            oledColor = vec3(0.0);
+            pixelMask = 1.0;
         }
-        
+
         gl_FragColor = vec4(oledColor * pixelMask, 1.0);
     }
 `;
@@ -760,83 +1011,193 @@ app.registerExtension({
 });
 
 // ============================================================================
-// OLED SCREEN PREVIEW NODE
+// OLED SCREEN PREVIEW NODE (Koshi_OLEDScreen)
 // ============================================================================
 
+// Color mode mapping for the shader (WebGL preview only)
+const OLED_COLOR_MODES = {
+    "grayscale": 0,
+    "green_mono": 1,
+    "blue_mono": 2,
+    "amber_mono": 3,
+    "white_mono": 4,
+    "yellow_mono": 5,
+};
+
+// Screen size presets
+const OLED_SCREEN_SIZES = {
+    "SSD1363 256x128": [256, 128],
+    "SSD1306 128x64": [128, 64],
+    "SSD1306 128x32": [128, 32],
+    "Custom": null, // Use custom_width/custom_height
+};
+
 app.registerExtension({
-    name: "Koshi.OLEDPreview",
-    
+    name: "Koshi.OLEDScreenPreview",
+
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
-        if (nodeData.name !== "Koshi_SIDKITExport" && nodeData.name !== "Koshi_OLEDPreview") return;
-        
+        // Target the actual OLED screen node
+        if (nodeData.name !== "Koshi_OLEDScreen") return;
+
         const onNodeCreated = nodeType.prototype.onNodeCreated;
         nodeType.prototype.onNodeCreated = function() {
             if (onNodeCreated) onNodeCreated.apply(this, arguments);
-            
+
             const widget = new KoshiPreviewWidget(this, "oled", {
-                title: "OLED 256×128 Preview",
+                title: "OLED Display Simulation",
                 width: 256,
                 height: 128,
                 oledBezel: true,
-                statusText: "SSD1363 4-bit OLED Emulation",
+                statusText: "256×128 | grayscale",
             });
-            
-            // Default OLED params
+
+            // Default OLED params - viewer mode (WebGL shows display simulation)
             widget.setParams({
                 screenSize: [256, 128],
-                bitDepth: 4,
-                pixelGap: 0.05,
+                bitDepth: 8,           // Full detail pass-through
+                pixelGap: 0.15,
                 brightness: 0.0,
                 contrast: 1.0,
+                ditherType: 0,         // No dithering in viewer
+                ditherStrength: 0.0,
+                colorMode: 0,          // Grayscale tint
+                bloomEnabled: 0,
+                bloomIntensity: 0.3,
+                invert: 0,
             });
-            
+
             const domWidget = this.addDOMWidget("oled_preview", "preview", widget.getElement(), {
                 serialize: false,
                 hideOnZoom: false,
             });
-            
+
             domWidget.computeSize = (width) => [width, widget.getHeight() + 20];
             this.oledPreview = widget;
+
+            // Initial param sync
+            this._syncOLEDPreviewParams();
         };
-        
-        // Update OLED preview with params
-        const onWidgetChanged = nodeType.prototype.onWidgetChanged;
-        nodeType.prototype.onWidgetChanged = function(name, value) {
-            if (onWidgetChanged) onWidgetChanged.apply(this, arguments);
-            
-            if (this.oledPreview) {
-                const params = {
-                    screenSize: [256, 128],
-                    bitDepth: 4,
-                    pixelGap: 0.05,
-                    brightness: 0.0,
-                    contrast: 1.0,
-                };
-                
-                // Map widget values
-                for (const w of this.widgets || []) {
-                    if (w.name === "target_width") params.screenSize[0] = w.value;
-                    if (w.name === "target_height") params.screenSize[1] = w.value;
-                    if (w.name === "bit_depth") {
-                        if (w.value.includes("1-bit")) params.bitDepth = 1;
-                        else if (w.value.includes("2-bit")) params.bitDepth = 2;
-                        else if (w.value.includes("4-bit")) params.bitDepth = 4;
-                    }
+
+        // Sync all widget values to preview params
+        nodeType.prototype._syncOLEDPreviewParams = function() {
+            if (!this.oledPreview) return;
+
+            // Default params - viewer mode (no dithering in preview, just display simulation)
+            const params = {
+                screenSize: [256, 128],
+                bitDepth: 8,           // Show full detail in preview
+                pixelGap: 0.15,
+                brightness: 0.0,
+                contrast: 1.0,
+                ditherType: 0,         // No dithering - pass through
+                ditherStrength: 0.0,
+                colorMode: 0,
+                bloomEnabled: 0,
+                bloomIntensity: 0.3,
+                invert: 0,
+            };
+
+            let customWidth = 256;
+            let customHeight = 128;
+
+            for (const w of this.widgets || []) {
+                switch (w.name) {
+                    case "screen_preset":
+                        const size = OLED_SCREEN_SIZES[w.value];
+                        if (size) params.screenSize = size;
+                        break;
+                    case "custom_width":
+                        customWidth = w.value;
+                        break;
+                    case "custom_height":
+                        customHeight = w.value;
+                        break;
+                    case "color_mode":
+                        params.colorMode = OLED_COLOR_MODES[w.value] ?? 0;
+                        break;
+                    case "pixel_gap":
+                        params.pixelGap = w.value;
+                        break;
+                    case "show_pixel_grid":
+                        if (!w.value) params.pixelGap = 0;
+                        break;
+                    case "bloom_glow":
+                        params.bloomEnabled = w.value ? 1 : 0;
+                        break;
+                    case "bloom_intensity":
+                        params.bloomIntensity = w.value ?? 0.3;
+                        break;
                 }
-                
-                this.oledPreview.setParams(params);
             }
+
+            // Handle Custom preset
+            const preset = this.widgets?.find(w => w.name === "screen_preset")?.value;
+            if (preset === "Custom") {
+                params.screenSize = [customWidth, customHeight];
+            }
+
+            // Update status text
+            const colorMode = this.widgets?.find(w => w.name === "color_mode")?.value || "grayscale";
+            const sizeStr = `${params.screenSize[0]}×${params.screenSize[1]}`;
+            this.oledPreview.status.textContent = `${sizeStr} | ${colorMode}`;
+
+            this.oledPreview.setParams(params);
         };
-        
-        // Handle execution result
+
+        // Update preview when any widget changes
+        const onWidgetChanged = nodeType.prototype.onWidgetChanged;
+        nodeType.prototype.onWidgetChanged = function(name, value, old_value, widget) {
+            if (onWidgetChanged) onWidgetChanged.apply(this, arguments);
+            this._syncOLEDPreviewParams?.();
+        };
+
+        // Also handle property changes
+        const onPropertyChanged = nodeType.prototype.onPropertyChanged;
+        nodeType.prototype.onPropertyChanged = function(name, value) {
+            if (onPropertyChanged) onPropertyChanged.apply(this, arguments);
+            this._syncOLEDPreviewParams?.();
+        };
+
+        // Handle execution result - load the input image for preview
         const onExecuted = nodeType.prototype.onExecuted;
         nodeType.prototype.onExecuted = function(message) {
             if (onExecuted) onExecuted.apply(this, arguments);
-            
+
             if (this.oledPreview && message?.images?.length > 0) {
+                // Use the first output image (preview) as source
                 const img = message.images[0];
                 const url = `/view?filename=${encodeURIComponent(img.filename)}&type=${img.type}&subfolder=${encodeURIComponent(img.subfolder || "")}`;
                 this.oledPreview.setImage(url);
+            }
+        };
+
+        // Try to get input image from connected node
+        const onConnectionsChange = nodeType.prototype.onConnectionsChange;
+        nodeType.prototype.onConnectionsChange = function(type, index, connected, link_info) {
+            if (onConnectionsChange) onConnectionsChange.apply(this, arguments);
+
+            // When input connection changes, try to get preview from connected node
+            if (type === 1 && index === 0) { // Input slot 0 = images
+                this._tryLoadInputPreview?.();
+            }
+        };
+
+        nodeType.prototype._tryLoadInputPreview = function() {
+            if (!this.oledPreview || !this.inputs || !this.inputs[0]) return;
+
+            const link = this.inputs[0].link;
+            if (!link) return;
+
+            const linkInfo = app.graph.links[link];
+            if (!linkInfo) return;
+
+            const sourceNode = app.graph.getNodeById(linkInfo.origin_id);
+            if (!sourceNode || !sourceNode.imgs || sourceNode.imgs.length === 0) return;
+
+            // Get the image URL from the source node
+            const img = sourceNode.imgs[0];
+            if (img && img.src) {
+                this.oledPreview.setImage(img.src);
             }
         };
     }

@@ -12,7 +12,7 @@ class KoshiDither:
     COLOR = "#FF9F43"
     BGCOLOR = "#1a1a1a"
 
-    CATEGORY = "Koshi/Image/SIDKIT"
+    CATEGORY = "Koshi/Effects"
     FUNCTION = "dither"
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("dithered",)
@@ -191,5 +191,5 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_Dither": "░▒░ KN Dither",
+    "Koshi_Dither": "░▀░ KN Dither",
 }
