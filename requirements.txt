@@ -1,7 +1,8 @@
 torch>=2.0
 numpy
 Pillow
-# Optional dependencies (install with pip install .[flux] or .[all])
-# moderngl  # For GPU-accelerated effects
-# transformers>=4.36.0  # For FLUX motion
-# diffusers>=0.25.0  # For FLUX motion
+
+# Optional - Enhanced features
+scipy          # Better dithering, edge detection
+opencv-python  # Optical flow for V2V motion mode
+moderngl       # GPU-accelerated effects (bloom, chromatic aberration)
