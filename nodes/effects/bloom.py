@@ -329,5 +329,5 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "KoshiBloomShader": "Bloom Shader (Post-Process) ✨"
+    "KoshiBloomShader": "░▀░ KN Bloom"
 }

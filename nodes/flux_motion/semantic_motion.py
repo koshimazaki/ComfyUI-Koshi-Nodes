@@ -51,7 +51,7 @@ class KoshiSemanticMotion:
     COLOR = "#1a1a1a"
     BGCOLOR = "#2d2d2d"
 
-    CATEGORY = "Koshi/Flux Motion"
+    CATEGORY = "Koshi/Motion"
     FUNCTION = "generate"
     RETURN_TYPES = ("KOSHI_MOTION_SCHEDULE",)
     RETURN_NAMES = ("motion_schedule",)

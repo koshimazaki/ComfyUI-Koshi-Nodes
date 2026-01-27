@@ -189,5 +189,5 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_ChromaticAberration": "Koshi Chromatic Aberration",
+    "Koshi_ChromaticAberration": "░▀░ KN Chromatic Aberration",
 }

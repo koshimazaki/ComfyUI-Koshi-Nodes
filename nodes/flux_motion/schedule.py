@@ -9,7 +9,7 @@ class KoshiSchedule:
     COLOR = "#1a1a1a"
     BGCOLOR = "#2d2d2d"
 
-    CATEGORY = "Koshi/Flux Motion"
+    CATEGORY = "Koshi/Motion"
     FUNCTION = "parse"
     RETURN_TYPES = ("KOSHI_SCHEDULE",)
     RETURN_NAMES = ("schedule",)
@@ -71,7 +71,7 @@ class KoshiScheduleMulti:
     COLOR = "#1a1a1a"
     BGCOLOR = "#2d2d2d"
 
-    CATEGORY = "Koshi/Flux Motion"
+    CATEGORY = "Koshi/Motion"
     FUNCTION = "parse"
     RETURN_TYPES = ("KOSHI_MOTION_SCHEDULE",)
     RETURN_NAMES = ("motion_schedule",)
@@ -146,6 +146,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_Schedule": "▄▀▄ KN Schedule Parser",
-    "Koshi_ScheduleMulti": "▄▀▄ KN Multi-Schedule",
+    "Koshi_Schedule": "KN Schedule Parser",
+    "Koshi_ScheduleMulti": "KN Multi-Schedule",
 }

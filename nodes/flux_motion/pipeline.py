@@ -1,16 +1,26 @@
 """Koshi Animation Pipeline - Complete animation workflow node."""
 
 import torch
+import warnings
 from typing import Dict, List, Optional
 from .core import apply_composite_transform
 
 
 class KoshiAnimationPipeline:
-    """Complete animation pipeline - generates multiple frames with motion."""
-    COLOR = "#1a1a1a"
+    """
+    [DEPRECATED] Use modular nodes with external KSampler instead.
+    
+    This node uses internal ComfyUI sampling APIs that are not stable.
+    For animation workflows, use:
+    
+    KoshiScheduleMulti -> KoshiMotionEngine -> KSampler -> KoshiFeedback (loop)
+    
+    The modular approach works with FLUX and other models.
+    """
+    COLOR = "#4a1a1a"  # Reddish to indicate deprecated
     BGCOLOR = "#2d2d2d"
 
-    CATEGORY = "Koshi/Flux Motion"
+    CATEGORY = "Koshi/Motion"
     FUNCTION = "generate"
     RETURN_TYPES = ("IMAGE",)
     RETURN_NAMES = ("frames",)
@@ -60,84 +70,33 @@ class KoshiAnimationPipeline:
         denoise_rest: float = 0.65,
         feedback_strength: float = 0.0,
     ):
-        """Generate animation frames with motion."""
-        import comfy.sample
-        import comfy.samplers
-        import latent_preview
-
-        frames = []
-        prev_latent = None
-        reference_image = None
-
-        # Get motion frames if schedule provided
-        motion_frames = None
-        if motion_schedule is not None:
-            motion_frames = motion_schedule.get("motion_frames", [])
-
-        # Latent dimensions
-        latent_height = height // 8
-        latent_width = width // 8
-
-        for frame_idx in range(num_frames):
-            # Determine denoise strength
-            denoise = denoise_first if frame_idx == 0 else denoise_rest
-
-            # Get seed for this frame
-            frame_seed = seed + frame_idx
-
-            # Prepare latent
-            if frame_idx == 0:
-                if init_image is not None:
-                    # Encode init image
-                    latent = vae.encode(init_image[:, :, :, :3])
-                else:
-                    # Start from noise
-                    latent = torch.zeros([1, 4, latent_height, latent_width])
-            else:
-                # Use previous frame's latent with motion applied
-                latent = prev_latent.clone()
-
-                # Apply motion transform if schedule provided
-                if motion_frames and frame_idx < len(motion_frames):
-                    mf = motion_frames[frame_idx]
-                    motion_params = mf.to_dict()
-                    latent = apply_composite_transform(latent, motion_params)
-
-            # Sample
-            samples = comfy.sample.sample(
-                model,
-                noise=comfy.sample.prepare_noise(latent, frame_seed, None),
-                steps=steps,
-                cfg=cfg,
-                sampler_name="euler",
-                scheduler="normal",
-                positive=positive,
-                negative=negative,
-                latent_image=latent,
-                denoise=denoise,
-            )
-
-            # Decode to image
-            image = vae.decode(samples)
-
-            # Store for next iteration
-            prev_latent = samples
-
-            # Store reference for color matching
-            if frame_idx == 0:
-                reference_image = image
-
-            frames.append(image)
-
-        return (frames,)
+        """[DEPRECATED] This node is deprecated. Use modular nodes with external KSampler."""
+        warnings.warn(
+            "KoshiAnimationPipeline is DEPRECATED. Use KoshiScheduleMulti + KoshiMotionEngine + "
+            "external KSampler + KoshiFeedback for animation workflows. This node uses unstable internal APIs.",
+            DeprecationWarning,
+            stacklevel=2
+        )
+        
+        print("[Koshi] WARNING: KoshiAnimationPipeline is deprecated and disabled.")
+        print("[Koshi] Use modular workflow: KoshiScheduleMulti -> KoshiMotionEngine -> KSampler -> KoshiFeedback")
+        
+        # Return init_image or empty list
+        if init_image is not None:
+            return ([init_image],)
+        return ([],)
 
 
 class KoshiFrameIterator:
-    """Iterate through frames for custom per-frame processing."""
+    """Iterate through frames for custom per-frame processing.
+    
+    Use this to build frame-by-frame animation loops with external samplers.
+    Connect to KSampler for each frame, then collect results.
+    """
     COLOR = "#1a1a1a"
     BGCOLOR = "#2d2d2d"
 
-    CATEGORY = "Koshi/Flux Motion"
+    CATEGORY = "Koshi/Motion"
     FUNCTION = "iterate"
     RETURN_TYPES = ("IMAGE", "LATENT", "INT", "FLOAT", "KOSHI_MOTION_SCHEDULE")
     RETURN_NAMES = ("image", "latent", "frame_index", "strength", "remaining_schedule")
@@ -187,6 +146,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_AnimationPipeline": "▄▀▄ KN Animation Pipeline",
+    "Koshi_AnimationPipeline": "▄▀▄ KN Animation Pipeline [DEPRECATED]",
     "Koshi_FrameIterator": "▄▀▄ KN Frame Iterator",
 }

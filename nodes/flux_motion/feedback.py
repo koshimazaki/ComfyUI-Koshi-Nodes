@@ -16,7 +16,7 @@ class KoshiFeedback:
     COLOR = "#1a1a1a"
     BGCOLOR = "#2d2d2d"
 
-    CATEGORY = "Koshi/Flux Motion"
+    CATEGORY = "Koshi/Motion"
     FUNCTION = "process"
     RETURN_TYPES = ("IMAGE", "LATENT")
     RETURN_NAMES = ("enhanced_image", "encoded_latent")
@@ -148,7 +148,7 @@ class KoshiFeedbackSimple:
     COLOR = "#1a1a1a"
     BGCOLOR = "#2d2d2d"
 
-    CATEGORY = "Koshi/Flux Motion"
+    CATEGORY = "Koshi/Motion"
     FUNCTION = "process"
     RETURN_TYPES = ("LATENT",)
     RETURN_NAMES = ("latent",)
@@ -179,6 +179,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_Feedback": "▄▀▄ KN Feedback",
-    "Koshi_FeedbackSimple": "▄▀▄ KN Feedback Simple",
+    "Koshi_Feedback": "KN Feedback",
+    "Koshi_FeedbackSimple": "KN Feedback Simple",
 }

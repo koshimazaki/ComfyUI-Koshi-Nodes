@@ -10,7 +10,7 @@ class KoshiMotionEngine:
     COLOR = "#1a1a1a"
     BGCOLOR = "#2d2d2d"
 
-    CATEGORY = "Koshi/Flux Motion"
+    CATEGORY = "Koshi/Motion"
     FUNCTION = "process"
     RETURN_TYPES = ("LATENT",)
     RETURN_NAMES = ("latent",)
@@ -91,7 +91,7 @@ class KoshiMotionBatch:
     COLOR = "#1a1a1a"
     BGCOLOR = "#2d2d2d"
 
-    CATEGORY = "Koshi/Flux Motion"
+    CATEGORY = "Koshi/Motion"
     FUNCTION = "process"
     RETURN_TYPES = ("LATENT",)
     RETURN_NAMES = ("latents",)
@@ -144,6 +144,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_MotionEngine": "▄▀▄ KN Motion Engine",
-    "Koshi_MotionBatch": "▄▀▄ KN Motion Batch",
+    "Koshi_MotionEngine": "KN Motion Engine",
+    "Koshi_MotionBatch": "KN Motion Batch",
 }
