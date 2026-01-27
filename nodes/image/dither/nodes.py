@@ -9,6 +9,8 @@ class KoshiDither:
     Universal dithering node - all algorithms in one.
     Perfect for SIDKIT OLED display export.
     """
+    COLOR = "#FF9F43"
+    BGCOLOR = "#1a1a1a"
 
     CATEGORY = "Koshi/Image/SIDKIT"
     FUNCTION = "dither"
@@ -189,5 +191,5 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_Dither": "Koshi Dither (SIDKIT)",
+    "Koshi_Dither": "░▒░ KN Dither",
 }

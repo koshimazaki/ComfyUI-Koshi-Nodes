@@ -30,6 +30,8 @@ class KoshiChromaticAberration:
     Chromatic aberration effect - separates RGB channels with offset.
     Based on alien.js ChromaticAberrationShader by Patrick Schroen.
     """
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     def __init__(self):
         self.ctx = None

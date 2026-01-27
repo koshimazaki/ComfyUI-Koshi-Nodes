@@ -7,6 +7,8 @@ from .core import apply_composite_transform
 
 class KoshiAnimationPipeline:
     """Complete animation pipeline - generates multiple frames with motion."""
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     CATEGORY = "Koshi/Flux Motion"
     FUNCTION = "generate"
@@ -132,6 +134,8 @@ class KoshiAnimationPipeline:
 
 class KoshiFrameIterator:
     """Iterate through frames for custom per-frame processing."""
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     CATEGORY = "Koshi/Flux Motion"
     FUNCTION = "iterate"
@@ -183,6 +187,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_AnimationPipeline": "Koshi Animation Pipeline",
-    "Koshi_FrameIterator": "Koshi Frame Iterator",
+    "Koshi_AnimationPipeline": "▄▀▄ KN Animation Pipeline",
+    "Koshi_FrameIterator": "▄▀▄ KN Frame Iterator",
 }

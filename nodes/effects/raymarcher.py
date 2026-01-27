@@ -25,6 +25,8 @@ class DitheringRaymarcher:
     Features multiple dithering patterns (Blue Noise, Bayer 2x2/4x4/8x8, Random),
     grain control, and mono output option.
     """
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     def __init__(self):
         self.ctx = None

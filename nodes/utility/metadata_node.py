@@ -6,7 +6,9 @@ from datetime import datetime
 
 class KoshiCaptureSettings:
     """Capture all workflow settings as JSON metadata."""
-    
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
+
     CATEGORY = "Koshi/Utility"
     FUNCTION = "capture"
     RETURN_TYPES = ("STRING", "STRING",)
@@ -133,7 +135,9 @@ class KoshiCaptureSettings:
 
 class KoshiSaveMetadata:
     """Save metadata JSON to file."""
-    
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
+
     CATEGORY = "Koshi/Utility"
     FUNCTION = "save"
     RETURN_TYPES = ("STRING",)
@@ -184,7 +188,9 @@ class KoshiSaveMetadata:
 
 class KoshiDisplayMetadata:
     """Display metadata in UI (no file save)."""
-    
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
+
     CATEGORY = "Koshi/Utility"
     FUNCTION = "display"
     RETURN_TYPES = ("STRING",)

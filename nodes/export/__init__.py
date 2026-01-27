@@ -21,12 +21,12 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_SIDKITScreen": "SIDKIT Screen",
-    "Koshi_OLEDPreview": "Koshi OLED Preview (Legacy)",
-    "Koshi_PixelScaler": "Koshi Pixel Scaler",
-    "Koshi_SpriteSheet": "Koshi Sprite Sheet",
-    "Koshi_OLEDScreen": "Koshi OLED Screen",
-    "Koshi_XBMExport": "Koshi XBM Export",
+    "Koshi_SIDKITScreen": "░▒░ KN SIDKIT Screen",
+    "Koshi_OLEDPreview": "░▒░ KN OLED Preview",
+    "Koshi_PixelScaler": "░▒░ KN Pixel Scaler",
+    "Koshi_SpriteSheet": "░▒░ KN Sprite Sheet",
+    "Koshi_OLEDScreen": "░▒░ KN OLED Screen",
+    "Koshi_XBMExport": "░▒░ KN XBM Export",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]

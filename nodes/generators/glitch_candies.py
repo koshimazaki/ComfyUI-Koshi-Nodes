@@ -13,6 +13,8 @@ class KoshiGlitchCandies:
     Generate procedural patterns and raymarched 3D shapes.
     Perfect for masks, backgrounds, and animated textures.
     """
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     CATEGORY = "Koshi/Generators"
     FUNCTION = "generate"
@@ -369,6 +371,8 @@ class KoshiGlitchCandies:
 
 class KoshiShapeMorph:
     """Morph between two patterns/shapes."""
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     CATEGORY = "Koshi/Generators"
     FUNCTION = "morph"
@@ -411,6 +415,8 @@ class KoshiShapeMorph:
 
 class KoshiNoiseDisplace:
     """Apply noise displacement to an image or mask."""
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     CATEGORY = "Koshi/Generators"
     FUNCTION = "displace"

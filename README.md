@@ -18,9 +18,62 @@ Custom nodes for ComfyUI: **Flux Motion** (Deforum-inspired V2V), **SIDKIT Editi
 
 ```bash
 cd ComfyUI/custom_nodes
-git clone https://github.com/koshimazaki/ComfyUI-Koshi-Nodes
-pip install -r requirements.txt
+git clone https://github.com/koshimazaki/ComfyUI-Koshi-Nodes.git Koshi-Nodes
+cd Koshi-Nodes && pip install -r requirements.txt
 ```
+
+## Quick Setup (RunPod / Full Install)
+
+One-line setup with ComfyUI + FLUX models + Koshi Nodes:
+
+```bash
+curl -sL https://raw.githubusercontent.com/koshimazaki/ComfyUI-Koshi-Nodes/main/setup_comfyui_flux.sh | bash
+```
+
+Or with model preset flags:
+
+```bash
+# Interactive menu (default)
+./setup_comfyui_flux.sh
+
+# Presets - skip menu
+./setup_comfyui_flux.sh --minimal      # Schnell + FP8 T5 (~17GB)
+./setup_comfyui_flux.sh --full         # Schnell + Dev + FP16 T5 (~46GB)
+./setup_comfyui_flux.sh --fp8          # FP8 optimized (~17GB, lower VRAM)
+./setup_comfyui_flux.sh --skip-models  # No model downloads
+
+# With HuggingFace token (required for FLUX models)
+./setup_comfyui_flux.sh --minimal --token=hf_yourtoken
+# Or via environment variable
+HF_TOKEN=hf_yourtoken ./setup_comfyui_flux.sh --minimal
+```
+
+> **Note:** FLUX models require HuggingFace authentication. Get your token at https://huggingface.co/settings/tokens
+
+**Model Presets:**
+
+| Preset | Models | Size | VRAM | Use Case |
+|--------|--------|------|------|----------|
+| `--minimal` | Schnell + FP8 T5 | ~17GB | 16GB+ | Fast generation, testing |
+| `--full` | Schnell + Dev + FP16 T5 | ~46GB | 24GB+ | Best quality |
+| `--fp8` | Dev FP8 + FP8 T5 | ~17GB | 12GB+ | Memory efficient |
+
+**Included:**
+- ComfyUI (latest)
+- Koshi Nodes
+- ComfyUI-Manager
+- VideoHelperSuite
+- FLUX models (based on preset)
+
+## Node Naming
+
+Nodes are prefixed by category for easy identification:
+
+| Prefix | Category | Description |
+|--------|----------|-------------|
+| `▄▀▄ KN` | Effects & Processing | V2V, color match, hologram, bloom, glitch, utility |
+| `▄█▄ KN` | Generators | Procedural patterns, fractals, raymarched 3D |
+| `░▒░ KN` | SIDKIT | OLED display, dithering, binary, export |
 
 ## Node Categories
 
@@ -29,9 +82,9 @@ Deforum-inspired temporal coherence for video stylization with FLUX models.
 
 | Node | Description |
 |------|-------------|
-| `Koshi_V2VProcessor` | Main V2V pipeline - 4 modes: pure, temporal, motion, ultimate |
-| `Koshi_ColorMatchLAB` | Match colors to anchor frame (LAB space) |
-| `Koshi_OpticalFlowWarp` | Warp frames using optical flow |
+| `▄▀▄ KN V2V Processor` | Main V2V pipeline - 4 modes: pure, temporal, motion, ultimate |
+| `▄▀▄ KN Color Match LAB` | Match colors to anchor frame (LAB space) |
+| `▄▀▄ KN Optical Flow Warp` | Warp frames using optical flow |
 
 **V2V Modes:**
 | Mode | Technique |
@@ -46,9 +99,9 @@ Procedural patterns, fractals, and raymarched 3D shapes. Based on SIDKIT shader 
 
 | Node | Description |
 |------|-------------|
-| `Koshi_GlitchCandies` | 22 patterns: waves, plasma, voronoi, fractals, raymarched 3D |
-| `Koshi_ShapeMorph` | Blend/morph between two patterns with easing |
-| `Koshi_NoiseDisplace` | FBM noise displacement with animation |
+| `▄█▄ KN Glitch Candies` | 22 patterns: waves, plasma, voronoi, fractals, raymarched 3D |
+| `▄█▄ KN Shape Morph` | Blend/morph between two patterns with easing |
+| `▄█▄ KN Noise Displace` | FBM noise displacement with animation |
 
 **Patterns:**
 - **2D:** waves, circles, plasma, voronoi, checkerboard, swirl, ripple
@@ -65,11 +118,11 @@ Post-processing effects based on [alien.js](https://github.com/alienkitty/alien.
 
 | Node | Description |
 |------|-------------|
-| `Koshi_Hologram` | Full hologram (scanlines, glitch, edge glow, grid, color tint) |
-| `Koshi_Scanlines` | Horizontal/vertical scanlines |
-| `Koshi_VideoGlitch` | RGB split glitch distortion |
-| `Koshi_ChromaticAberration` | RGB channel separation |
-| `Koshi_Bloom` | Unreal-style bloom (GPU/CPU fallback) |
+| `▄▀▄ KN Hologram` | Full hologram (scanlines, glitch, edge glow, grid, color tint) |
+| `▄▀▄ KN Scanlines` | Horizontal/vertical scanlines |
+| `▄▀▄ KN Video Glitch` | RGB split glitch distortion |
+| `▄▀▄ KN Chromatic Aberration` | RGB channel separation |
+| `▄▀▄ KN Bloom` | Unreal-style bloom (GPU/CPU fallback) |
 
 **Hologram presets:** cyan, red_error, green_matrix, purple, orange, white
 
@@ -78,9 +131,9 @@ Metadata capture, workflow settings, and helper nodes.
 
 | Node | Description |
 |------|-------------|
-| `Koshi_CaptureSettings` | Extract all workflow settings as JSON (seed, steps, model, prompts) |
-| `Koshi_SaveMetadata` | Save metadata JSON to file with timestamp |
-| `Koshi_DisplayMetadata` | Display metadata in UI |
+| `▄▀▄ KN Capture Settings` | Extract all workflow settings as JSON (seed, steps, model, prompts) |
+| `▄▀▄ KN Save Metadata` | Save metadata JSON to file with timestamp |
+| `▄▀▄ KN Display Metadata` | Display metadata in UI |
 
 **Captured params:** seed, steps, cfg, sampler, scheduler, model, LoRAs, positive/negative prompts, dimensions
 
@@ -89,13 +142,13 @@ Nodes optimized for [SIDKIT](https://github.com/koshimazaki/SIDKIT) synthesizer 
 
 | Node | Description |
 |------|-------------|
-| `Koshi_Dither` | All dithering: bayer, floyd-steinberg, atkinson, halftone |
-| `Koshi_Binary` | Threshold methods + hex export for C headers |
-| `Koshi_Greyscale` | Greyscale conversion with bit depth quantization |
-| `Koshi_OLEDScreen` | OLED emulator with region presets |
-| `Koshi_PixelScaler` | Lanczos/nearest scaling to OLED resolutions |
-| `Koshi_SpriteSheet` | Combine frames into sprite grid |
-| `SIDKIT Screen` | Export to .sidv/.xbm/.h for Teensy |
+| `░▒░ KN Dither` | All dithering: bayer, floyd-steinberg, atkinson, halftone |
+| `░▒░ KN Binary` | Threshold methods + hex export for C headers |
+| `░▒░ KN Greyscale` | Greyscale conversion with bit depth quantization |
+| `░▒░ KN OLED Screen` | OLED emulator with region presets |
+| `░▒░ KN Pixel Scaler` | Lanczos/nearest scaling to OLED resolutions |
+| `░▒░ KN Sprite Sheet` | Combine frames into sprite grid |
+| `░▒░ KN SIDKIT Screen` | Export to .sidv/.xbm/.h for Teensy |
 
 **OLED Presets:** SSD1306 128x64, SSD1363 256x128, custom
 
@@ -148,18 +201,18 @@ In `workflows/`:
 
 **V2V Stylization:**
 ```
-Video → Koshi_V2VProcessor (ultimate) → VHS_VideoCombine
+Video → ▄▀▄ KN V2V Processor (ultimate) → VHS_VideoCombine
 ```
 
 **Hologram Effect:**
 ```
-Image → Koshi_Hologram (cyan) → Koshi_ChromaticAberration → Koshi_Bloom
+Image → ▄▀▄ KN Hologram (cyan) → ▄▀▄ KN Chromatic Aberration → ▄▀▄ KN Bloom
 ```
 
 **SIDKIT OLED Export:**
 ```
-Image → Koshi_PixelScaler (128x64) → Koshi_Dither (bayer, 2 levels)
-      → Koshi_OLEDScreen (preview) → SIDKIT Screen (.xbm)
+Image → ░▒░ KN Pixel Scaler (128x64) → ░▒░ KN Dither (bayer, 2 levels)
+      → ░▒░ KN OLED Screen (preview) → ░▒░ KN SIDKIT Screen (.xbm)
 ```
 
 ## Dependencies

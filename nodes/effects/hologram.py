@@ -23,6 +23,8 @@ class KoshiHologram:
     Apply hologram post-process effect to any image.
     Combines scanlines, glitch distortion, edge glow, grid overlay, and color tinting.
     """
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     CATEGORY = "Koshi/Effects"
     FUNCTION = "apply"

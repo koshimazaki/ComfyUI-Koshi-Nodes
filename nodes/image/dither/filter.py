@@ -23,6 +23,8 @@ class ImageDitheringFilter:
     A ComfyUI node that applies dithering effects to input images.
     Features color palette control, posterization, and pixel grid sizing.
     """
+    COLOR = "#FF9F43"
+    BGCOLOR = "#1a1a1a"
 
     def __init__(self):
         self.ctx = None
@@ -424,9 +426,9 @@ class ImageDitheringFilter:
 
 # Register node
 NODE_CLASS_MAPPINGS = {
-    "KoshiImageDitheringFilter": ImageDitheringFilter
+    "Koshi_DitheringFilter": ImageDitheringFilter
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "KoshiImageDitheringFilter": "Image Dithering Filter 🎨"
+    "Koshi_DitheringFilter": "░▒░ KN Dithering Filter"
 }

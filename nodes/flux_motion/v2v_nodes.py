@@ -12,6 +12,8 @@ except ImportError:
 
 class KoshiColorMatchLAB:
     """Match colors to anchor frame using LAB space - critical for V2V coherence."""
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     CATEGORY = "Koshi/V2V"
     FUNCTION = "match"
@@ -64,6 +66,8 @@ class KoshiColorMatchLAB:
 
 class KoshiOpticalFlowWarp:
     """Warp image using optical flow from frame pair - for motion transfer."""
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     CATEGORY = "Koshi/V2V"
     FUNCTION = "warp"
@@ -139,6 +143,8 @@ class KoshiV2VProcessor:
     - motion: Warp previous output using optical flow
     - ultimate: Motion + temporal + init image (all techniques combined)
     """
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     CATEGORY = "Koshi/V2V"
     FUNCTION = "process"
@@ -307,6 +313,8 @@ class KoshiV2VProcessor:
 
 class KoshiV2VMetadata:
     """Save V2V processing metadata alongside video output."""
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     CATEGORY = "Koshi/V2V"
     FUNCTION = "save"
@@ -379,8 +387,8 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_ColorMatchLAB": "Koshi Color Match (LAB)",
-    "Koshi_OpticalFlowWarp": "Koshi Optical Flow Warp",
-    "Koshi_V2VProcessor": "Koshi V2V Processor",
-    "Koshi_V2VMetadata": "Koshi V2V Metadata",
+    "Koshi_ColorMatchLAB": "▄▀▄ KN Color Match LAB",
+    "Koshi_OpticalFlowWarp": "▄▀▄ KN Optical Flow Warp",
+    "Koshi_V2VProcessor": "▄▀▄ KN V2V Processor",
+    "Koshi_V2VMetadata": "▄▀▄ KN V2V Metadata",
 }

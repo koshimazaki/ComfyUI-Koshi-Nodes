@@ -28,6 +28,8 @@ class SIDKITExport:
     Export dithered images/video to SIDKIT-compatible formats.
     Supports .sidv (Teensy), .xbm (standard), and .h (C header).
     """
+    COLOR = "#FF9F43"
+    BGCOLOR = "#1a1a1a"
 
     def __init__(self):
         self.output_dir = None

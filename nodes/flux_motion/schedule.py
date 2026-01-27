@@ -6,6 +6,8 @@ from .core import parse_schedule_string, list_easings, EASING_PRESETS
 
 class KoshiSchedule:
     """Parse Deforum-style schedule strings (e.g., '0:(1.0), 30:(0.5)')."""
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     CATEGORY = "Koshi/Flux Motion"
     FUNCTION = "parse"
@@ -66,6 +68,8 @@ class KoshiSchedule:
 
 class KoshiScheduleMulti:
     """Parse multiple Deforum-style schedules for full motion control."""
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     CATEGORY = "Koshi/Flux Motion"
     FUNCTION = "parse"
@@ -142,6 +146,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_Schedule": "Koshi Schedule Parser",
-    "Koshi_ScheduleMulti": "Koshi Multi-Schedule",
+    "Koshi_Schedule": "▄▀▄ KN Schedule Parser",
+    "Koshi_ScheduleMulti": "▄▀▄ KN Multi-Schedule",
 }

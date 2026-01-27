@@ -9,6 +9,8 @@ class KoshiBinary:
     All-in-one binary conversion for SIDKIT OLED export.
     Threshold methods + optional hex output for C headers.
     """
+    COLOR = "#FF9F43"
+    BGCOLOR = "#1a1a1a"
 
     CATEGORY = "Koshi/Image/SIDKIT"
     FUNCTION = "convert"
@@ -175,5 +177,5 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_Binary": "Koshi Binary (SIDKIT)",
+    "Koshi_Binary": "░▒░ KN Binary",
 }

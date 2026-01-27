@@ -7,6 +7,8 @@ from .core import apply_composite_transform
 
 class KoshiMotionEngine:
     """Apply motion vectors and transformations to latents."""
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     CATEGORY = "Koshi/Flux Motion"
     FUNCTION = "process"
@@ -86,6 +88,8 @@ class KoshiMotionEngine:
 
 class KoshiMotionBatch:
     """Apply motion to a batch of latents using schedule."""
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     CATEGORY = "Koshi/Flux Motion"
     FUNCTION = "process"
@@ -140,6 +144,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_MotionEngine": "Koshi Motion Engine",
-    "Koshi_MotionBatch": "Koshi Motion Batch",
+    "Koshi_MotionEngine": "▄▀▄ KN Motion Engine",
+    "Koshi_MotionBatch": "▄▀▄ KN Motion Batch",
 }

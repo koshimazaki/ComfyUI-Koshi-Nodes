@@ -18,6 +18,8 @@ class GlitchShaderNode:
     A ComfyUI node that applies glitch shader effects to images.
     Based on WebGL shader with RGB shift, noise, and distortion effects.
     """
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     @classmethod
     def INPUT_TYPES(cls):

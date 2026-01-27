@@ -8,7 +8,9 @@ class KoshiOLEDPreview:
     Preview how images will look on OLED displays.
     Emulates SSD1363 256x128 4-bit greyscale display.
     """
-    
+    COLOR = "#FF9F43"
+    BGCOLOR = "#1a1a1a"
+
     CATEGORY = "Koshi/Export"
     FUNCTION = "preview"
     RETURN_TYPES = ("IMAGE",)

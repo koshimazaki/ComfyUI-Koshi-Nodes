@@ -48,6 +48,8 @@ MOTION_PRESETS = {
 
 class KoshiSemanticMotion:
     """Generate motion from semantic prompts (e.g., 'slow zoom in, pan left')."""
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     CATEGORY = "Koshi/Flux Motion"
     FUNCTION = "generate"
@@ -180,5 +182,5 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_SemanticMotion": "Koshi Semantic Motion",
+    "Koshi_SemanticMotion": "▄▀▄ KN Semantic Motion",
 }

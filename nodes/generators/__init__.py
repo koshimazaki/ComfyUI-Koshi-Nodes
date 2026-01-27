@@ -8,9 +8,9 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_GlitchCandies": "Koshi Glitch Candies",
-    "Koshi_ShapeMorph": "Koshi Shape Morph",
-    "Koshi_NoiseDisplace": "Koshi Noise Displace",
+    "Koshi_GlitchCandies": "▄█▄ KN Glitch Candies",
+    "Koshi_ShapeMorph": "▄█▄ KN Shape Morph",
+    "Koshi_NoiseDisplace": "▄█▄ KN Noise Displace",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]

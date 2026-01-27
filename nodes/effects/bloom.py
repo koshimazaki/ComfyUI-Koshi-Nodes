@@ -31,6 +31,8 @@ class BloomShaderNode:
     A ComfyUI node that applies a high-quality Bloom effect.
     Uses a multi-pass approach (Downsample/Upsample chain) for natural looking glow.
     """
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     def __init__(self):
         self.ctx = None

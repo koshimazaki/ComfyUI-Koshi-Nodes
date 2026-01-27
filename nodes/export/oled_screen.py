@@ -44,6 +44,8 @@ class KoshiPixelScaler:
     Scale images for pixel-perfect display on OLED screens.
     Supports Lanczos downscaling from generated images to target resolution.
     """
+    COLOR = "#FF9F43"
+    BGCOLOR = "#1a1a1a"
 
     CATEGORY = "Koshi/Export"
     FUNCTION = "scale"
@@ -131,6 +133,8 @@ class KoshiSpriteSheet:
     Combine frame sequence into a sprite sheet grid.
     Perfect for game dev exports and embedded display animations.
     """
+    COLOR = "#FF9F43"
+    BGCOLOR = "#1a1a1a"
 
     CATEGORY = "Koshi/Export"
     FUNCTION = "create_sheet"
@@ -224,6 +228,8 @@ class KoshiOLEDScreen:
     Simulates real hardware characteristics including pixel gaps, color tints, and burn-in.
     Supports region presets for placing content in specific screen areas.
     """
+    COLOR = "#FF9F43"
+    BGCOLOR = "#1a1a1a"
 
     CATEGORY = "Koshi/Export"
     FUNCTION = "emulate"
@@ -471,6 +477,8 @@ class KoshiXBMExport:
     Export images directly to XBM format for embedded displays.
     Supports variable names for direct C inclusion.
     """
+    COLOR = "#FF9F43"
+    BGCOLOR = "#1a1a1a"
 
     CATEGORY = "Koshi/Export"
     FUNCTION = "export"

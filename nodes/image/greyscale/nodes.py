@@ -9,6 +9,8 @@ class KoshiGreyscale:
     Universal greyscale conversion with quantization for SIDKIT OLED displays.
     Supports multiple algorithms and bit depth output.
     """
+    COLOR = "#FF9F43"
+    BGCOLOR = "#1a1a1a"
 
     CATEGORY = "Koshi/Image/SIDKIT"
     FUNCTION = "convert"
@@ -103,5 +105,5 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_Greyscale": "Koshi Greyscale (SIDKIT)",
+    "Koshi_Greyscale": "░▒░ KN Greyscale",
 }

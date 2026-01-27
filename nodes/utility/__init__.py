@@ -8,9 +8,9 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_CaptureSettings": "Koshi Capture Settings",
-    "Koshi_SaveMetadata": "Koshi Save Metadata",
-    "Koshi_DisplayMetadata": "Koshi Display Metadata",
+    "Koshi_CaptureSettings": "▄▀▄ KN Capture Settings",
+    "Koshi_SaveMetadata": "▄▀▄ KN Save Metadata",
+    "Koshi_DisplayMetadata": "▄▀▄ KN Display Metadata",
 }
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]

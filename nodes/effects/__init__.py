@@ -7,7 +7,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {}
 try:
     from .bloom import BloomShaderNode
     NODE_CLASS_MAPPINGS["Koshi_Bloom"] = BloomShaderNode
-    NODE_DISPLAY_NAME_MAPPINGS["Koshi_Bloom"] = "Koshi Bloom"
+    NODE_DISPLAY_NAME_MAPPINGS["Koshi_Bloom"] = "▄▀▄ KN Bloom"
 except ImportError:
     pass
 
@@ -15,7 +15,7 @@ except ImportError:
 try:
     from .chromatic_aberration import KoshiChromaticAberration
     NODE_CLASS_MAPPINGS["Koshi_ChromaticAberration"] = KoshiChromaticAberration
-    NODE_DISPLAY_NAME_MAPPINGS["Koshi_ChromaticAberration"] = "Koshi Chromatic Aberration"
+    NODE_DISPLAY_NAME_MAPPINGS["Koshi_ChromaticAberration"] = "▄▀▄ KN Chromatic Aberration"
 except ImportError:
     pass
 
@@ -25,9 +25,9 @@ try:
     NODE_CLASS_MAPPINGS["Koshi_Hologram"] = KoshiHologram
     NODE_CLASS_MAPPINGS["Koshi_Scanlines"] = KoshiScanlines
     NODE_CLASS_MAPPINGS["Koshi_VideoGlitch"] = KoshiVideoGlitch
-    NODE_DISPLAY_NAME_MAPPINGS["Koshi_Hologram"] = "Koshi Hologram"
-    NODE_DISPLAY_NAME_MAPPINGS["Koshi_Scanlines"] = "Koshi Scanlines"
-    NODE_DISPLAY_NAME_MAPPINGS["Koshi_VideoGlitch"] = "Koshi Video Glitch"
+    NODE_DISPLAY_NAME_MAPPINGS["Koshi_Hologram"] = "▄▀▄ KN Hologram"
+    NODE_DISPLAY_NAME_MAPPINGS["Koshi_Scanlines"] = "▄▀▄ KN Scanlines"
+    NODE_DISPLAY_NAME_MAPPINGS["Koshi_VideoGlitch"] = "▄▀▄ KN Video Glitch"
 except ImportError:
     pass
 
@@ -35,7 +35,7 @@ except ImportError:
 try:
     from .glitch import GlitchShaderNode
     NODE_CLASS_MAPPINGS["Koshi_Glitch"] = GlitchShaderNode
-    NODE_DISPLAY_NAME_MAPPINGS["Koshi_Glitch"] = "Koshi Glitch"
+    NODE_DISPLAY_NAME_MAPPINGS["Koshi_Glitch"] = "▄▀▄ KN Glitch"
 except ImportError:
     pass
 
@@ -43,7 +43,7 @@ except ImportError:
 try:
     from .raymarcher import DitheringRaymarcher
     NODE_CLASS_MAPPINGS["Koshi_Raymarcher"] = DitheringRaymarcher
-    NODE_DISPLAY_NAME_MAPPINGS["Koshi_Raymarcher"] = "Koshi Raymarcher"
+    NODE_DISPLAY_NAME_MAPPINGS["Koshi_Raymarcher"] = "▄▀▄ KN Raymarcher"
 except ImportError:
     pass
 

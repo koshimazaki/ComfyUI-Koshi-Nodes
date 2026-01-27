@@ -13,6 +13,8 @@ except ImportError:
 
 class KoshiFeedback:
     """Process previous frame for coherent animation with color matching and enhancement."""
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     CATEGORY = "Koshi/Flux Motion"
     FUNCTION = "process"
@@ -143,6 +145,8 @@ class KoshiFeedback:
 
 class KoshiFeedbackSimple:
     """Simplified feedback - just encode previous frame with optional noise."""
+    COLOR = "#1a1a1a"
+    BGCOLOR = "#2d2d2d"
 
     CATEGORY = "Koshi/Flux Motion"
     FUNCTION = "process"
@@ -175,6 +179,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_Feedback": "Koshi Feedback Processor",
-    "Koshi_FeedbackSimple": "Koshi Feedback (Simple)",
+    "Koshi_Feedback": "▄▀▄ KN Feedback",
+    "Koshi_FeedbackSimple": "▄▀▄ KN Feedback Simple",
 }
