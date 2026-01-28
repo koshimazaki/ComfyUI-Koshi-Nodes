@@ -16,6 +16,12 @@ Custom nodes for ComfyUI: **Flux Motion** (Deforum-inspired animation & V2V), **
 
 ## Installation
 
+**One-liner** (existing ComfyUI):
+```bash
+cd ComfyUI/custom_nodes && git clone https://github.com/koshimazaki/ComfyUI-Koshi-Nodes.git Koshi-Nodes && pip install -r Koshi-Nodes/requirements.txt
+```
+
+**Or step by step:**
 ```bash
 cd ComfyUI/custom_nodes
 git clone https://github.com/koshimazaki/ComfyUI-Koshi-Nodes.git Koshi-Nodes
@@ -40,6 +46,7 @@ Or with model preset flags:
 ./setup_comfyui_flux.sh --minimal      # Schnell + FP8 T5 (~17GB)
 ./setup_comfyui_flux.sh --full         # Schnell + Dev + FP16 T5 (~46GB)
 ./setup_comfyui_flux.sh --fp8          # FP8 optimized (~17GB, lower VRAM)
+./setup_comfyui_flux.sh --gguf         # Q4 GGUF quantized (~6GB, ultra low VRAM)
 ./setup_comfyui_flux.sh --skip-models  # No model downloads
 
 # With HuggingFace token (required for FLUX models)
@@ -57,6 +64,7 @@ HF_TOKEN=hf_yourtoken ./setup_comfyui_flux.sh --minimal
 | `--minimal` | Schnell + FP8 T5 | ~17GB | 16GB+ | Fast generation, testing |
 | `--full` | Schnell + Dev + FP16 T5 | ~46GB | 24GB+ | Best quality |
 | `--fp8` | Dev FP8 + FP8 T5 | ~17GB | 12GB+ | Memory efficient |
+| `--gguf` | Dev Q4 GGUF + FP8 T5 | ~11GB | 6GB+ | Ultra low VRAM |
 
 **Included:**
 - ComfyUI (latest)
@@ -85,17 +93,17 @@ Deforum-inspired animation engine and V2V processing for FLUX models.
 
 **Modular pipeline** (recommended):
 ```
-KN Schedule Parser → KN Multi-Schedule → KN Motion Engine → KSampler → KN Feedback (loop)
+▀▄▀ KN Schedule Parser → ▀▄▀ KN Multi-Schedule → ▀▄▀ KN Motion Engine → KSampler → ▀▄▀ KN Feedback (loop)
 ```
 
 | Node | Description |
 |------|-------------|
-| `KN Schedule Parser` | Parse Deforum-style keyframe strings (`0:(1.0), 30:(0.5)`) |
-| `KN Multi-Schedule` | Combine multiple schedules (zoom, angle, translation) |
-| `KN Motion Engine` | Apply motion vectors and transforms to latents |
-| `KN Motion Batch` | Batch process motion across frame sequences |
-| `KN Feedback` | Frame-to-frame coherence with color matching and enhancement |
-| `KN Feedback Simple` | Lightweight feedback for quick iteration |
+| `▀▄▀ KN Schedule Parser` | Parse Deforum-style keyframe strings (`0:(1.0), 30:(0.5)`) |
+| `▀▄▀ KN Multi-Schedule` | Combine multiple schedules (zoom, angle, translation) |
+| `▀▄▀ KN Motion Engine` | Apply motion vectors and transforms to latents |
+| `▀▄▀ KN Motion Batch` | Batch process motion across frame sequences |
+| `▀▄▀ KN Feedback` | Frame-to-frame coherence with color matching and enhancement |
+| `▀▄▀ KN Feedback Simple` | Lightweight feedback for quick iteration |
 | `▄▀▄ KN Semantic Motion` | Generate motion from text descriptions ("slow zoom in, pan left") |
 | `▄▀▄ KN Color Match LAB` | Match colors to anchor frame (LAB space) |
 | `▄▀▄ KN Optical Flow Warp` | Warp frames using optical flow |
@@ -183,6 +191,7 @@ ComfyUI-Koshi-Nodes/
 │   │   └── core/       # Interpolation, easing, transforms
 │   ├── generators/     # Glitch Candies, shape morph, noise displace, raymarcher
 │   ├── utility/        # Metadata capture, settings save
+│   ├── utils/          # Shared utilities (tensor ops, metadata)
 │   ├── audio/          # (Reserved for future audio-reactive nodes)
 │   └── image/          # SIDKIT Edition
 │       ├── binary/     # Threshold + hex export
@@ -190,7 +199,7 @@ ComfyUI-Koshi-Nodes/
 │       └── greyscale/  # Quantization, algorithms
 ├── shaders/            # GLSL shaders (bloom, chromatic aberration)
 ├── workflows/          # Example workflow JSONs
-└── web/js/             # Live preview + orbital controls
+└── js/                 # Live preview + orbital controls
 ```
 
 ## Live Preview & WebGL
@@ -214,6 +223,10 @@ ComfyUI-Koshi-Nodes/
 
 In `workflows/`:
 - `koshi_v2v_ultimate.json` - Full V2V with motion + temporal + color match
+- `koshi_v2v_complete.json` - Complete V2V pipeline
+- `koshi_v2v_motion.json` - Motion-focused V2V
+- `koshi_v2v_temporal.json` - Temporal coherence V2V
+- `koshi_v2v_pure.json` - Minimal V2V setup
 - `koshi_oled_sprite_pipeline.json` - Image → dither → OLED preview → export
 - `koshi_sprite_sheet.json` - Video → sprite sheet for game dev
 
@@ -221,13 +234,13 @@ In `workflows/`:
 
 **Motion Animation (modular):**
 ```
-KN Schedule Parser → KN Multi-Schedule → KN Motion Engine → KSampler
-                                                          → KN Feedback (loop)
+▀▄▀ KN Schedule Parser → ▀▄▀ KN Multi-Schedule → ▀▄▀ KN Motion Engine → KSampler
+                                                                      → ▀▄▀ KN Feedback (loop)
 ```
 
 **Semantic Motion:**
 ```
-▄▀▄ KN Semantic Motion ("slow zoom in, pan left") → KN Motion Engine → KSampler
+▄▀▄ KN Semantic Motion ("slow zoom in, pan left") → ▀▄▀ KN Motion Engine → KSampler
 ```
 
 **Hologram Effect:**
