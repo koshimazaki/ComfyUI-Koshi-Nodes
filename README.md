@@ -128,7 +128,7 @@ Metadata capture, workflow settings, and helper nodes.
 **Captured params:** seed, steps, cfg, sampler, scheduler, model, LoRAs, positive/negative prompts, dimensions
 
 ### SIDKIT Edition
-Nodes optimized for [SIDKIT](https://github.com/koshimazaki/SIDKIT) synthesizer OLED displays (SSD1306, SSD1363).
+Nodes optimized for [SIDKIT](https://sidkit.pages.dev/) synthesizer OLED displays (SSD1306, SSD1363).
 
 | Node | Description |
 |------|-------------|
