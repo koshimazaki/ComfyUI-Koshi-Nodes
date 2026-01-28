@@ -146,6 +146,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_Schedule": "KN Schedule Parser",
-    "Koshi_ScheduleMulti": "KN Multi-Schedule",
+    "Koshi_Schedule": "▀▄▀ KN Schedule Parser",
+    "Koshi_ScheduleMulti": "▀▄▀ KN Multi-Schedule",
 }

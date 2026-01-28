@@ -73,7 +73,7 @@ Nodes are prefixed by category for easy identification:
 |--------|----------|-------------|
 | `░▀░ KN` | Effects | Hologram, bloom, glitch, chromatic aberration, dither |
 | `▄▀▄ KN` | Motion | V2V, color match, optical flow, semantic motion |
-| `KN` | Motion Core | Schedule, motion engine, feedback (no symbol prefix) |
+| `▀▄▀ KN` | Motion Core | Schedule, motion engine, feedback |
 | `▄█▄ KN` | Generators | Procedural patterns, fractals, raymarched 3D |
 | `░▒░ KN` | SIDKIT | OLED display, binary, greyscale, export |
 | `◊ KN` | Utility | Metadata capture, settings save |

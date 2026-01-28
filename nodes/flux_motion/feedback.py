@@ -223,6 +223,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_Feedback": "KN Feedback",
-    "Koshi_FeedbackSimple": "KN Feedback Simple",
+    "Koshi_Feedback": "▀▄▀ KN Feedback",
+    "Koshi_FeedbackSimple": "▀▄▀ KN Feedback Simple",
 }

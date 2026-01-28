@@ -5,7 +5,7 @@ from .nodes import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
 try:
     from .filter import ImageDitheringFilter
     NODE_CLASS_MAPPINGS["Koshi_DitheringFilter"] = ImageDitheringFilter
-    NODE_DISPLAY_NAME_MAPPINGS["Koshi_DitheringFilter"] = "Koshi Dithering Filter (GPU)"
+    NODE_DISPLAY_NAME_MAPPINGS["Koshi_DitheringFilter"] = "░▀░ KN Dithering Filter (GPU)"
 except ImportError:
     pass
 

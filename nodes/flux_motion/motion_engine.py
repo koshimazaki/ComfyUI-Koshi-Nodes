@@ -144,6 +144,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_MotionEngine": "KN Motion Engine",
-    "Koshi_MotionBatch": "KN Motion Batch",
+    "Koshi_MotionEngine": "▀▄▀ KN Motion Engine",
+    "Koshi_MotionBatch": "▀▄▀ KN Motion Batch",
 }

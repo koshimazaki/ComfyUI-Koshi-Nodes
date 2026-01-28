@@ -1,6 +1,6 @@
 #!/bin/bash
 # ComfyUI + FLUX + Koshi Nodes Setup Script
-# Usage: ./setup_comfyui_flux.sh [--runpod|--local] [--minimal|--full|--fp8|--skip-models]
+# Usage: ./setup_comfyui_flux.sh [--runpod|--local] [--minimal|--full|--fp8|--gguf|--skip-models]
 set -e
 
 # Minimal colors (status only)
@@ -20,6 +20,7 @@ for arg in "$@"; do
         --minimal) MODEL_PRESET="minimal" ;;
         --full) MODEL_PRESET="full" ;;
         --fp8) MODEL_PRESET="fp8" ;;
+        --gguf) MODEL_PRESET="gguf" ;;
         --skip-models) MODEL_PRESET="skip" ;;
         --token=*) HF_TOKEN="${arg#*=}" ;;
     esac
@@ -133,15 +134,17 @@ if [ "$MODEL_PRESET" = "menu" ]; then
     printf "  1) Minimal  - Schnell + FP8 T5 (~17GB) - Fast, low VRAM\n"
     printf "  2) Full     - Schnell + Dev + FP16 T5 (~46GB) - Best quality\n"
     printf "  3) FP8      - FP8 optimized models (~17GB) - Balanced\n"
-    printf "  4) Skip     - Don't download models\n"
+    printf "  4) GGUF 4B  - Q4 quantized (~6GB) - Ultra low VRAM\n"
+    printf "  5) Skip     - Don't download models\n"
     [ "$FULL_INSTALL" = false ] && printf "  (Recommended: Skip if you already have models)\n"
-    printf "\nChoice [1-4]: "
+    printf "\nChoice [1-5]: "
     read -r choice
     case $choice in
         1) MODEL_PRESET="minimal" ;;
         2) MODEL_PRESET="full" ;;
         3) MODEL_PRESET="fp8" ;;
-        4) MODEL_PRESET="skip" ;;
+        4) MODEL_PRESET="gguf" ;;
+        5) MODEL_PRESET="skip" ;;
         *) [ "$FULL_INSTALL" = true ] && MODEL_PRESET="minimal" || MODEL_PRESET="skip" ;;
     esac
 fi
@@ -170,6 +173,7 @@ download_if_missing() {
 HF_FLUX="https://huggingface.co/black-forest-labs"
 HF_CLIP="https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main"
 HF_FP8="https://huggingface.co/Kijai/flux-fp8/resolve/main"
+HF_GGUF="https://huggingface.co/city96/FLUX.1-dev-gguf/resolve/main"
 
 if [ "$MODEL_PRESET" != "skip" ]; then
     # Check for HF token (needed for FLUX models)
@@ -206,6 +210,12 @@ if [ "$MODEL_PRESET" != "skip" ]; then
             download_if_missing "clip/t5xxl_fp8_e4m3fn.safetensors" \
                 "$HF_CLIP/t5xxl_fp8_e4m3fn.safetensors" "T5-XXL FP8 (4.9GB)"
             ;;
+        gguf)
+            download_if_missing "unet/flux1-dev-Q4_K_S.gguf" \
+                "$HF_GGUF/flux1-dev-Q4_K_S.gguf" "FLUX.1 Dev Q4 GGUF (5.6GB)"
+            download_if_missing "clip/t5xxl_fp8_e4m3fn.safetensors" \
+                "$HF_CLIP/t5xxl_fp8_e4m3fn.safetensors" "T5-XXL FP8 (4.9GB)"
+            ;;
     esac
     printf "  ${GREEN}Model downloads complete${NC}\n"
 else
@@ -217,6 +227,15 @@ printf "\n[5/6] Installing extra nodes...\n"
 cd "$COMFY_DIR/custom_nodes"
 [ ! -d "ComfyUI-Manager" ] && git clone https://github.com/ltdrdata/ComfyUI-Manager.git
 [ ! -d "ComfyUI-VideoHelperSuite" ] && git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git
+# Install GGUF support if using GGUF models
+if [ "$MODEL_PRESET" = "gguf" ]; then
+    [ ! -d "ComfyUI-GGUF" ] && git clone https://github.com/city96/ComfyUI-GGUF.git
+    if [ "$RUNPOD" = true ]; then
+        pip3 install --break-system-packages gguf 2>/dev/null || pip3 install gguf
+    else
+        pip3 install gguf
+    fi
+fi
 if [ "$RUNPOD" = true ]; then
     pip3 install --break-system-packages gitpython 2>/dev/null || true
 fi
