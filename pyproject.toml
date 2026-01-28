@@ -22,6 +22,10 @@ audio = [
     "librosa",
     "soundfile",
 ]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov",
+]
 all = [
     "comfyui-koshi-nodes[flux,audio]",
 ]

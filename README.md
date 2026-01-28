@@ -6,13 +6,13 @@
 ██║  ██╗╚██████╔╝███████║██║  ██║██║    ██║ ╚████║╚██████╔╝██████╔╝███████╗███████║
 ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝    ╚═╝  ╚═══╝ ╚═════╝ ╚═════╝ ╚══════╝╚══════╝
 ```
-░░█ **Custom nodes for ComfyUI** - Flux Motion V2V | SIDKIT OLED | Post-FX | Generators █░░
+░░█ **Custom nodes for ComfyUI** - Flux Motion V2V | Effects | Generators | SIDKIT OLED █░░
 
 ---
 
 # ComfyUI-Koshi-Nodes
 
-Custom nodes for ComfyUI: **Flux Motion** (Deforum-inspired V2V), **SIDKIT Edition** (OLED/embedded display), and **Post-FX** (hologram, bloom, glitch).
+Custom nodes for ComfyUI: **Flux Motion** (Deforum-inspired animation & V2V), **Effects** (hologram, bloom, glitch, dither), **Generators** (procedural patterns, raymarched 3D), and **SIDKIT Edition** (OLED/embedded display export).
 
 ## Installation
 
@@ -71,28 +71,55 @@ Nodes are prefixed by category for easy identification:
 
 | Prefix | Category | Description |
 |--------|----------|-------------|
-| `▄▀▄ KN` | Effects & Processing | V2V, color match, hologram, bloom, glitch, utility |
+| `░▀░ KN` | Effects | Hologram, bloom, glitch, chromatic aberration, dither |
+| `▄▀▄ KN` | Motion | V2V, color match, optical flow, semantic motion |
+| `KN` | Motion Core | Schedule, motion engine, feedback (no symbol prefix) |
 | `▄█▄ KN` | Generators | Procedural patterns, fractals, raymarched 3D |
-| `░▒░ KN` | SIDKIT | OLED display, dithering, binary, export |
+| `░▒░ KN` | SIDKIT | OLED display, binary, greyscale, export |
+| `◊ KN` | Utility | Metadata capture, settings save |
 
 ## Node Categories
 
 ### Flux Motion (V2V)
-Deforum-inspired temporal coherence for video stylization with FLUX models.
+Deforum-inspired animation engine and V2V processing for FLUX models.
+
+**Modular pipeline** (recommended):
+```
+KN Schedule Parser → KN Multi-Schedule → KN Motion Engine → KSampler → KN Feedback (loop)
+```
 
 | Node | Description |
 |------|-------------|
-| `▄▀▄ KN V2V Processor` | Main V2V pipeline - 4 modes: pure, temporal, motion, ultimate |
+| `KN Schedule Parser` | Parse Deforum-style keyframe strings (`0:(1.0), 30:(0.5)`) |
+| `KN Multi-Schedule` | Combine multiple schedules (zoom, angle, translation) |
+| `KN Motion Engine` | Apply motion vectors and transforms to latents |
+| `KN Motion Batch` | Batch process motion across frame sequences |
+| `KN Feedback` | Frame-to-frame coherence with color matching and enhancement |
+| `KN Feedback Simple` | Lightweight feedback for quick iteration |
+| `▄▀▄ KN Semantic Motion` | Generate motion from text descriptions ("slow zoom in, pan left") |
 | `▄▀▄ KN Color Match LAB` | Match colors to anchor frame (LAB space) |
 | `▄▀▄ KN Optical Flow Warp` | Warp frames using optical flow |
+| `▄▀▄ KN Image Blend` | Blend images with configurable strength |
+| `▄▀▄ KN Frame Iterator` | Iterate frames for animation loops |
+| `▄▀▄ KN V2V Metadata` | Save V2V processing metadata alongside output |
 
-**V2V Modes:**
-| Mode | Technique |
-|------|-----------|
-| `pure` | Frame-by-frame + LAB color match |
-| `temporal` | Blend previous output with current input |
-| `motion` | Warp previous output via optical flow |
-| `ultimate` | All techniques combined |
+**Semantic Motion Presets:** zoom in/out, pan left/right/up/down, rotate, dolly, orbit, push/pull, spin, static
+
+### Effects
+Post-processing effects based on [alien.js](https://github.com/alienkitty/alien.js) and custom shaders.
+
+| Node | Description |
+|------|-------------|
+| `░▀░ KN Hologram` | Full hologram (scanlines, glitch, edge glow, grid, color tint) |
+| `░▀░ KN Scanlines` | Horizontal/vertical scanlines |
+| `░▀░ KN Video Glitch` | RGB split glitch distortion |
+| `░▀░ KN Chromatic Aberration` | RGB channel separation |
+| `░▀░ KN Bloom` | Unreal-style bloom (GPU/CPU fallback) |
+| `░▀░ KN Glitch` | Shader-based glitch distortion |
+| `░▀░ KN Dither` | All dithering: bayer, floyd-steinberg, atkinson, halftone |
+| `░▀░ KN Dithering Filter` | GPU-accelerated dithering filter |
+
+**Hologram presets:** cyan, red_error, green_matrix, purple, orange, white
 
 ### Generators
 Procedural patterns, fractals, and raymarched 3D shapes. Based on SIDKIT shader system.
@@ -102,6 +129,7 @@ Procedural patterns, fractals, and raymarched 3D shapes. Based on SIDKIT shader 
 | `▄█▄ KN Glitch Candies` | 22 patterns: waves, plasma, voronoi, fractals, raymarched 3D |
 | `▄█▄ KN Shape Morph` | Blend/morph between two patterns with easing |
 | `▄█▄ KN Noise Displace` | FBM noise displacement with animation |
+| `▄█▄ KN Raymarcher` | Dedicated raymarched 3D shapes with dithering |
 
 **Patterns:**
 - **2D:** waves, circles, plasma, voronoi, checkerboard, swirl, ripple
@@ -113,27 +141,14 @@ All patterns support `loop_frames` for seamless animation loops.
 
 **3D Camera Controls:** Raymarched shapes have `rotation_x`, `rotation_y`, and `camera_distance` inputs for orbital control.
 
-### Post-FX Effects
-Post-processing effects based on [alien.js](https://github.com/alienkitty/alien.js) and custom shaders.
-
-| Node | Description |
-|------|-------------|
-| `▄▀▄ KN Hologram` | Full hologram (scanlines, glitch, edge glow, grid, color tint) |
-| `▄▀▄ KN Scanlines` | Horizontal/vertical scanlines |
-| `▄▀▄ KN Video Glitch` | RGB split glitch distortion |
-| `▄▀▄ KN Chromatic Aberration` | RGB channel separation |
-| `▄▀▄ KN Bloom` | Unreal-style bloom (GPU/CPU fallback) |
-
-**Hologram presets:** cyan, red_error, green_matrix, purple, orange, white
-
 ### Utility
 Metadata capture, workflow settings, and helper nodes.
 
 | Node | Description |
 |------|-------------|
-| `▄▀▄ KN Capture Settings` | Extract all workflow settings as JSON (seed, steps, model, prompts) |
-| `▄▀▄ KN Save Metadata` | Save metadata JSON to file with timestamp |
-| `▄▀▄ KN Display Metadata` | Display metadata in UI |
+| `◊ KN Capture Settings` | Extract all workflow settings as JSON (seed, steps, model, prompts) |
+| `◊ KN Save Metadata` | Save metadata JSON to file with timestamp |
+| `◊ KN Display Metadata` | Display metadata in UI |
 
 **Captured params:** seed, steps, cfg, sampler, scheduler, model, LoRAs, positive/negative prompts, dimensions
 
@@ -142,12 +157,13 @@ Nodes optimized for [SIDKIT](https://github.com/koshimazaki/SIDKIT) synthesizer 
 
 | Node | Description |
 |------|-------------|
-| `░▒░ KN Dither` | All dithering: bayer, floyd-steinberg, atkinson, halftone |
 | `░▒░ KN Binary` | Threshold methods + hex export for C headers |
 | `░▒░ KN Greyscale` | Greyscale conversion with bit depth quantization |
 | `░▒░ KN OLED Screen` | OLED emulator with region presets |
+| `░▒░ KN OLED Preview` | Inline OLED preview in node |
 | `░▒░ KN Pixel Scaler` | Lanczos/nearest scaling to OLED resolutions |
 | `░▒░ KN Sprite Sheet` | Combine frames into sprite grid |
+| `░▒░ KN XBM Export` | Export frames as XBM format |
 | `░▒░ KN SIDKIT Screen` | Export to .sidv/.xbm/.h for Teensy |
 
 **OLED Presets:** SSD1306 128x64, SSD1363 256x128, custom
@@ -162,11 +178,12 @@ Nodes optimized for [SIDKIT](https://github.com/koshimazaki/SIDKIT) synthesizer 
 ComfyUI-Koshi-Nodes/
 ├── nodes/
 │   ├── effects/        # Hologram, bloom, glitch, chromatic aberration
-│   ├── export/         # OLED screen, SIDKIT export, sprite sheets
-│   ├── flux_motion/    # V2V processor, optical flow, color match
+│   ├── export/         # OLED screen, SIDKIT export, sprite sheets, XBM
+│   ├── flux_motion/    # Motion engine, schedule, feedback, V2V, semantic
 │   │   └── core/       # Interpolation, easing, transforms
-│   ├── generators/     # Glitch Candies, shape morph, noise displace
+│   ├── generators/     # Glitch Candies, shape morph, noise displace, raymarcher
 │   ├── utility/        # Metadata capture, settings save
+│   ├── audio/          # (Reserved for future audio-reactive nodes)
 │   └── image/          # SIDKIT Edition
 │       ├── binary/     # Threshold + hex export
 │       ├── dither/     # Bayer, Floyd-Steinberg, Atkinson, Halftone
@@ -176,19 +193,22 @@ ComfyUI-Koshi-Nodes/
 └── web/js/             # Live preview + orbital controls
 ```
 
-## Live Preview
+## Live Preview & WebGL
 
-All effect, generator, and SIDKIT nodes include **inline live preview** - see results directly in the node without connecting to a Preview Image node.
+31 nodes include **inline live preview** directly in the node UI - no Preview Image node needed.
 
-**Features:**
 - Toggle preview on/off per node
-- Batch preview (shows first 4 frames)
-- Pixel-perfect rendering for OLED preview
+- Batch preview (first 4 frames, "+N more" indicator)
+- Collapsible preview widget (▼/▶)
+
+**WebGL Shaders** (9 built-in): passthrough, bayer dither, floyd-steinberg, halftone, glitch, bloom, threshold, greyscale, OLED emulation.
+
+**OLED Emulation Shader:** Exact SIDKIT Bayer matrices (2x2/4x4/8x8), 1/2/4/8-bit depth, 6 color modes (grayscale, green, blue, amber, white, yellow), pixel gap/grid effect, bloom glow.
 
 **3D Orbital Controls** (Generators with `rm_*` patterns):
-- **Drag** image to rotate (updates `rotation_x`/`rotation_y`)
-- **Scroll** to zoom (updates `camera_distance`)
-- **Reset View** button to return to default
+- **Drag** to rotate (updates `rotation_x`/`rotation_y`, clamped ±90°)
+- **Scroll** to zoom (`camera_distance`, range 1-10)
+- **Reset View** button to restore defaults
 
 ## Example Workflows
 
@@ -199,19 +219,25 @@ In `workflows/`:
 
 ## Quick Pipelines
 
-**V2V Stylization:**
+**Motion Animation (modular):**
 ```
-Video → ▄▀▄ KN V2V Processor (ultimate) → VHS_VideoCombine
+KN Schedule Parser → KN Multi-Schedule → KN Motion Engine → KSampler
+                                                          → KN Feedback (loop)
+```
+
+**Semantic Motion:**
+```
+▄▀▄ KN Semantic Motion ("slow zoom in, pan left") → KN Motion Engine → KSampler
 ```
 
 **Hologram Effect:**
 ```
-Image → ▄▀▄ KN Hologram (cyan) → ▄▀▄ KN Chromatic Aberration → ▄▀▄ KN Bloom
+Image → ░▀░ KN Hologram (cyan) → ░▀░ KN Chromatic Aberration → ░▀░ KN Bloom
 ```
 
 **SIDKIT OLED Export:**
 ```
-Image → ░▒░ KN Pixel Scaler (128x64) → ░▒░ KN Dither (bayer, 2 levels)
+Image → ░▒░ KN Pixel Scaler (128x64) → ░▀░ KN Dither (bayer, 2 levels)
       → ░▒░ KN OLED Screen (preview) → ░▒░ KN SIDKIT Screen (.xbm)
 ```
 

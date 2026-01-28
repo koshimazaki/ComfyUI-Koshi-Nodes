@@ -142,6 +142,50 @@ class KoshiFeedback:
         noisy = img_float + noise_scaled
         return np.clip(noisy, 0, 255).astype(np.uint8)
 
+    def detect_burn(self, image: np.ndarray, threshold: float = 0.1) -> bool:
+        """
+        Detect burned-out image by checking normalized standard deviation.
+
+        A burned image has nearly uniform pixel values (all white, all black,
+        or any flat color), resulting in very low standard deviation.
+
+        Args:
+            image: uint8 image array (H, W, C)
+            threshold: Normalized std threshold (0-1 scale). Below this = burned.
+
+        Returns:
+            True if image appears burned out
+        """
+        std_normalized = image.astype(np.float32).std() / 255.0
+        return bool(std_normalized < threshold)
+
+    def detect_blur(self, image: np.ndarray, threshold: float = 100.0) -> bool:
+        """
+        Detect excessively blurred image using gradient variance.
+
+        Uses Laplacian variance when cv2 is available, falls back to
+        simple gradient magnitude variance.
+
+        Args:
+            image: uint8 image array (H, W, C)
+            threshold: Variance threshold. Below this = blurry.
+
+        Returns:
+            True if image appears too blurry
+        """
+        try:
+            import cv2
+            gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+            laplacian_var = cv2.Laplacian(gray, cv2.CV_64F).var()
+            return bool(laplacian_var < threshold)
+        except ImportError:
+            # Fallback: simple gradient magnitude variance
+            gray = image.astype(np.float32).mean(axis=2)
+            dx = np.diff(gray, axis=1)
+            dy = np.diff(gray, axis=0)
+            gradient_var = (dx.var() + dy.var()) / 2.0
+            return bool(gradient_var < threshold)
+
 
 class KoshiFeedbackSimple:
     """Simplified feedback - just encode previous frame with optional noise."""
