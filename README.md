@@ -28,50 +28,15 @@ git clone https://github.com/koshimazaki/ComfyUI-Koshi-Nodes.git Koshi-Nodes
 cd Koshi-Nodes && pip install -r requirements.txt
 ```
 
-## Quick Setup (RunPod / Full Install)
+## Quick Setup (RunPod)
 
-One-line setup with ComfyUI + FLUX models + Koshi Nodes:
-
-```bash
-curl -sL https://raw.githubusercontent.com/koshimazaki/ComfyUI-Koshi-Nodes/main/setup_comfyui_flux.sh | bash
-```
-
-Or with model preset flags:
+Full setup with ComfyUI + FLUX Q4 GGUF + Koshi Nodes (~6GB VRAM):
 
 ```bash
-# Interactive menu (default)
-./setup_comfyui_flux.sh
-
-# Presets - skip menu
-./setup_comfyui_flux.sh --minimal      # Schnell + FP8 T5 (~17GB)
-./setup_comfyui_flux.sh --full         # Schnell + Dev + FP16 T5 (~46GB)
-./setup_comfyui_flux.sh --fp8          # FP8 optimized (~17GB, lower VRAM)
-./setup_comfyui_flux.sh --gguf         # Q4 GGUF quantized (~6GB, ultra low VRAM)
-./setup_comfyui_flux.sh --skip-models  # No model downloads
-
-# With HuggingFace token (required for FLUX models)
-./setup_comfyui_flux.sh --minimal --token=hf_yourtoken
-# Or via environment variable
-HF_TOKEN=hf_yourtoken ./setup_comfyui_flux.sh --minimal
+curl -sL https://raw.githubusercontent.com/koshimazaki/ComfyUI-Koshi-Nodes/main/setup_comfyui_flux.sh | bash -s -- --runpod --gguf
 ```
 
-> **Note:** FLUX models require HuggingFace authentication. Get your token at https://huggingface.co/settings/tokens
-
-**Model Presets:**
-
-| Preset | Models | Size | VRAM | Use Case |
-|--------|--------|------|------|----------|
-| `--minimal` | Schnell + FP8 T5 | ~17GB | 16GB+ | Fast generation, testing |
-| `--full` | Schnell + Dev + FP16 T5 | ~46GB | 24GB+ | Best quality |
-| `--fp8` | Dev FP8 + FP8 T5 | ~17GB | 12GB+ | Memory efficient |
-| `--gguf` | Dev Q4 GGUF + FP8 T5 | ~11GB | 6GB+ | Ultra low VRAM |
-
-**Included:**
-- ComfyUI (latest)
-- Koshi Nodes
-- ComfyUI-Manager
-- VideoHelperSuite
-- FLUX models (based on preset)
+Includes: ComfyUI, Koshi Nodes, ComfyUI-Manager, VideoHelperSuite, ComfyUI-GGUF, FLUX Dev Q4
 
 ## Node Naming
 
@@ -93,7 +58,9 @@ Deforum-inspired animation engine and V2V processing for FLUX models.
 
 **Modular pipeline** (recommended):
 ```
-▀▄▀ KN Schedule Parser → ▀▄▀ KN Multi-Schedule → ▀▄▀ KN Motion Engine → KSampler → ▀▄▀ KN Feedback (loop)
+▀▄▀ Schedule → ▀▄▀ Multi-Schedule → ▀▄▀ Motion Engine → KSampler
+                                                      ↓
+                                              ▀▄▀ Feedback (loop)
 ```
 
 | Node | Description |
@@ -234,24 +201,24 @@ In `workflows/`:
 
 **Motion Animation (modular):**
 ```
-▀▄▀ KN Schedule Parser → ▀▄▀ KN Multi-Schedule → ▀▄▀ KN Motion Engine → KSampler
-                                                                      → ▀▄▀ KN Feedback (loop)
+▀▄▀ Schedule → ▀▄▀ Multi-Schedule → ▀▄▀ Motion Engine → KSampler
+                                                      ↓
+                                              ▀▄▀ Feedback (loop)
 ```
 
 **Semantic Motion:**
 ```
-▄▀▄ KN Semantic Motion ("slow zoom in, pan left") → ▀▄▀ KN Motion Engine → KSampler
+▄▀▄ Semantic Motion ("zoom in, pan left") → ▀▄▀ Motion Engine → KSampler
 ```
 
 **Hologram Effect:**
 ```
-Image → ░▀░ KN Hologram (cyan) → ░▀░ KN Chromatic Aberration → ░▀░ KN Bloom
+Image → ░▀░ Hologram → ░▀░ Chromatic Aberration → ░▀░ Bloom
 ```
 
 **SIDKIT OLED Export:**
 ```
-Image → ░▒░ KN Pixel Scaler (128x64) → ░▀░ KN Dither (bayer, 2 levels)
-      → ░▒░ KN OLED Screen (preview) → ░▒░ KN SIDKIT Screen (.xbm)
+Image → ░▒░ Pixel Scaler → ░▀░ Dither → ░▒░ OLED Screen → ░▒░ SIDKIT Screen
 ```
 
 ## Dependencies
