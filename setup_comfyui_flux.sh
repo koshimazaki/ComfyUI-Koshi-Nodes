@@ -43,6 +43,7 @@ for arg in "$@"; do
         --full) MODEL_PRESET="full" ;;
         --fp8) MODEL_PRESET="fp8" ;;
         --gguf) MODEL_PRESET="gguf" ;;
+        --klein) MODEL_PRESET="klein" ;;
         --skip-models) MODEL_PRESET="skip" ;;
         --models-only) MODELS_ONLY=true ;;
         --tailscale) SETUP_TAILSCALE=true ;;
@@ -57,6 +58,7 @@ for arg in "$@"; do
             printf "  --full          Schnell + Dev + FP16 T5 (~46GB)\n"
             printf "  --fp8           FP8 optimized models (~17GB)\n"
             printf "  --gguf          Q4 quantized (~6GB)\n"
+            printf "  --klein         FLUX.2-klein-4B (~8GB) - Fast, efficient\n"
             printf "  --skip-models   Skip model downloads\n"
             printf "  --models-only   Only download models (skip ComfyUI/nodes)\n"
             printf "  --tailscale     Setup Tailscale SSH\n"
@@ -212,21 +214,23 @@ mkdir -p checkpoints vae clip unet
 # Model selection menu
 if [ "$MODEL_PRESET" = "menu" ]; then
     printf "\nSelect model preset:\n"
-    printf "  1) Minimal  - Schnell + FP8 T5 (~17GB) - Fast, low VRAM\n"
-    printf "  2) Full     - Schnell + Dev + FP16 T5 (~46GB) - Best quality\n"
-    printf "  3) FP8      - FP8 optimized models (~17GB) - Balanced\n"
-    printf "  4) GGUF 4B  - Q4 quantized (~6GB) - Ultra low VRAM\n"
-    printf "  5) Skip     - Don't download models\n"
+    printf "  1) Klein    - FLUX.2-klein-4B (~13GB) - Fast, efficient (Recommended)\n"
+    printf "  2) Minimal  - Schnell + FP8 T5 (~17GB) - Fast, low VRAM\n"
+    printf "  3) Full     - Schnell + Dev + FP16 T5 (~46GB) - Best quality\n"
+    printf "  4) FP8      - FP8 optimized models (~17GB) - Balanced\n"
+    printf "  5) GGUF 4B  - Q4 quantized (~6GB) - Ultra low VRAM\n"
+    printf "  6) Skip     - Don't download models\n"
     [ "$FULL_INSTALL" = false ] && printf "  (Recommended: Skip if you already have models)\n"
-    printf "\nChoice [1-5]: "
+    printf "\nChoice [1-6]: "
     read -r choice
     case $choice in
-        1) MODEL_PRESET="minimal" ;;
-        2) MODEL_PRESET="full" ;;
-        3) MODEL_PRESET="fp8" ;;
-        4) MODEL_PRESET="gguf" ;;
-        5) MODEL_PRESET="skip" ;;
-        *) [ "$FULL_INSTALL" = true ] && MODEL_PRESET="minimal" || MODEL_PRESET="skip" ;;
+        1) MODEL_PRESET="klein" ;;
+        2) MODEL_PRESET="minimal" ;;
+        3) MODEL_PRESET="full" ;;
+        4) MODEL_PRESET="fp8" ;;
+        5) MODEL_PRESET="gguf" ;;
+        6) MODEL_PRESET="skip" ;;
+        *) [ "$FULL_INSTALL" = true ] && MODEL_PRESET="klein" || MODEL_PRESET="skip" ;;
     esac
 fi
 
@@ -251,10 +255,13 @@ download_if_missing() {
     fi
 }
 
+# Model sources (prefer no-auth sources where available)
 HF_FLUX="https://huggingface.co/black-forest-labs"
+HF_KLEIN="https://huggingface.co/black-forest-labs/FLUX.2-klein-4B/resolve/main"
 HF_CLIP="https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main"
 HF_FP8="https://huggingface.co/Kijai/flux-fp8/resolve/main"
 HF_GGUF="https://huggingface.co/city96/FLUX.1-dev-gguf/resolve/main"
+HF_VAE_NOAUTH="https://huggingface.co/Comfy-Org/flux1-schnell/resolve/main"
 
 if [ "$MODEL_PRESET" != "skip" ]; then
     # Check for HF token (needed for FLUX models)
@@ -264,11 +271,13 @@ if [ "$MODEL_PRESET" != "skip" ]; then
         printf "Enter HF token (or press Enter to skip FLUX checkpoints): "
         read -r HF_TOKEN
     fi
-    # Always download VAE and CLIP-L (VAE needs auth, CLIP doesn't)
-    download_if_missing "vae/ae.safetensors" \
-        "$HF_FLUX/FLUX.1-schnell/resolve/main/ae.safetensors" "FLUX VAE (335MB)" true
-    download_if_missing "clip/clip_l.safetensors" \
-        "$HF_CLIP/clip_l.safetensors" "CLIP-L (246MB)"
+    # Download VAE and CLIP-L (skip for klein - it has its own)
+    if [ "$MODEL_PRESET" != "klein" ]; then
+        download_if_missing "vae/ae.safetensors" \
+            "$HF_VAE_NOAUTH/ae.safetensors" "FLUX VAE (335MB)"
+        download_if_missing "clip/clip_l.safetensors" \
+            "$HF_CLIP/clip_l.safetensors" "CLIP-L (246MB)"
+    fi
 
     case $MODEL_PRESET in
         minimal)
@@ -296,6 +305,17 @@ if [ "$MODEL_PRESET" != "skip" ]; then
                 "$HF_GGUF/flux1-dev-Q4_K_S.gguf" "FLUX.1 Dev Q4 GGUF (5.6GB)"
             download_if_missing "clip/t5xxl_fp8_e4m3fn.safetensors" \
                 "$HF_CLIP/t5xxl_fp8_e4m3fn.safetensors" "T5-XXL FP8 (4.9GB)"
+            ;;
+        klein)
+            # FLUX.2-klein-4B - smaller, faster model with its own VAE
+            download_if_missing "checkpoints/flux2-klein-4b.safetensors" \
+                "$HF_KLEIN/flux2-klein-4b.safetensors" "FLUX.2 Klein 4B (8GB)" true
+            download_if_missing "vae/klein_vae.safetensors" \
+                "$HF_KLEIN/vae/diffusion_pytorch_model.safetensors" "Klein VAE (335MB)" true
+            download_if_missing "clip/t5xxl_fp8_e4m3fn.safetensors" \
+                "$HF_CLIP/t5xxl_fp8_e4m3fn.safetensors" "T5-XXL FP8 (4.9GB)"
+            download_if_missing "clip/clip_l.safetensors" \
+                "$HF_CLIP/clip_l.safetensors" "CLIP-L (246MB)"
             ;;
     esac
     printf "  ${GREEN}Model downloads complete${NC}\n"
