@@ -26,7 +26,12 @@ NODE_CATEGORIES = [
 
 def load_nodes():
     """Dynamically load all node modules."""
+    import sys
     base_path = os.path.dirname(__file__)
+
+    # Ensure base path is in sys.path for imports
+    if base_path not in sys.path:
+        sys.path.insert(0, base_path)
 
     for category in NODE_CATEGORIES:
         module_path = os.path.join(base_path, *category.split("."))
@@ -35,7 +40,8 @@ def load_nodes():
             continue
 
         try:
-            module = importlib.import_module(f".{category}", package=__name__)
+            # Use absolute import instead of relative
+            module = importlib.import_module(category)
 
             if hasattr(module, "NODE_CLASS_MAPPINGS"):
                 NODE_CLASS_MAPPINGS.update(module.NODE_CLASS_MAPPINGS)
