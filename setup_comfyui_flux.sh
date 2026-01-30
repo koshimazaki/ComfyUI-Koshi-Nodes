@@ -1,37 +1,80 @@
 #!/bin/bash
 # ComfyUI + FLUX + Koshi Nodes Setup Script
 #
-# Quick install (RunPod):
-#   curl -sL https://raw.githubusercontent.com/koshimazaki/ComfyUI-Koshi-Nodes/main/setup_comfyui_flux.sh | bash -s -- --runpod --minimal
-#
-# Full install with Tailscale:
-#   curl -sL https://raw.githubusercontent.com/koshimazaki/ComfyUI-Koshi-Nodes/main/setup_comfyui_flux.sh | bash -s -- --runpod --full --tailscale
-#
-# Options:
-#   --runpod|--local    Environment (auto-detects if not specified)
-#   --minimal           Schnell + FP8 T5 (~17GB)
-#   --full              Schnell + Dev + FP16 T5 (~46GB)
-#   --fp8               FP8 optimized (~17GB)
-#   --gguf              Q4 quantized (~6GB)
-#   --skip-models       Don't download models
-#   --tailscale         Setup Tailscale SSH for remote access
-#   --token=XXX         HuggingFace token
-#   --authkey=XXX       Tailscale auth key (optional)
+# Interactive: ./setup_comfyui_flux.sh
+# Non-interactive: ./setup_comfyui_flux.sh --runpod --klein --token=hf_xxx
 #
 set -e
 
-# Colors
+# ═══════════════════════════════════════════════════════════════════════════════
+# COLORS & HELPERS
+# ═══════════════════════════════════════════════════════════════════════════════
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
 CYAN='\033[0;36m'
+BOLD='\033[1m'
+DIM='\033[2m'
 NC='\033[0m'
 
-# Parse arguments
-MODEL_PRESET="menu"
+print_banner() {
+    clear 2>/dev/null || true
+    printf "\n"
+    printf "${CYAN}"
+    printf "    ██╗  ██╗ ██████╗ ███████╗██╗  ██╗██╗\n"
+    printf "    ██║ ██╔╝██╔═══██╗██╔════╝██║  ██║██║\n"
+    printf "    █████╔╝ ██║   ██║███████╗███████║██║\n"
+    printf "    ██╔═██╗ ██║   ██║╚════██║██╔══██║██║\n"
+    printf "    ██║  ██╗╚██████╔╝███████║██║  ██║██║\n"
+    printf "    ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝\n"
+    printf "${NC}\n"
+    printf "    ${DIM}ComfyUI + FLUX Setup${NC}\n"
+    printf "    ${DIM}github.com/koshimazaki/ComfyUI-Koshi-Nodes${NC}\n"
+    printf "\n"
+    printf "    ─────────────────────────────────────────\n\n"
+}
+
+print_done() {
+    printf "\n"
+    printf "${GREEN}"
+    printf "    ██████╗  ██████╗ ███╗   ██╗███████╗██╗\n"
+    printf "    ██╔══██╗██╔═══██╗████╗  ██║██╔════╝██║\n"
+    printf "    ██║  ██║██║   ██║██╔██╗ ██║█████╗  ██║\n"
+    printf "    ██║  ██║██║   ██║██║╚██╗██║██╔══╝  ╚═╝\n"
+    printf "    ██████╔╝╚██████╔╝██║ ╚████║███████╗██╗\n"
+    printf "    ╚═════╝  ╚═════╝ ╚═╝  ╚═══╝╚══════╝╚═╝\n"
+    printf "${NC}\n"
+}
+
+print_step() {
+    printf "\n${BOLD}[$1]${NC} $2\n"
+}
+
+print_ok() {
+    printf "    ${GREEN}✓${NC} $1\n"
+}
+
+print_skip() {
+    printf "    ${DIM}○ $1${NC}\n"
+}
+
+print_warn() {
+    printf "    ${YELLOW}!${NC} $1\n"
+}
+
+print_err() {
+    printf "    ${RED}✗${NC} $1\n"
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# PARSE ARGUMENTS
+# ═══════════════════════════════════════════════════════════════════════════════
+INSTALL_COMFY=true
+INSTALL_NODES=true
+INSTALL_MODELS=true
+INSTALL_TAILSCALE=false
+MODEL_PRESET=""
 INSTALL_MODE=""
-SETUP_TAILSCALE=false
-MODELS_ONLY=false
 HF_TOKEN="${HF_TOKEN:-}"
 TS_AUTHKEY="${TS_AUTHKEY:-}"
 
@@ -39,28 +82,31 @@ for arg in "$@"; do
     case $arg in
         --runpod) INSTALL_MODE="runpod" ;;
         --local) INSTALL_MODE="local" ;;
+        --klein) MODEL_PRESET="klein" ;;
         --minimal) MODEL_PRESET="minimal" ;;
         --full) MODEL_PRESET="full" ;;
         --fp8) MODEL_PRESET="fp8" ;;
         --gguf) MODEL_PRESET="gguf" ;;
-        --klein) MODEL_PRESET="klein" ;;
-        --skip-models) MODEL_PRESET="skip" ;;
-        --models-only) MODELS_ONLY=true ;;
-        --tailscale) SETUP_TAILSCALE=true ;;
+        --skip-models) INSTALL_MODELS=false ;;
+        --models-only) INSTALL_COMFY=false; INSTALL_NODES=false ;;
+        --nodes-only) INSTALL_COMFY=false; INSTALL_MODELS=false ;;
+        --tailscale) INSTALL_TAILSCALE=true ;;
         --token=*) HF_TOKEN="${arg#*=}" ;;
         --authkey=*) TS_AUTHKEY="${arg#*=}" ;;
         --help)
             printf "Usage: ./setup_comfyui_flux.sh [OPTIONS]\n\n"
-            printf "Options:\n"
-            printf "  --runpod        RunPod environment (full install)\n"
-            printf "  --local         Local environment (nodes only)\n"
+            printf "Presets:\n"
+            printf "  --klein         FLUX.2-klein-4B (~13GB)\n"
             printf "  --minimal       Schnell + FP8 T5 (~17GB)\n"
             printf "  --full          Schnell + Dev + FP16 T5 (~46GB)\n"
-            printf "  --fp8           FP8 optimized models (~17GB)\n"
-            printf "  --gguf          Q4 quantized (~6GB)\n"
-            printf "  --klein         FLUX.2-klein-4B (~8GB) - Fast, efficient\n"
+            printf "  --fp8           FP8 optimized (~17GB)\n"
+            printf "  --gguf          Q4 quantized (~6GB)\n\n"
+            printf "Options:\n"
+            printf "  --runpod        RunPod environment\n"
+            printf "  --local         Local environment\n"
             printf "  --skip-models   Skip model downloads\n"
-            printf "  --models-only   Only download models (skip ComfyUI/nodes)\n"
+            printf "  --models-only   Only download models\n"
+            printf "  --nodes-only    Only install nodes\n"
             printf "  --tailscale     Setup Tailscale SSH\n"
             printf "  --token=XXX     HuggingFace token\n"
             printf "  --authkey=XXX   Tailscale auth key\n"
@@ -69,63 +115,125 @@ for arg in "$@"; do
     esac
 done
 
-# Auto-detect if piped (non-interactive)
+# Auto-detect interactive mode
 INTERACTIVE=true
-if [ ! -t 0 ] || [ ! -t 1 ]; then
-    INTERACTIVE=false
-    # Running via curl pipe - need defaults
-    [ -z "$INSTALL_MODE" ] && [ -d "/workspace" ] && INSTALL_MODE="runpod"
-    [ "$MODEL_PRESET" = "menu" ] && MODEL_PRESET="minimal"
-fi
+[ ! -t 0 ] || [ ! -t 1 ] && INTERACTIVE=false
 
-# Early check: warn if HF token needed but missing in non-interactive mode
-if [ "$INTERACTIVE" = false ] && [ "$MODEL_PRESET" != "skip" ] && [ -z "$HF_TOKEN" ]; then
-    printf "${YELLOW}Warning:${NC} No HF token provided. FLUX models require authentication.\n"
-    printf "Either:\n"
-    printf "  1. Add --token=YOUR_TOKEN to the command\n"
-    printf "  2. Set HF_TOKEN env var: export HF_TOKEN=xxx && curl ...\n"
-    printf "  3. Use --skip-models to skip model downloads\n"
-    printf "\nContinuing without token (some downloads may fail)...\n\n"
-fi
+# ═══════════════════════════════════════════════════════════════════════════════
+# INTERACTIVE SETUP
+# ═══════════════════════════════════════════════════════════════════════════════
+if [ "$INTERACTIVE" = true ]; then
+    print_banner
 
-# ASCII Art Banner
-printf "\n"
-printf "█▄▀ █▀█ █▀▀ █ █ █    █▄ █ █▀█ █▀▄ █▀▀ █▀▀\n"
-printf "█ █ █▄█ ▄▄█ █▀█ █    █ ▀█ █▄█ █▄▀ ██▄ ▄▄█\n"
-printf "░░█ ComfyUI + FLUX Setup █░░\n"
-printf "\n"
-printf "╭─────────────────────────────────────────────╮\n"
-printf "│ github.com/koshimazaki/ComfyUI-Koshi-Nodes  │\n"
-printf "╰─────────────────────────────────────────────╯\n\n"
+    # ─────────────────────────────────────────────────────────────────────────────
+    # STEP 1: HuggingFace Token
+    # ─────────────────────────────────────────────────────────────────────────────
+    printf "${BOLD}STEP 1: HuggingFace Token${NC}\n\n"
+    printf "    FLUX models require authentication.\n"
+    printf "    Get token: ${CYAN}https://huggingface.co/settings/tokens${NC}\n\n"
 
-# Installation mode selection
-if [ -z "$INSTALL_MODE" ]; then
-    # Auto-detect environment
-    if [ -d "/workspace" ]; then
-        printf "RunPod environment detected.\n\n"
+    if [ -n "$HF_TOKEN" ]; then
+        printf "    ${GREEN}✓${NC} Token found in environment\n\n"
+    else
+        printf "    Enter HF token (or press Enter to skip): "
+        read -r HF_TOKEN
+        printf "\n"
     fi
-    printf "Select installation mode:\n"
-    printf "  1) RunPod   - Full install to /workspace/ComfyUI\n"
-    printf "  2) Local    - Add nodes to existing ComfyUI\n"
-    printf "\nChoice [1-2]: "
-    read -r mode_choice
-    case $mode_choice in
-        1) INSTALL_MODE="runpod" ;;
-        2) INSTALL_MODE="local" ;;
-        *) [ -d "/workspace" ] && INSTALL_MODE="runpod" || INSTALL_MODE="local" ;;
+
+    # ─────────────────────────────────────────────────────────────────────────────
+    # STEP 2: What to Install
+    # ─────────────────────────────────────────────────────────────────────────────
+    printf "${BOLD}STEP 2: What do you want to install?${NC}\n\n"
+    printf "    ${BOLD}1)${NC} Full Setup      ${DIM}- ComfyUI + Koshi Nodes + Models${NC}\n"
+    printf "    ${BOLD}2)${NC} Models Only     ${DIM}- Just download FLUX models${NC}\n"
+    printf "    ${BOLD}3)${NC} Nodes Only      ${DIM}- Just install Koshi Nodes${NC}\n"
+    printf "    ${BOLD}4)${NC} ComfyUI Only    ${DIM}- Just install ComfyUI${NC}\n"
+    printf "\n    Choice [1-4]: "
+    read -r install_choice
+    printf "\n"
+
+    case $install_choice in
+        1) INSTALL_COMFY=true; INSTALL_NODES=true; INSTALL_MODELS=true ;;
+        2) INSTALL_COMFY=false; INSTALL_NODES=false; INSTALL_MODELS=true ;;
+        3) INSTALL_COMFY=false; INSTALL_NODES=true; INSTALL_MODELS=false ;;
+        4) INSTALL_COMFY=true; INSTALL_NODES=false; INSTALL_MODELS=false ;;
+        *) INSTALL_COMFY=true; INSTALL_NODES=true; INSTALL_MODELS=true ;;
     esac
+
+    # ─────────────────────────────────────────────────────────────────────────────
+    # STEP 3: Model Selection (if installing models)
+    # ─────────────────────────────────────────────────────────────────────────────
+    if [ "$INSTALL_MODELS" = true ]; then
+        printf "${BOLD}STEP 3: Select Model Preset${NC}\n\n"
+        printf "    ${BOLD}1)${NC} Klein     ${DIM}- FLUX.2-klein-4B (~13GB) - Recommended${NC}\n"
+        printf "    ${BOLD}2)${NC} Minimal   ${DIM}- Schnell + FP8 T5 (~17GB)${NC}\n"
+        printf "    ${BOLD}3)${NC} Full      ${DIM}- Schnell + Dev + FP16 T5 (~46GB)${NC}\n"
+        printf "    ${BOLD}4)${NC} FP8       ${DIM}- FP8 optimized (~17GB)${NC}\n"
+        printf "    ${BOLD}5)${NC} GGUF      ${DIM}- Q4 quantized (~6GB) - Low VRAM${NC}\n"
+        printf "\n    Choice [1-5]: "
+        read -r model_choice
+        printf "\n"
+
+        case $model_choice in
+            1) MODEL_PRESET="klein" ;;
+            2) MODEL_PRESET="minimal" ;;
+            3) MODEL_PRESET="full" ;;
+            4) MODEL_PRESET="fp8" ;;
+            5) MODEL_PRESET="gguf" ;;
+            *) MODEL_PRESET="klein" ;;
+        esac
+    fi
+
+    # ─────────────────────────────────────────────────────────────────────────────
+    # STEP 4: Environment
+    # ─────────────────────────────────────────────────────────────────────────────
+    if [ "$INSTALL_COMFY" = true ] || [ "$INSTALL_NODES" = true ]; then
+        if [ -z "$INSTALL_MODE" ]; then
+            printf "${BOLD}STEP 4: Environment${NC}\n\n"
+            if [ -d "/workspace" ]; then
+                printf "    ${GREEN}✓${NC} RunPod detected\n\n"
+                INSTALL_MODE="runpod"
+            else
+                printf "    ${BOLD}1)${NC} RunPod    ${DIM}- Full install to /workspace/ComfyUI${NC}\n"
+                printf "    ${BOLD}2)${NC} Local     ${DIM}- Add to existing ComfyUI${NC}\n"
+                printf "\n    Choice [1-2]: "
+                read -r env_choice
+                printf "\n"
+                case $env_choice in
+                    1) INSTALL_MODE="runpod" ;;
+                    2) INSTALL_MODE="local" ;;
+                    *) INSTALL_MODE="runpod" ;;
+                esac
+            fi
+        fi
+    fi
+
+    # ─────────────────────────────────────────────────────────────────────────────
+    # STEP 5: Tailscale
+    # ─────────────────────────────────────────────────────────────────────────────
+    if [ "$INSTALL_MODE" = "runpod" ]; then
+        printf "${BOLD}STEP 5: Setup Tailscale SSH?${NC}\n\n"
+        printf "    ${BOLD}1)${NC} Yes   ${DIM}- Enable remote SSH via Tailscale${NC}\n"
+        printf "    ${BOLD}2)${NC} No    ${DIM}- Skip Tailscale setup${NC}\n"
+        printf "\n    Choice [1-2]: "
+        read -r ts_choice
+        printf "\n"
+        [ "$ts_choice" = "1" ] && INSTALL_TAILSCALE=true
+    fi
+
+    printf "    ─────────────────────────────────────────\n"
+    printf "    ${BOLD}Starting installation...${NC}\n"
+    printf "    ─────────────────────────────────────────\n"
 fi
 
-# Set paths based on mode
-if [ "$INSTALL_MODE" = "runpod" ]; then
+# ═══════════════════════════════════════════════════════════════════════════════
+# SET PATHS
+# ═══════════════════════════════════════════════════════════════════════════════
+if [ "$INSTALL_MODE" = "runpod" ] || [ -d "/workspace" ]; then
     COMFY_DIR="/workspace/ComfyUI"
     RUNPOD=true
-    FULL_INSTALL=true
-    printf "\n[Mode: RunPod] Install: %s\n\n" "$COMFY_DIR"
 else
     RUNPOD=false
-    FULL_INSTALL=false
-    # Find existing ComfyUI installation
     if [ -n "$COMFY_PATH" ]; then
         COMFY_DIR="$COMFY_PATH"
     elif [ -d "$HOME/ComfyUI" ]; then
@@ -133,285 +241,217 @@ else
     elif [ -d "/opt/ComfyUI" ]; then
         COMFY_DIR="/opt/ComfyUI"
     else
-        printf "Enter path to your ComfyUI installation: "
-        read -r COMFY_DIR
-    fi
-    printf "\n[Mode: Local] ComfyUI: %s\n\n" "$COMFY_DIR"
-
-    # Verify ComfyUI exists
-    if [ ! -f "$COMFY_DIR/main.py" ]; then
-        printf "${RED}Error:${NC} ComfyUI not found at %s\n" "$COMFY_DIR"
-        printf "Make sure ComfyUI is installed first.\n"
-        exit 1
-    fi
-fi
-
-# Models-only mode: set COMFY_DIR for model downloads
-if [ "$MODELS_ONLY" = true ]; then
-    if [ -d "/workspace/ComfyUI" ]; then
-        COMFY_DIR="/workspace/ComfyUI"
-    elif [ -n "$COMFY_PATH" ]; then
-        COMFY_DIR="$COMFY_PATH"
-    elif [ -d "$HOME/ComfyUI" ]; then
         COMFY_DIR="$HOME/ComfyUI"
-    else
-        printf "${RED}Error:${NC} ComfyUI not found. Specify COMFY_PATH or install ComfyUI first.\n"
-        exit 1
     fi
-    printf "[Models Only Mode] Using: %s\n\n" "$COMFY_DIR"
 fi
 
-if [ "$MODELS_ONLY" = false ]; then
-    # Check prerequisites
-    printf "[1/7] Checking prerequisites...\n"
-    command -v python3 >/dev/null || { printf "Error: python3 required\n"; exit 1; }
-    command -v pip3 >/dev/null || { printf "Error: pip3 required\n"; exit 1; }
-    command -v git >/dev/null || { printf "Error: git required\n"; exit 1; }
-    printf "  OK\n"
+# Track what was installed for summary
+INSTALLED_COMFY=false
+INSTALLED_NODES=false
+INSTALLED_MODELS=false
+INSTALLED_TS=false
+MODEL_NAME=""
 
-    # Install ComfyUI (RunPod only)
-    printf "\n[2/7] Installing ComfyUI...\n"
-    if [ "$FULL_INSTALL" = true ]; then
-        mkdir -p "$(dirname "$COMFY_DIR")"
-        if [ ! -d "$COMFY_DIR" ]; then
-            git clone https://github.com/comfyanonymous/ComfyUI.git "$COMFY_DIR"
-        fi
-        cd "$COMFY_DIR"
-        if [ "$RUNPOD" = true ]; then
-            pip3 install --break-system-packages -r requirements.txt 2>/dev/null || pip3 install -r requirements.txt
-        else
-            pip3 install -r requirements.txt
-        fi
-        printf "  ${GREEN}Done${NC}\n"
+# ═══════════════════════════════════════════════════════════════════════════════
+# INSTALL COMFYUI
+# ═══════════════════════════════════════════════════════════════════════════════
+if [ "$INSTALL_COMFY" = true ]; then
+    print_step "1" "Installing ComfyUI"
+
+    mkdir -p "$(dirname "$COMFY_DIR")"
+    if [ ! -d "$COMFY_DIR" ]; then
+        git clone https://github.com/comfyanonymous/ComfyUI.git "$COMFY_DIR" 2>/dev/null
+        print_ok "Cloned ComfyUI"
     else
-        printf "  Skipped (using existing ComfyUI)\n"
+        print_skip "ComfyUI already exists"
     fi
 
-    # Install Koshi Nodes
-    printf "\n[3/7] Installing Koshi Nodes...\n"
+    cd "$COMFY_DIR"
+    if [ "$RUNPOD" = true ]; then
+        pip3 install --break-system-packages -q -r requirements.txt 2>/dev/null || pip3 install -q -r requirements.txt
+    else
+        pip3 install -q -r requirements.txt
+    fi
+    print_ok "Dependencies installed"
+    INSTALLED_COMFY=true
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# INSTALL KOSHI NODES
+# ═══════════════════════════════════════════════════════════════════════════════
+if [ "$INSTALL_NODES" = true ]; then
+    print_step "2" "Installing Koshi Nodes"
+
     mkdir -p "$COMFY_DIR/custom_nodes"
     cd "$COMFY_DIR/custom_nodes"
+
     if [ ! -d "Koshi-Nodes" ]; then
-        git clone https://github.com/koshimazaki/ComfyUI-Koshi-Nodes.git Koshi-Nodes
+        git clone https://github.com/koshimazaki/ComfyUI-Koshi-Nodes.git Koshi-Nodes 2>/dev/null
+        print_ok "Cloned Koshi-Nodes"
+    else
+        cd Koshi-Nodes && git pull 2>/dev/null && cd ..
+        print_skip "Koshi-Nodes updated"
     fi
+
+    # Install dependencies
     if [ "$RUNPOD" = true ]; then
-        pip3 install --break-system-packages torch numpy Pillow scipy opencv-python moderngl 2>/dev/null || pip3 install torch numpy Pillow scipy opencv-python moderngl
+        pip3 install --break-system-packages -q torch numpy Pillow scipy opencv-python moderngl 2>/dev/null || true
     else
-        pip3 install torch numpy Pillow scipy opencv-python moderngl
+        pip3 install -q torch numpy Pillow scipy opencv-python moderngl 2>/dev/null || true
     fi
-    printf "  ${GREEN}Done${NC}\n"
+
+    # Install extra nodes
+    [ ! -d "ComfyUI-Manager" ] && git clone -q https://github.com/ltdrdata/ComfyUI-Manager.git 2>/dev/null && print_ok "ComfyUI-Manager"
+    [ ! -d "ComfyUI-VideoHelperSuite" ] && git clone -q https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git 2>/dev/null && print_ok "VideoHelperSuite"
+
+    INSTALLED_NODES=true
 fi
 
-# Download FLUX models
-if [ "$MODELS_ONLY" = true ]; then
-    printf "[1/1] Downloading FLUX models...\n"
-else
-    printf "\n[4/7] Downloading FLUX models...\n"
-fi
-cd "$COMFY_DIR/models"
-mkdir -p checkpoints vae clip unet
+# ═══════════════════════════════════════════════════════════════════════════════
+# DOWNLOAD MODELS
+# ═══════════════════════════════════════════════════════════════════════════════
+if [ "$INSTALL_MODELS" = true ] && [ -n "$MODEL_PRESET" ]; then
+    print_step "3" "Downloading Models ($MODEL_PRESET)"
 
-# Model selection menu
-if [ "$MODEL_PRESET" = "menu" ]; then
-    printf "\nSelect model preset:\n"
-    printf "  1) Klein    - FLUX.2-klein-4B (~13GB) - Fast, efficient (Recommended)\n"
-    printf "  2) Minimal  - Schnell + FP8 T5 (~17GB) - Fast, low VRAM\n"
-    printf "  3) Full     - Schnell + Dev + FP16 T5 (~46GB) - Best quality\n"
-    printf "  4) FP8      - FP8 optimized models (~17GB) - Balanced\n"
-    printf "  5) GGUF 4B  - Q4 quantized (~6GB) - Ultra low VRAM\n"
-    printf "  6) Skip     - Don't download models\n"
-    [ "$FULL_INSTALL" = false ] && printf "  (Recommended: Skip if you already have models)\n"
-    printf "\nChoice [1-6]: "
-    read -r choice
-    case $choice in
-        1) MODEL_PRESET="klein" ;;
-        2) MODEL_PRESET="minimal" ;;
-        3) MODEL_PRESET="full" ;;
-        4) MODEL_PRESET="fp8" ;;
-        5) MODEL_PRESET="gguf" ;;
-        6) MODEL_PRESET="skip" ;;
-        *) [ "$FULL_INSTALL" = true ] && MODEL_PRESET="klein" || MODEL_PRESET="skip" ;;
-    esac
-fi
+    cd "$COMFY_DIR/models"
+    mkdir -p checkpoints vae clip unet
 
-download_if_missing() {
-    local file=$1 url=$2 desc=$3 auth=${4:-false}
-    if [ ! -f "$file" ]; then
-        printf "  ${YELLOW}Downloading${NC} %s...\n" "$desc"
-        if [ "$auth" = true ] && [ -n "$HF_TOKEN" ]; then
-            curl -L --progress-bar -H "Authorization: Bearer $HF_TOKEN" -o "$file" "$url"
+    download_model() {
+        local file=$1 url=$2 desc=$3 auth=${4:-false}
+        if [ ! -f "$file" ]; then
+            printf "    ${YELLOW}↓${NC} $desc\n"
+            if [ "$auth" = true ] && [ -n "$HF_TOKEN" ]; then
+                curl -L --progress-bar -H "Authorization: Bearer $HF_TOKEN" -o "$file" "$url"
+            else
+                curl -L --progress-bar -o "$file" "$url"
+            fi
+            if [ -f "$file" ] && head -c 50 "$file" 2>/dev/null | grep -q "Access to model"; then
+                print_err "Auth required: $desc"
+                rm -f "$file"
+                return 1
+            fi
         else
-            curl -L --progress-bar -o "$file" "$url"
+            print_skip "$desc (exists)"
         fi
-        # Check if download failed (got HTML error page)
-        if [ -f "$file" ] && head -c 50 "$file" 2>/dev/null | grep -q "Access to model"; then
-            printf "  ${RED}Auth required${NC}: %s\n" "$desc"
-            rm -f "$file"
-            return 1
-        fi
-        printf "  ${GREEN}Done${NC}: %s\n" "$desc"
-    else
-        printf "  ${GREEN}Exists${NC}: %s\n" "$desc"
-    fi
-}
+    }
 
-# Model sources (prefer no-auth sources where available)
-HF_FLUX="https://huggingface.co/black-forest-labs"
-HF_KLEIN="https://huggingface.co/black-forest-labs/FLUX.2-klein-4B/resolve/main"
-HF_CLIP="https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main"
-HF_FP8="https://huggingface.co/Kijai/flux-fp8/resolve/main"
-HF_GGUF="https://huggingface.co/city96/FLUX.1-dev-gguf/resolve/main"
-HF_VAE_NOAUTH="https://huggingface.co/Comfy-Org/flux1-schnell/resolve/main"
-
-if [ "$MODEL_PRESET" != "skip" ]; then
-    # Check for HF token (needed for FLUX models)
-    if [ -z "$HF_TOKEN" ] && [ "$INTERACTIVE" = true ]; then
-        printf "\n${YELLOW}FLUX models require HuggingFace authentication.${NC}\n"
-        printf "Get token at: ${CYAN}https://huggingface.co/settings/tokens${NC}\n"
-        printf "Enter HF token (or press Enter to skip FLUX checkpoints): "
-        read -r HF_TOKEN
-    fi
-    # Download VAE and CLIP-L (skip for klein - it has its own)
-    if [ "$MODEL_PRESET" != "klein" ]; then
-        download_if_missing "vae/ae.safetensors" \
-            "$HF_VAE_NOAUTH/ae.safetensors" "FLUX VAE (335MB)"
-        download_if_missing "clip/clip_l.safetensors" \
-            "$HF_CLIP/clip_l.safetensors" "CLIP-L (246MB)"
-    fi
+    HF_KLEIN="https://huggingface.co/black-forest-labs/FLUX.2-klein-4B/resolve/main"
+    HF_FLUX="https://huggingface.co/black-forest-labs"
+    HF_CLIP="https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main"
+    HF_FP8="https://huggingface.co/Kijai/flux-fp8/resolve/main"
+    HF_GGUF="https://huggingface.co/city96/FLUX.1-dev-gguf/resolve/main"
+    HF_VAE="https://huggingface.co/Comfy-Org/flux1-schnell/resolve/main"
 
     case $MODEL_PRESET in
+        klein)
+            MODEL_NAME="FLUX.2-klein-4B"
+            download_model "checkpoints/flux2-klein-4b.safetensors" "$HF_KLEIN/flux2-klein-4b.safetensors" "Klein 4B (8GB)" true
+            download_model "vae/klein_vae.safetensors" "$HF_KLEIN/vae/diffusion_pytorch_model.safetensors" "Klein VAE" true
+            download_model "clip/t5xxl_fp8_e4m3fn.safetensors" "$HF_CLIP/t5xxl_fp8_e4m3fn.safetensors" "T5-XXL FP8"
+            download_model "clip/clip_l.safetensors" "$HF_CLIP/clip_l.safetensors" "CLIP-L"
+            ;;
         minimal)
-            download_if_missing "checkpoints/flux1-schnell.safetensors" \
-                "$HF_FLUX/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors" "FLUX.1 Schnell (12GB)" true
-            download_if_missing "clip/t5xxl_fp8_e4m3fn.safetensors" \
-                "$HF_CLIP/t5xxl_fp8_e4m3fn.safetensors" "T5-XXL FP8 (4.9GB)"
+            MODEL_NAME="FLUX.1-schnell"
+            download_model "vae/ae.safetensors" "$HF_VAE/ae.safetensors" "FLUX VAE"
+            download_model "checkpoints/flux1-schnell.safetensors" "$HF_FLUX/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors" "Schnell (12GB)" true
+            download_model "clip/t5xxl_fp8_e4m3fn.safetensors" "$HF_CLIP/t5xxl_fp8_e4m3fn.safetensors" "T5-XXL FP8"
+            download_model "clip/clip_l.safetensors" "$HF_CLIP/clip_l.safetensors" "CLIP-L"
             ;;
         full)
-            download_if_missing "checkpoints/flux1-schnell.safetensors" \
-                "$HF_FLUX/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors" "FLUX.1 Schnell (12GB)" true
-            download_if_missing "checkpoints/flux1-dev.safetensors" \
-                "$HF_FLUX/FLUX.1-dev/resolve/main/flux1-dev.safetensors" "FLUX.1 Dev (24GB)" true
-            download_if_missing "clip/t5xxl_fp16.safetensors" \
-                "$HF_CLIP/t5xxl_fp16.safetensors" "T5-XXL FP16 (9.8GB)"
+            MODEL_NAME="FLUX.1-schnell + dev"
+            download_model "vae/ae.safetensors" "$HF_VAE/ae.safetensors" "FLUX VAE"
+            download_model "checkpoints/flux1-schnell.safetensors" "$HF_FLUX/FLUX.1-schnell/resolve/main/flux1-schnell.safetensors" "Schnell (12GB)" true
+            download_model "checkpoints/flux1-dev.safetensors" "$HF_FLUX/FLUX.1-dev/resolve/main/flux1-dev.safetensors" "Dev (24GB)" true
+            download_model "clip/t5xxl_fp16.safetensors" "$HF_CLIP/t5xxl_fp16.safetensors" "T5-XXL FP16"
+            download_model "clip/clip_l.safetensors" "$HF_CLIP/clip_l.safetensors" "CLIP-L"
             ;;
         fp8)
-            download_if_missing "unet/flux1-dev-fp8.safetensors" \
-                "$HF_FP8/flux1-dev-fp8.safetensors" "FLUX.1 Dev FP8 (12GB)"
-            download_if_missing "clip/t5xxl_fp8_e4m3fn.safetensors" \
-                "$HF_CLIP/t5xxl_fp8_e4m3fn.safetensors" "T5-XXL FP8 (4.9GB)"
+            MODEL_NAME="FLUX.1-dev FP8"
+            download_model "vae/ae.safetensors" "$HF_VAE/ae.safetensors" "FLUX VAE"
+            download_model "unet/flux1-dev-fp8.safetensors" "$HF_FP8/flux1-dev-fp8.safetensors" "Dev FP8 (12GB)"
+            download_model "clip/t5xxl_fp8_e4m3fn.safetensors" "$HF_CLIP/t5xxl_fp8_e4m3fn.safetensors" "T5-XXL FP8"
+            download_model "clip/clip_l.safetensors" "$HF_CLIP/clip_l.safetensors" "CLIP-L"
             ;;
         gguf)
-            download_if_missing "unet/flux1-dev-Q4_K_S.gguf" \
-                "$HF_GGUF/flux1-dev-Q4_K_S.gguf" "FLUX.1 Dev Q4 GGUF (5.6GB)"
-            download_if_missing "clip/t5xxl_fp8_e4m3fn.safetensors" \
-                "$HF_CLIP/t5xxl_fp8_e4m3fn.safetensors" "T5-XXL FP8 (4.9GB)"
-            ;;
-        klein)
-            # FLUX.2-klein-4B - smaller, faster model with its own VAE
-            download_if_missing "checkpoints/flux2-klein-4b.safetensors" \
-                "$HF_KLEIN/flux2-klein-4b.safetensors" "FLUX.2 Klein 4B (8GB)" true
-            download_if_missing "vae/klein_vae.safetensors" \
-                "$HF_KLEIN/vae/diffusion_pytorch_model.safetensors" "Klein VAE (335MB)" true
-            download_if_missing "clip/t5xxl_fp8_e4m3fn.safetensors" \
-                "$HF_CLIP/t5xxl_fp8_e4m3fn.safetensors" "T5-XXL FP8 (4.9GB)"
-            download_if_missing "clip/clip_l.safetensors" \
-                "$HF_CLIP/clip_l.safetensors" "CLIP-L (246MB)"
+            MODEL_NAME="FLUX.1-dev GGUF Q4"
+            download_model "vae/ae.safetensors" "$HF_VAE/ae.safetensors" "FLUX VAE"
+            download_model "unet/flux1-dev-Q4_K_S.gguf" "$HF_GGUF/flux1-dev-Q4_K_S.gguf" "Dev Q4 GGUF (5.6GB)"
+            download_model "clip/t5xxl_fp8_e4m3fn.safetensors" "$HF_CLIP/t5xxl_fp8_e4m3fn.safetensors" "T5-XXL FP8"
+            download_model "clip/clip_l.safetensors" "$HF_CLIP/clip_l.safetensors" "CLIP-L"
+            # Install GGUF support
+            cd "$COMFY_DIR/custom_nodes"
+            [ ! -d "ComfyUI-GGUF" ] && git clone -q https://github.com/city96/ComfyUI-GGUF.git 2>/dev/null
+            pip3 install -q gguf 2>/dev/null || true
             ;;
     esac
-    printf "  ${GREEN}Model downloads complete${NC}\n"
-else
-    printf "  ${YELLOW}Skipping model downloads${NC}\n"
+    INSTALLED_MODELS=true
 fi
 
-if [ "$MODELS_ONLY" = false ]; then
-    # Install extra nodes
-    printf "\n[5/7] Installing extra nodes...\n"
-    cd "$COMFY_DIR/custom_nodes"
-    [ ! -d "ComfyUI-Manager" ] && git clone https://github.com/ltdrdata/ComfyUI-Manager.git
-    [ ! -d "ComfyUI-VideoHelperSuite" ] && git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git
-    # Install GGUF support if using GGUF models
-    if [ "$MODEL_PRESET" = "gguf" ]; then
-        [ ! -d "ComfyUI-GGUF" ] && git clone https://github.com/city96/ComfyUI-GGUF.git
-        if [ "$RUNPOD" = true ]; then
-            pip3 install --break-system-packages gguf 2>/dev/null || pip3 install gguf
-        else
-            pip3 install gguf
-        fi
+# ═══════════════════════════════════════════════════════════════════════════════
+# SETUP TAILSCALE
+# ═══════════════════════════════════════════════════════════════════════════════
+if [ "$INSTALL_TAILSCALE" = true ]; then
+    print_step "4" "Setting up Tailscale"
+
+    if ! command -v tailscale >/dev/null 2>&1; then
+        curl -fsSL https://tailscale.com/install.sh | sh 2>/dev/null
+        print_ok "Tailscale installed"
     fi
-    if [ "$RUNPOD" = true ]; then
-        pip3 install --break-system-packages gitpython 2>/dev/null || true
+
+    if ! pgrep -x tailscaled >/dev/null; then
+        tailscaled --tun=userspace-networking --state=/workspace/tailscale.state &
+        sleep 2
+        print_ok "Daemon started"
     fi
-    printf "  ${GREEN}Done${NC}\n"
 
-    # Create launcher
-    printf "\n[6/7] Creating launcher...\n"
-    cat > "$COMFY_DIR/run.sh" << EOF
-#!/bin/bash
-cd "$COMFY_DIR"
-python3 main.py --listen 0.0.0.0 --port \${PORT:-8188} "\$@"
-EOF
-    chmod +x "$COMFY_DIR/run.sh"
-    printf "  ${GREEN}Done${NC}\n"
-
-    # Tailscale setup (optional)
-    if [ "$SETUP_TAILSCALE" = true ]; then
-        printf "\n[7/7] Setting up Tailscale...\n"
-
-        # Check if already installed
-        if command -v tailscale >/dev/null 2>&1; then
-            printf "  Tailscale already installed\n"
-        else
-            printf "  Installing Tailscale...\n"
-            curl -fsSL https://tailscale.com/install.sh | sh
-        fi
-
-        # Start daemon (userspace mode for containers)
-        if ! pgrep -x tailscaled >/dev/null; then
-            printf "  Starting tailscaled daemon...\n"
-            tailscaled --tun=userspace-networking --state=/workspace/tailscale.state &
-            sleep 2
-        fi
-
-        # Connect with SSH enabled
-        if [ -n "$TS_AUTHKEY" ]; then
-            printf "  Authenticating with auth key...\n"
-            tailscale up --ssh --authkey="$TS_AUTHKEY"
-        else
-            printf "  ${YELLOW}Run this to authenticate:${NC}\n"
-            printf "    tailscale up --ssh\n"
-            printf "  Then click the URL to login.\n"
-        fi
-
-        # Show IP if connected
-        if tailscale status >/dev/null 2>&1; then
-            TS_IP=$(tailscale ip -4 2>/dev/null || echo "pending")
-            printf "  ${GREEN}Tailscale IP:${NC} %s\n" "$TS_IP"
-        fi
+    if [ -n "$TS_AUTHKEY" ]; then
+        tailscale up --ssh --authkey="$TS_AUTHKEY"
+        print_ok "Authenticated"
     else
-        printf "\n[7/7] Skipping Tailscale (use --tailscale to enable)\n"
+        print_warn "Run: tailscale up --ssh"
+    fi
+
+    INSTALLED_TS=true
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# CREATE LAUNCHER
+# ═══════════════════════════════════════════════════════════════════════════════
+if [ "$INSTALL_COMFY" = true ]; then
+    cat > "$COMFY_DIR/run.sh" << 'RUNEOF'
+#!/bin/bash
+cd "$(dirname "$0")"
+python3 main.py --listen 0.0.0.0 --port ${PORT:-8188} "$@"
+RUNEOF
+    chmod +x "$COMFY_DIR/run.sh"
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# SUMMARY
+# ═══════════════════════════════════════════════════════════════════════════════
+print_done
+
+printf "    ─────────────────────────────────────────\n\n"
+
+[ "$INSTALLED_COMFY" = true ] && printf "    ${GREEN}✓${NC} ComfyUI installed\n"
+[ "$INSTALLED_NODES" = true ] && printf "    ${GREEN}✓${NC} Koshi Nodes installed\n"
+[ "$INSTALLED_MODELS" = true ] && printf "    ${GREEN}✓${NC} Models: $MODEL_NAME\n"
+[ "$INSTALLED_TS" = true ] && printf "    ${GREEN}✓${NC} Tailscale ready\n"
+
+printf "\n    ${BOLD}LOCATIONS${NC}\n"
+printf "    ComfyUI: $COMFY_DIR\n"
+[ "$INSTALLED_NODES" = true ] && printf "    Nodes:   $COMFY_DIR/custom_nodes/Koshi-Nodes\n"
+[ "$INSTALLED_MODELS" = true ] && printf "    Models:  $COMFY_DIR/models/\n"
+
+if [ "$INSTALL_COMFY" = true ]; then
+    printf "\n    ${BOLD}START COMFYUI${NC}\n"
+    printf "    $COMFY_DIR/run.sh\n"
+    printf "\n    ${BOLD}ACCESS${NC}\n"
+    printf "    http://localhost:8188\n"
+    if [ "$INSTALLED_TS" = true ]; then
+        TS_IP=$(tailscale ip -4 2>/dev/null || echo "<tailscale-ip>")
+        printf "    http://$TS_IP:8188\n"
     fi
 fi
 
-printf "\n"
-printf "╭─────────────────────────────────────────────╮\n"
-printf "│  Installation Complete!                     │\n"
-printf "╰─────────────────────────────────────────────╯\n"
-printf "\n"
-if [ "$MODELS_ONLY" = true ]; then
-    printf "Models downloaded to:\n"
-    printf "  %s/models/\n" "$COMFY_DIR"
-elif [ "$FULL_INSTALL" = true ]; then
-    printf "Start ComfyUI:\n"
-    printf "  %s/run.sh\n\n" "$COMFY_DIR"
-    printf "Access:\n"
-    printf "  Local:     http://127.0.0.1:8188\n"
-    if [ "$SETUP_TAILSCALE" = true ]; then
-        TS_IP=$(tailscale ip -4 2>/dev/null || echo "<tailscale-ip>")
-        printf "  Tailscale: http://%s:8188\n" "$TS_IP"
-    fi
-else
-    printf "Koshi Nodes installed to:\n"
-    printf "  %s/custom_nodes/Koshi-Nodes\n" "$COMFY_DIR"
-    printf "\nRestart ComfyUI to load the new nodes.\n"
-fi
-printf "\n"
+printf "\n    ─────────────────────────────────────────\n\n"
