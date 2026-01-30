@@ -1,18 +1,39 @@
 #!/bin/bash
 # ComfyUI + FLUX + Koshi Nodes Setup Script
-# Usage: ./setup_comfyui_flux.sh [--runpod|--local] [--minimal|--full|--fp8|--gguf|--skip-models]
+#
+# Quick install (RunPod):
+#   curl -sL https://raw.githubusercontent.com/koshimazaki/ComfyUI-Koshi-Nodes/main/setup_comfyui_flux.sh | bash -s -- --runpod --minimal
+#
+# Full install with Tailscale:
+#   curl -sL https://raw.githubusercontent.com/koshimazaki/ComfyUI-Koshi-Nodes/main/setup_comfyui_flux.sh | bash -s -- --runpod --full --tailscale
+#
+# Options:
+#   --runpod|--local    Environment (auto-detects if not specified)
+#   --minimal           Schnell + FP8 T5 (~17GB)
+#   --full              Schnell + Dev + FP16 T5 (~46GB)
+#   --fp8               FP8 optimized (~17GB)
+#   --gguf              Q4 quantized (~6GB)
+#   --skip-models       Don't download models
+#   --tailscale         Setup Tailscale SSH for remote access
+#   --token=XXX         HuggingFace token
+#   --authkey=XXX       Tailscale auth key (optional)
+#
 set -e
 
-# Minimal colors (status only)
+# Colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 RED='\033[0;31m'
+CYAN='\033[0;36m'
 NC='\033[0m'
 
 # Parse arguments
 MODEL_PRESET="menu"
 INSTALL_MODE=""
+SETUP_TAILSCALE=false
 HF_TOKEN="${HF_TOKEN:-}"
+TS_AUTHKEY="${TS_AUTHKEY:-}"
+
 for arg in "$@"; do
     case $arg in
         --runpod) INSTALL_MODE="runpod" ;;
@@ -22,9 +43,33 @@ for arg in "$@"; do
         --fp8) MODEL_PRESET="fp8" ;;
         --gguf) MODEL_PRESET="gguf" ;;
         --skip-models) MODEL_PRESET="skip" ;;
+        --tailscale) SETUP_TAILSCALE=true ;;
         --token=*) HF_TOKEN="${arg#*=}" ;;
+        --authkey=*) TS_AUTHKEY="${arg#*=}" ;;
+        --help)
+            printf "Usage: ./setup_comfyui_flux.sh [OPTIONS]\n\n"
+            printf "Options:\n"
+            printf "  --runpod        RunPod environment (full install)\n"
+            printf "  --local         Local environment (nodes only)\n"
+            printf "  --minimal       Schnell + FP8 T5 (~17GB)\n"
+            printf "  --full          Schnell + Dev + FP16 T5 (~46GB)\n"
+            printf "  --fp8           FP8 optimized models (~17GB)\n"
+            printf "  --gguf          Q4 quantized (~6GB)\n"
+            printf "  --skip-models   Skip model downloads\n"
+            printf "  --tailscale     Setup Tailscale SSH\n"
+            printf "  --token=XXX     HuggingFace token\n"
+            printf "  --authkey=XXX   Tailscale auth key\n"
+            exit 0
+            ;;
     esac
 done
+
+# Auto-detect if piped (non-interactive)
+if [ ! -t 0 ]; then
+    # Running via curl pipe - need defaults
+    [ -z "$INSTALL_MODE" ] && [ -d "/workspace" ] && INSTALL_MODE="runpod"
+    [ "$MODEL_PRESET" = "menu" ] && MODEL_PRESET="minimal"
+fi
 
 # ASCII Art Banner
 printf "\n"
@@ -242,7 +287,7 @@ fi
 printf "  ${GREEN}Done${NC}\n"
 
 # Create launcher
-printf "\n[6/6] Creating launcher...\n"
+printf "\n[6/7] Creating launcher...\n"
 cat > "$COMFY_DIR/run.sh" << EOF
 #!/bin/bash
 cd "$COMFY_DIR"
@@ -251,15 +296,58 @@ EOF
 chmod +x "$COMFY_DIR/run.sh"
 printf "  ${GREEN}Done${NC}\n"
 
+# Tailscale setup (optional)
+if [ "$SETUP_TAILSCALE" = true ]; then
+    printf "\n[7/7] Setting up Tailscale...\n"
+
+    # Check if already installed
+    if command -v tailscale >/dev/null 2>&1; then
+        printf "  Tailscale already installed\n"
+    else
+        printf "  Installing Tailscale...\n"
+        curl -fsSL https://tailscale.com/install.sh | sh
+    fi
+
+    # Start daemon (userspace mode for containers)
+    if ! pgrep -x tailscaled >/dev/null; then
+        printf "  Starting tailscaled daemon...\n"
+        tailscaled --tun=userspace-networking --state=/workspace/tailscale.state &
+        sleep 2
+    fi
+
+    # Connect with SSH enabled
+    if [ -n "$TS_AUTHKEY" ]; then
+        printf "  Authenticating with auth key...\n"
+        tailscale up --ssh --authkey="$TS_AUTHKEY"
+    else
+        printf "  ${YELLOW}Run this to authenticate:${NC}\n"
+        printf "    tailscale up --ssh\n"
+        printf "  Then click the URL to login.\n"
+    fi
+
+    # Show IP if connected
+    if tailscale status >/dev/null 2>&1; then
+        TS_IP=$(tailscale ip -4 2>/dev/null || echo "pending")
+        printf "  ${GREEN}Tailscale IP:${NC} %s\n" "$TS_IP"
+    fi
+else
+    printf "\n[7/7] Skipping Tailscale (use --tailscale to enable)\n"
+fi
+
 printf "\n"
 printf "╭─────────────────────────────────────────────╮\n"
 printf "│  Installation Complete!                     │\n"
 printf "╰─────────────────────────────────────────────╯\n"
 printf "\n"
 if [ "$FULL_INSTALL" = true ]; then
-    printf "Start:  %s/run.sh\n" "$COMFY_DIR"
-    printf "Access: http://127.0.0.1:8188\n"
-    [ "$RUNPOD" = true ] && printf "        http://<tailscale-ip>:8188\n"
+    printf "Start ComfyUI:\n"
+    printf "  %s/run.sh\n\n" "$COMFY_DIR"
+    printf "Access:\n"
+    printf "  Local:     http://127.0.0.1:8188\n"
+    if [ "$SETUP_TAILSCALE" = true ]; then
+        TS_IP=$(tailscale ip -4 2>/dev/null || echo "<tailscale-ip>")
+        printf "  Tailscale: http://%s:8188\n" "$TS_IP"
+    fi
 else
     printf "Koshi Nodes installed to:\n"
     printf "  %s/custom_nodes/Koshi-Nodes\n" "$COMFY_DIR"
