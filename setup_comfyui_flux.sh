@@ -65,10 +65,22 @@ for arg in "$@"; do
 done
 
 # Auto-detect if piped (non-interactive)
-if [ ! -t 0 ]; then
+INTERACTIVE=true
+if [ ! -t 0 ] || [ ! -t 1 ]; then
+    INTERACTIVE=false
     # Running via curl pipe - need defaults
     [ -z "$INSTALL_MODE" ] && [ -d "/workspace" ] && INSTALL_MODE="runpod"
     [ "$MODEL_PRESET" = "menu" ] && MODEL_PRESET="minimal"
+fi
+
+# Early check: warn if HF token needed but missing in non-interactive mode
+if [ "$INTERACTIVE" = false ] && [ "$MODEL_PRESET" != "skip" ] && [ -z "$HF_TOKEN" ]; then
+    printf "${YELLOW}Warning:${NC} No HF token provided. FLUX models require authentication.\n"
+    printf "Either:\n"
+    printf "  1. Add --token=YOUR_TOKEN to the command\n"
+    printf "  2. Set HF_TOKEN env var: export HF_TOKEN=xxx && curl ...\n"
+    printf "  3. Use --skip-models to skip model downloads\n"
+    printf "\nContinuing without token (some downloads may fail)...\n\n"
 fi
 
 # ASCII Art Banner
@@ -222,7 +234,7 @@ HF_GGUF="https://huggingface.co/city96/FLUX.1-dev-gguf/resolve/main"
 
 if [ "$MODEL_PRESET" != "skip" ]; then
     # Check for HF token (needed for FLUX models)
-    if [ -z "$HF_TOKEN" ]; then
+    if [ -z "$HF_TOKEN" ] && [ "$INTERACTIVE" = true ]; then
         printf "\n${YELLOW}FLUX models require HuggingFace authentication.${NC}\n"
         printf "Get token at: ${CYAN}https://huggingface.co/settings/tokens${NC}\n"
         printf "Enter HF token (or press Enter to skip FLUX checkpoints): "
