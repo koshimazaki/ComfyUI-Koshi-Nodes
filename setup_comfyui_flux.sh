@@ -31,6 +31,7 @@ NC='\033[0m'
 MODEL_PRESET="menu"
 INSTALL_MODE=""
 SETUP_TAILSCALE=false
+MODELS_ONLY=false
 HF_TOKEN="${HF_TOKEN:-}"
 TS_AUTHKEY="${TS_AUTHKEY:-}"
 
@@ -43,6 +44,7 @@ for arg in "$@"; do
         --fp8) MODEL_PRESET="fp8" ;;
         --gguf) MODEL_PRESET="gguf" ;;
         --skip-models) MODEL_PRESET="skip" ;;
+        --models-only) MODELS_ONLY=true ;;
         --tailscale) SETUP_TAILSCALE=true ;;
         --token=*) HF_TOKEN="${arg#*=}" ;;
         --authkey=*) TS_AUTHKEY="${arg#*=}" ;;
@@ -56,6 +58,7 @@ for arg in "$@"; do
             printf "  --fp8           FP8 optimized models (~17GB)\n"
             printf "  --gguf          Q4 quantized (~6GB)\n"
             printf "  --skip-models   Skip model downloads\n"
+            printf "  --models-only   Only download models (skip ComfyUI/nodes)\n"
             printf "  --tailscale     Setup Tailscale SSH\n"
             printf "  --token=XXX     HuggingFace token\n"
             printf "  --authkey=XXX   Tailscale auth key\n"
@@ -141,47 +144,68 @@ else
     fi
 fi
 
-# Check prerequisites
-printf "[1/6] Checking prerequisites...\n"
-command -v python3 >/dev/null || { printf "Error: python3 required\n"; exit 1; }
-command -v pip3 >/dev/null || { printf "Error: pip3 required\n"; exit 1; }
-command -v git >/dev/null || { printf "Error: git required\n"; exit 1; }
-printf "  OK\n"
-
-# Install ComfyUI (RunPod only)
-printf "\n[2/6] Installing ComfyUI...\n"
-if [ "$FULL_INSTALL" = true ]; then
-    mkdir -p "$(dirname "$COMFY_DIR")"
-    if [ ! -d "$COMFY_DIR" ]; then
-        git clone https://github.com/comfyanonymous/ComfyUI.git "$COMFY_DIR"
-    fi
-    cd "$COMFY_DIR"
-    if [ "$RUNPOD" = true ]; then
-        pip3 install --break-system-packages -r requirements.txt 2>/dev/null || pip3 install -r requirements.txt
+# Models-only mode: set COMFY_DIR for model downloads
+if [ "$MODELS_ONLY" = true ]; then
+    if [ -d "/workspace/ComfyUI" ]; then
+        COMFY_DIR="/workspace/ComfyUI"
+    elif [ -n "$COMFY_PATH" ]; then
+        COMFY_DIR="$COMFY_PATH"
+    elif [ -d "$HOME/ComfyUI" ]; then
+        COMFY_DIR="$HOME/ComfyUI"
     else
-        pip3 install -r requirements.txt
+        printf "${RED}Error:${NC} ComfyUI not found. Specify COMFY_PATH or install ComfyUI first.\n"
+        exit 1
+    fi
+    printf "[Models Only Mode] Using: %s\n\n" "$COMFY_DIR"
+fi
+
+if [ "$MODELS_ONLY" = false ]; then
+    # Check prerequisites
+    printf "[1/7] Checking prerequisites...\n"
+    command -v python3 >/dev/null || { printf "Error: python3 required\n"; exit 1; }
+    command -v pip3 >/dev/null || { printf "Error: pip3 required\n"; exit 1; }
+    command -v git >/dev/null || { printf "Error: git required\n"; exit 1; }
+    printf "  OK\n"
+
+    # Install ComfyUI (RunPod only)
+    printf "\n[2/7] Installing ComfyUI...\n"
+    if [ "$FULL_INSTALL" = true ]; then
+        mkdir -p "$(dirname "$COMFY_DIR")"
+        if [ ! -d "$COMFY_DIR" ]; then
+            git clone https://github.com/comfyanonymous/ComfyUI.git "$COMFY_DIR"
+        fi
+        cd "$COMFY_DIR"
+        if [ "$RUNPOD" = true ]; then
+            pip3 install --break-system-packages -r requirements.txt 2>/dev/null || pip3 install -r requirements.txt
+        else
+            pip3 install -r requirements.txt
+        fi
+        printf "  ${GREEN}Done${NC}\n"
+    else
+        printf "  Skipped (using existing ComfyUI)\n"
+    fi
+
+    # Install Koshi Nodes
+    printf "\n[3/7] Installing Koshi Nodes...\n"
+    mkdir -p "$COMFY_DIR/custom_nodes"
+    cd "$COMFY_DIR/custom_nodes"
+    if [ ! -d "Koshi-Nodes" ]; then
+        git clone https://github.com/koshimazaki/ComfyUI-Koshi-Nodes.git Koshi-Nodes
+    fi
+    if [ "$RUNPOD" = true ]; then
+        pip3 install --break-system-packages torch numpy Pillow scipy opencv-python moderngl 2>/dev/null || pip3 install torch numpy Pillow scipy opencv-python moderngl
+    else
+        pip3 install torch numpy Pillow scipy opencv-python moderngl
     fi
     printf "  ${GREEN}Done${NC}\n"
-else
-    printf "  Skipped (using existing ComfyUI)\n"
 fi
-
-# Install Koshi Nodes
-printf "\n[3/6] Installing Koshi Nodes...\n"
-mkdir -p "$COMFY_DIR/custom_nodes"
-cd "$COMFY_DIR/custom_nodes"
-if [ ! -d "Koshi-Nodes" ]; then
-    git clone https://github.com/koshimazaki/ComfyUI-Koshi-Nodes.git Koshi-Nodes
-fi
-if [ "$RUNPOD" = true ]; then
-    pip3 install --break-system-packages torch numpy Pillow scipy opencv-python moderngl 2>/dev/null || pip3 install torch numpy Pillow scipy opencv-python moderngl
-else
-    pip3 install torch numpy Pillow scipy opencv-python moderngl
-fi
-printf "  ${GREEN}Done${NC}\n"
 
 # Download FLUX models
-printf "\n[4/6] Downloading FLUX models...\n"
+if [ "$MODELS_ONLY" = true ]; then
+    printf "[1/1] Downloading FLUX models...\n"
+else
+    printf "\n[4/7] Downloading FLUX models...\n"
+fi
 cd "$COMFY_DIR/models"
 mkdir -p checkpoints vae clip unet
 
@@ -279,71 +303,73 @@ else
     printf "  ${YELLOW}Skipping model downloads${NC}\n"
 fi
 
-# Install extra nodes
-printf "\n[5/6] Installing extra nodes...\n"
-cd "$COMFY_DIR/custom_nodes"
-[ ! -d "ComfyUI-Manager" ] && git clone https://github.com/ltdrdata/ComfyUI-Manager.git
-[ ! -d "ComfyUI-VideoHelperSuite" ] && git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git
-# Install GGUF support if using GGUF models
-if [ "$MODEL_PRESET" = "gguf" ]; then
-    [ ! -d "ComfyUI-GGUF" ] && git clone https://github.com/city96/ComfyUI-GGUF.git
-    if [ "$RUNPOD" = true ]; then
-        pip3 install --break-system-packages gguf 2>/dev/null || pip3 install gguf
-    else
-        pip3 install gguf
+if [ "$MODELS_ONLY" = false ]; then
+    # Install extra nodes
+    printf "\n[5/7] Installing extra nodes...\n"
+    cd "$COMFY_DIR/custom_nodes"
+    [ ! -d "ComfyUI-Manager" ] && git clone https://github.com/ltdrdata/ComfyUI-Manager.git
+    [ ! -d "ComfyUI-VideoHelperSuite" ] && git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git
+    # Install GGUF support if using GGUF models
+    if [ "$MODEL_PRESET" = "gguf" ]; then
+        [ ! -d "ComfyUI-GGUF" ] && git clone https://github.com/city96/ComfyUI-GGUF.git
+        if [ "$RUNPOD" = true ]; then
+            pip3 install --break-system-packages gguf 2>/dev/null || pip3 install gguf
+        else
+            pip3 install gguf
+        fi
     fi
-fi
-if [ "$RUNPOD" = true ]; then
-    pip3 install --break-system-packages gitpython 2>/dev/null || true
-fi
-printf "  ${GREEN}Done${NC}\n"
+    if [ "$RUNPOD" = true ]; then
+        pip3 install --break-system-packages gitpython 2>/dev/null || true
+    fi
+    printf "  ${GREEN}Done${NC}\n"
 
-# Create launcher
-printf "\n[6/7] Creating launcher...\n"
-cat > "$COMFY_DIR/run.sh" << EOF
+    # Create launcher
+    printf "\n[6/7] Creating launcher...\n"
+    cat > "$COMFY_DIR/run.sh" << EOF
 #!/bin/bash
 cd "$COMFY_DIR"
 python3 main.py --listen 0.0.0.0 --port \${PORT:-8188} "\$@"
 EOF
-chmod +x "$COMFY_DIR/run.sh"
-printf "  ${GREEN}Done${NC}\n"
+    chmod +x "$COMFY_DIR/run.sh"
+    printf "  ${GREEN}Done${NC}\n"
 
-# Tailscale setup (optional)
-if [ "$SETUP_TAILSCALE" = true ]; then
-    printf "\n[7/7] Setting up Tailscale...\n"
+    # Tailscale setup (optional)
+    if [ "$SETUP_TAILSCALE" = true ]; then
+        printf "\n[7/7] Setting up Tailscale...\n"
 
-    # Check if already installed
-    if command -v tailscale >/dev/null 2>&1; then
-        printf "  Tailscale already installed\n"
+        # Check if already installed
+        if command -v tailscale >/dev/null 2>&1; then
+            printf "  Tailscale already installed\n"
+        else
+            printf "  Installing Tailscale...\n"
+            curl -fsSL https://tailscale.com/install.sh | sh
+        fi
+
+        # Start daemon (userspace mode for containers)
+        if ! pgrep -x tailscaled >/dev/null; then
+            printf "  Starting tailscaled daemon...\n"
+            tailscaled --tun=userspace-networking --state=/workspace/tailscale.state &
+            sleep 2
+        fi
+
+        # Connect with SSH enabled
+        if [ -n "$TS_AUTHKEY" ]; then
+            printf "  Authenticating with auth key...\n"
+            tailscale up --ssh --authkey="$TS_AUTHKEY"
+        else
+            printf "  ${YELLOW}Run this to authenticate:${NC}\n"
+            printf "    tailscale up --ssh\n"
+            printf "  Then click the URL to login.\n"
+        fi
+
+        # Show IP if connected
+        if tailscale status >/dev/null 2>&1; then
+            TS_IP=$(tailscale ip -4 2>/dev/null || echo "pending")
+            printf "  ${GREEN}Tailscale IP:${NC} %s\n" "$TS_IP"
+        fi
     else
-        printf "  Installing Tailscale...\n"
-        curl -fsSL https://tailscale.com/install.sh | sh
+        printf "\n[7/7] Skipping Tailscale (use --tailscale to enable)\n"
     fi
-
-    # Start daemon (userspace mode for containers)
-    if ! pgrep -x tailscaled >/dev/null; then
-        printf "  Starting tailscaled daemon...\n"
-        tailscaled --tun=userspace-networking --state=/workspace/tailscale.state &
-        sleep 2
-    fi
-
-    # Connect with SSH enabled
-    if [ -n "$TS_AUTHKEY" ]; then
-        printf "  Authenticating with auth key...\n"
-        tailscale up --ssh --authkey="$TS_AUTHKEY"
-    else
-        printf "  ${YELLOW}Run this to authenticate:${NC}\n"
-        printf "    tailscale up --ssh\n"
-        printf "  Then click the URL to login.\n"
-    fi
-
-    # Show IP if connected
-    if tailscale status >/dev/null 2>&1; then
-        TS_IP=$(tailscale ip -4 2>/dev/null || echo "pending")
-        printf "  ${GREEN}Tailscale IP:${NC} %s\n" "$TS_IP"
-    fi
-else
-    printf "\n[7/7] Skipping Tailscale (use --tailscale to enable)\n"
 fi
 
 printf "\n"
@@ -351,7 +377,10 @@ printf "╭───────────────────────
 printf "│  Installation Complete!                     │\n"
 printf "╰─────────────────────────────────────────────╯\n"
 printf "\n"
-if [ "$FULL_INSTALL" = true ]; then
+if [ "$MODELS_ONLY" = true ]; then
+    printf "Models downloaded to:\n"
+    printf "  %s/models/\n" "$COMFY_DIR"
+elif [ "$FULL_INSTALL" = true ]; then
     printf "Start ComfyUI:\n"
     printf "  %s/run.sh\n\n" "$COMFY_DIR"
     printf "Access:\n"
