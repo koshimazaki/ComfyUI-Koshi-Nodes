@@ -32,7 +32,7 @@ print_banner() {
 
 print_done() {
     printf "\n"
-    printf "${GREEN}"
+    printf "${CYAN}"
     printf "    █▀▄ █▀█ █▄ █ █▀▀ █\n"
     printf "    █▄▀ █▄█ █ ▀█ ██▄ ▄\n"
     printf "${NC}\n"
