@@ -14,14 +14,16 @@ NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
 
 NODE_CATEGORIES = [
+    "nodes.sidkit",
+    "nodes.effects",
+    "nodes.generators",
+    "nodes.utility",
+    "nodes.flux_motion",
+    # Legacy - to be removed after migration
     "nodes.image.dither",
     "nodes.image.greyscale",
     "nodes.image.binary",
-    "nodes.effects",
     "nodes.export",
-    "nodes.utility",
-    "nodes.generators",
-    "nodes.flux_motion",
     "nodes.audio",
 ]
 

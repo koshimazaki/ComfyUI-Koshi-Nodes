@@ -11,6 +11,47 @@ import numpy as np
 import torch
 from PIL import Image
 import math
+import os
+import uuid
+
+# ComfyUI imports for preview
+try:
+    import folder_paths
+    COMFY_AVAILABLE = True
+except ImportError:
+    COMFY_AVAILABLE = False
+
+
+def save_images_for_preview(image_tensor):
+    """Save images to temp folder and return preview metadata."""
+    if not COMFY_AVAILABLE:
+        return []
+
+    results = []
+    output_dir = folder_paths.get_temp_directory()
+
+    # Handle batch
+    if len(image_tensor.shape) == 4:
+        batch = image_tensor
+    else:
+        batch = image_tensor.unsqueeze(0)
+
+    for i in range(batch.shape[0]):
+        img_np = batch[i].cpu().numpy()
+        img_np = (np.clip(img_np, 0, 1) * 255).astype(np.uint8)
+
+        pil_img = Image.fromarray(img_np)
+        filename = f"koshi_glitch_{uuid.uuid4().hex[:8]}_{i}.png"
+        filepath = os.path.join(output_dir, filename)
+        pil_img.save(filepath)
+
+        results.append({
+            "filename": filename,
+            "subfolder": "",
+            "type": "temp"
+        })
+
+    return results
 
 
 class GlitchShaderNode:
@@ -91,6 +132,7 @@ class GlitchShaderNode:
     RETURN_TYPES = ("IMAGE",)
     FUNCTION = "apply_glitch"
     CATEGORY = "Koshi/Effects"
+    OUTPUT_NODE = True
 
     def __init__(self):
         self.frozen_time = 0.0
@@ -234,7 +276,12 @@ class GlitchShaderNode:
         # Convert back to tensor
         output_tensor = torch.from_numpy(np.stack(results)).float()
 
-        return (output_tensor,)
+        # Return with preview UI
+        preview_images = save_images_for_preview(output_tensor)
+        return {
+            "ui": {"images": preview_images},
+            "result": (output_tensor,)
+        }
 
     def _smoothstep(self, edge0, edge1, x):
         """GLSL smoothstep function"""

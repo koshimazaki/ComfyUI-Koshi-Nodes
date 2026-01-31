@@ -1,16 +1,23 @@
 """Koshi Generator Nodes - Procedural patterns and 3D shapes."""
-from .glitch_candies import KoshiGlitchCandies, KoshiShapeMorph, KoshiNoiseDisplace
+from .glitch_candies import (
+    KoshiGlitchCandies,
+    KoshiShapeMorph,
+    KoshiNoiseDisplace,
+    KoshiShapeCandies,
+)
 
 NODE_CLASS_MAPPINGS = {
     "Koshi_GlitchCandies": KoshiGlitchCandies,
     "Koshi_ShapeMorph": KoshiShapeMorph,
     "Koshi_NoiseDisplace": KoshiNoiseDisplace,
+    "Koshi_ShapeCandies": KoshiShapeCandies,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "Koshi_GlitchCandies": "▄█▄ KN Glitch Candies",
     "Koshi_ShapeMorph": "▄█▄ KN Shape Morph",
     "Koshi_NoiseDisplace": "▄█▄ KN Noise Displace",
+    "Koshi_ShapeCandies": "▄█▄ KN Shape Candies",
 }
 
 # Import raymarcher from effects folder (generates content)

@@ -124,7 +124,7 @@ const DITHER_HALFTONE_SHADER = `
     }
 `;
 
-// Glitch shader
+// Glitch shader - matches Python GlitchShaderNode parameters
 const GLITCH_SHADER = `
     precision mediump float;
     uniform sampler2D u_image;
@@ -132,33 +132,80 @@ const GLITCH_SHADER = `
     uniform float u_glitch_intensity;
     uniform float u_rgb_shift;
     uniform float u_time;
+    uniform float u_shake_amount;
+    uniform float u_noise_amount;
+    uniform float u_scan_line_intensity;
     varying vec2 v_texCoord;
-    
+
     float rand(vec2 co) {
         return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
     }
-    
+
+    float noise(vec2 p) {
+        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+    }
+
+    float smoothstep2(float edge0, float edge1, float x) {
+        float t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+        return t * t * (3.0 - 2.0 * t);
+    }
+
     void main() {
         vec2 uv = v_texCoord;
-        float intensity = u_glitch_intensity;
-        
-        // RGB shift
-        float shift = u_rgb_shift / u_resolution.x * intensity;
-        float r = texture2D(u_image, uv + vec2(shift, 0.0)).r;
-        float g = texture2D(u_image, uv).g;
-        float b = texture2D(u_image, uv - vec2(shift, 0.0)).b;
-        
+
+        // Calculate glitch strength based on time interval (matching Python)
+        float interval = 3.0;
+        float strength = smoothstep2(interval * 0.5, interval, interval - mod(u_time, interval));
+        strength *= u_glitch_intensity;
+
+        // Shake effect
+        float shakeX = (rand(vec2(u_time, 0.0)) * 2.0 - 1.0) * u_shake_amount * strength / u_resolution.x;
+        float shakeY = (rand(vec2(u_time * 2.0, 0.0)) * 2.0 - 1.0) * u_shake_amount * strength / u_resolution.y;
+        uv += vec2(shakeX, shakeY);
+
+        // RGB wave based on row noise (like Python)
+        float rowNoise1 = noise(vec2(0.0, uv.y * u_resolution.y * 0.01 + u_time * 400.0));
+        float rowNoise2 = noise(vec2(0.0, uv.y * u_resolution.y * 0.02 + u_time * 200.0));
+        float rgbWave = rowNoise1 * (2.0 + strength * 32.0) * rowNoise2 * (1.0 + strength * 4.0);
+
+        // Periodic spikes
+        float spike1 = sin(uv.y * u_resolution.y * 0.005 + u_time * 1.6);
+        float spike2 = sin(uv.y * u_resolution.y * 0.005 + u_time * 2.0);
+        rgbWave += step(0.9995, spike1) * 12.0;
+        rgbWave += step(0.9999, spike2) * -18.0;
+
+        // RGB difference per row
+        float rgbDiff = u_rgb_shift + sin(u_time * 500.0 + uv.y * 40.0) * (20.0 * strength + 1.0);
+        rgbDiff /= u_resolution.x;
+        rgbWave /= u_resolution.x;
+
+        // Sample with RGB shift
+        float r = texture2D(u_image, uv + vec2(rgbWave + rgbDiff, 0.0)).r;
+        float g = texture2D(u_image, uv + vec2(rgbWave, 0.0)).g;
+        float b = texture2D(u_image, uv + vec2(rgbWave - rgbDiff, 0.0)).b;
+        vec3 color = vec3(r, g, b);
+
         // Block glitch
         float blockY = floor(uv.y * 20.0);
-        float noise = rand(vec2(blockY, u_time));
-        if (noise > 1.0 - intensity * 0.3) {
-            float blockShift = (rand(vec2(blockY, u_time + 1.0)) - 0.5) * 0.1 * intensity;
-            r = texture2D(u_image, uv + vec2(blockShift + shift, 0.0)).r;
-            g = texture2D(u_image, uv + vec2(blockShift, 0.0)).g;
-            b = texture2D(u_image, uv + vec2(blockShift - shift, 0.0)).b;
+        float blockNoise = rand(vec2(blockY, floor(u_time * 20.0) * 200.0));
+        float blockMask = step(1.0 - (0.12 + strength * 0.3), blockNoise);
+        if (blockMask > 0.5) {
+            float blockShift = sin(floor(u_time * 20.0) * 200.0) * 20.0 / u_resolution.x;
+            color.r = texture2D(u_image, uv + vec2(blockShift + rgbDiff, 0.0)).r;
+            color.g = texture2D(u_image, uv + vec2(blockShift, 0.0)).g;
+            color.b = texture2D(u_image, uv + vec2(blockShift - rgbDiff, 0.0)).b;
         }
-        
-        gl_FragColor = vec4(r, g, b, 1.0);
+
+        // White noise overlay
+        float whiteNoise = (rand(uv * u_resolution + u_time) * 2.0 - 1.0) * (u_noise_amount + strength * u_noise_amount);
+        color += whiteNoise;
+
+        // Scan lines
+        float scanLine = sin(uv.y * u_resolution.y * 1200.0 / u_resolution.y * 6.28318);
+        scanLine = (scanLine + 1.0) * 0.5 * (u_scan_line_intensity + strength * 0.2);
+        color -= scanLine;
+
+        gl_FragColor = vec4(clamp(color, 0.0, 1.0), 1.0);
     }
 `;
 
@@ -913,23 +960,76 @@ app.registerExtension({
                 paramMap: { threshold: "threshold" }
             },
             
-            // Effects nodes
-            "Koshi_Glitch": { 
-                effect: "glitch", 
-                title: "Glitch Preview",
-                animated: true,
-                paramMap: { 
-                    glitch_intensity: "glitch_intensity",
-                    rgb_shift: "rgb_shift"
+            // Dither node (universal)
+            "Koshi_Dither": {
+                effect: "dither_bayer",
+                title: "Dither Preview",
+                paramMap: {
+                    technique: "technique",
+                    levels: "levels",
+                    bayer_size: "bayer_size",
+                    dot_size: "dot_size",
+                    dot_angle: "angle"
+                },
+                // Dynamic effect selection based on technique widget
+                dynamicEffect: {
+                    widget: "technique",
+                    mapping: {
+                        "bayer": "dither_bayer",
+                        "floyd_steinberg": "dither_fs",
+                        "atkinson": "dither_fs",
+                        "halftone": "dither_halftone",
+                        "none": "passthrough"
+                    }
                 }
             },
-            "Koshi_Bloom": { 
-                effect: "bloom", 
+
+            // Effects nodes
+            "KoshiGlitchShader": {
+                effect: "glitch",
+                title: "Glitch Preview",
+                animated: true,
+                paramMap: {
+                    glitch_intensity: "glitch_intensity",
+                    rgb_shift: "rgb_shift",
+                    time: "time",
+                    shake_amount: "shake_amount",
+                    noise_amount: "noise_amount",
+                    scan_line_intensity: "scan_line_intensity"
+                }
+            },
+            "Koshi_Bloom": {
+                effect: "bloom",
                 title: "Bloom Preview",
-                paramMap: { 
+                paramMap: {
                     threshold: "threshold",
                     intensity: "intensity",
                     radius: "radius"
+                }
+            },
+
+            // Unified Effects node
+            "Koshi_Effects": {
+                effect: "glitch",
+                title: "Effects Preview",
+                animated: true,
+                dynamicEffect: {
+                    widget: "effect_type",
+                    mapping: {
+                        "dither": "dither_bayer",
+                        "bloom": "bloom",
+                        "glitch": "glitch",
+                        "hologram": "glitch",
+                        "video_glitch": "glitch",
+                        "scanlines": "dither_bayer",
+                        "chromatic": "glitch"
+                    }
+                },
+                paramMap: {
+                    intensity: "glitch_intensity",
+                    rgb_shift: "rgb_shift",
+                    bloom_threshold: "threshold",
+                    dither_levels: "levels"
                 }
             },
         };
@@ -1011,7 +1111,7 @@ app.registerExtension({
 });
 
 // ============================================================================
-// OLED SCREEN PREVIEW NODE (Koshi_OLEDScreen)
+// SIDKIT OLED SCREEN PREVIEW NODE (Koshi_OLEDScreen)
 // ============================================================================
 
 // Color mode mapping for the shader (WebGL preview only)
@@ -1036,15 +1136,15 @@ app.registerExtension({
     name: "Koshi.OLEDScreenPreview",
 
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
-        // Target the actual OLED screen node
-        if (nodeData.name !== "Koshi_OLEDScreen") return;
+        // Target SIDKIT OLED screen nodes (old and new names)
+        if (nodeData.name !== "Koshi_OLEDScreen" && nodeData.name !== "SIDKIT_OLEDScreen") return;
 
         const onNodeCreated = nodeType.prototype.onNodeCreated;
         nodeType.prototype.onNodeCreated = function() {
             if (onNodeCreated) onNodeCreated.apply(this, arguments);
 
             const widget = new KoshiPreviewWidget(this, "oled", {
-                title: "OLED Display Simulation",
+                title: "SIDKIT OLED Display",
                 width: 256,
                 height: 128,
                 oledBezel: true,
@@ -1071,11 +1171,162 @@ app.registerExtension({
                 hideOnZoom: false,
             });
 
-            domWidget.computeSize = (width) => [width, widget.getHeight() + 20];
+            domWidget.computeSize = (width) => [width, widget.getHeight() + 40];
             this.oledPreview = widget;
+
+            // Video playback state
+            this.videoFrames = [];
+            this.currentFrame = 0;
+            this.isPlaying = false;
+            this.playbackInterval = null;
+            this.fps = 12;
+
+            // Add video controls
+            this._createVideoControls();
 
             // Initial param sync
             this._syncOLEDPreviewParams();
+        };
+
+        // Create video playback controls
+        nodeType.prototype._createVideoControls = function() {
+            if (!this.oledPreview) return;
+
+            const container = this.oledPreview.getElement();
+
+            // Create controls bar
+            const controls = document.createElement("div");
+            controls.style.cssText = `
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                padding: 4px 8px;
+                background: #1a1a1a;
+                border-top: 1px solid #333;
+                font-family: monospace;
+                font-size: 10px;
+                color: #888;
+            `;
+
+            // Play/Pause button
+            const playBtn = document.createElement("button");
+            playBtn.textContent = "▶";
+            playBtn.title = "Play/Pause";
+            playBtn.style.cssText = `
+                background: #333;
+                border: 1px solid #555;
+                color: #0f0;
+                padding: 2px 8px;
+                cursor: pointer;
+                font-size: 10px;
+                border-radius: 3px;
+            `;
+            playBtn.onclick = () => this._togglePlayback();
+
+            // Frame counter
+            const frameInfo = document.createElement("span");
+            frameInfo.textContent = "0/0";
+            frameInfo.style.minWidth = "50px";
+            frameInfo.style.textAlign = "center";
+
+            // Frame slider
+            const slider = document.createElement("input");
+            slider.type = "range";
+            slider.min = 0;
+            slider.max = 0;
+            slider.value = 0;
+            slider.style.cssText = "width: 100px; accent-color: #0f0;";
+            slider.oninput = () => {
+                this.currentFrame = parseInt(slider.value);
+                this._showFrame(this.currentFrame);
+            };
+
+            // FPS control
+            const fpsLabel = document.createElement("span");
+            fpsLabel.textContent = "FPS:";
+            const fpsInput = document.createElement("input");
+            fpsInput.type = "number";
+            fpsInput.min = 1;
+            fpsInput.max = 60;
+            fpsInput.value = this.fps;
+            fpsInput.style.cssText = "width: 35px; background: #222; border: 1px solid #444; color: #0f0; text-align: center;";
+            fpsInput.onchange = () => {
+                this.fps = Math.max(1, Math.min(60, parseInt(fpsInput.value) || 12));
+                if (this.isPlaying) {
+                    this._stopPlayback();
+                    this._startPlayback();
+                }
+            };
+
+            controls.appendChild(playBtn);
+            controls.appendChild(frameInfo);
+            controls.appendChild(slider);
+            controls.appendChild(fpsLabel);
+            controls.appendChild(fpsInput);
+
+            container.appendChild(controls);
+
+            this._videoControls = { playBtn, frameInfo, slider, fpsInput };
+        };
+
+        nodeType.prototype._togglePlayback = function() {
+            if (this.isPlaying) {
+                this._stopPlayback();
+            } else {
+                this._startPlayback();
+            }
+        };
+
+        nodeType.prototype._startPlayback = function() {
+            if (this.videoFrames.length < 2) return;
+
+            this.isPlaying = true;
+            this._videoControls.playBtn.textContent = "⏸";
+
+            this.playbackInterval = setInterval(() => {
+                this.currentFrame = (this.currentFrame + 1) % this.videoFrames.length;
+                this._showFrame(this.currentFrame);
+            }, 1000 / this.fps);
+        };
+
+        nodeType.prototype._stopPlayback = function() {
+            this.isPlaying = false;
+            this._videoControls.playBtn.textContent = "▶";
+
+            if (this.playbackInterval) {
+                clearInterval(this.playbackInterval);
+                this.playbackInterval = null;
+            }
+        };
+
+        nodeType.prototype._showFrame = function(index) {
+            if (!this.videoFrames[index]) return;
+
+            this.oledPreview.setImage(this.videoFrames[index]);
+            this._videoControls.slider.value = index;
+            this._videoControls.frameInfo.textContent = `${index + 1}/${this.videoFrames.length}`;
+        };
+
+        nodeType.prototype._loadVideoFrames = function(images) {
+            this._stopPlayback();
+
+            this.videoFrames = images.map(img =>
+                `/view?filename=${encodeURIComponent(img.filename)}&type=${img.type}&subfolder=${encodeURIComponent(img.subfolder || "")}`
+            );
+
+            this.currentFrame = 0;
+            this._videoControls.slider.max = Math.max(0, this.videoFrames.length - 1);
+            this._videoControls.slider.value = 0;
+
+            if (this.videoFrames.length > 0) {
+                this._showFrame(0);
+            }
+
+            // Auto-play if video (more than 1 frame)
+            if (this.videoFrames.length > 1) {
+                this._startPlayback();
+            }
         };
 
         // Sync all widget values to preview params
@@ -1158,16 +1409,14 @@ app.registerExtension({
             this._syncOLEDPreviewParams?.();
         };
 
-        // Handle execution result - load the input image for preview
+        // Handle execution result - load all frames for video playback
         const onExecuted = nodeType.prototype.onExecuted;
         nodeType.prototype.onExecuted = function(message) {
             if (onExecuted) onExecuted.apply(this, arguments);
 
             if (this.oledPreview && message?.images?.length > 0) {
-                // Use the first output image (preview) as source
-                const img = message.images[0];
-                const url = `/view?filename=${encodeURIComponent(img.filename)}&type=${img.type}&subfolder=${encodeURIComponent(img.subfolder || "")}`;
-                this.oledPreview.setImage(url);
+                // Load all frames for video playback
+                this._loadVideoFrames(message.images);
             }
         };
 

@@ -376,11 +376,12 @@ class KoshiV2VMetadata:
         return {"ui": {"text": [f"Saved: {filepath}"]}}
 
 
+# Deprecated: KoshiV2VProcessor removed - use modular nodes with external KSampler
+
 NODE_CLASS_MAPPINGS = {
     "Koshi_ColorMatchLAB": KoshiColorMatchLAB,
     "Koshi_OpticalFlowWarp": KoshiOpticalFlowWarp,
     "Koshi_ImageBlend": KoshiImageBlend,
-    "Koshi_V2VProcessor": KoshiV2VProcessor,
     "Koshi_V2VMetadata": KoshiV2VMetadata,
 }
 
@@ -388,6 +389,5 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "Koshi_ColorMatchLAB": "▄▀▄ KN Color Match LAB",
     "Koshi_OpticalFlowWarp": "▄▀▄ KN Optical Flow Warp",
     "Koshi_ImageBlend": "▄▀▄ KN Image Blend",
-    "Koshi_V2VProcessor": "▄▀▄ KN V2V Processor [DEPRECATED]",
     "Koshi_V2VMetadata": "▄▀▄ KN V2V Metadata",
 }
