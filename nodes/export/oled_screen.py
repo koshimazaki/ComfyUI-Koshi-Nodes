@@ -1,6 +1,8 @@
 """OLED Screen Emulation, Scaling, and Sprite Sheet Generation."""
 import torch
 import numpy as np
+import os
+import uuid
 from typing import Tuple, List
 
 try:
@@ -8,6 +10,45 @@ try:
     PIL_AVAILABLE = True
 except ImportError:
     PIL_AVAILABLE = False
+
+# ComfyUI imports for preview
+try:
+    import folder_paths
+    COMFY_AVAILABLE = True
+except ImportError:
+    COMFY_AVAILABLE = False
+
+
+def save_images_for_preview(image_tensor):
+    """Save images to temp folder and return preview metadata."""
+    if not COMFY_AVAILABLE or not PIL_AVAILABLE:
+        return []
+
+    results = []
+    output_dir = folder_paths.get_temp_directory()
+
+    # Handle batch
+    if len(image_tensor.shape) == 4:
+        batch = image_tensor
+    else:
+        batch = image_tensor.unsqueeze(0)
+
+    for i in range(batch.shape[0]):
+        img_np = batch[i].cpu().numpy()
+        img_np = (np.clip(img_np, 0, 1) * 255).astype(np.uint8)
+
+        pil_img = PILImage.fromarray(img_np)
+        filename = f"koshi_oled_{uuid.uuid4().hex[:8]}_{i}.png"
+        filepath = os.path.join(output_dir, filename)
+        pil_img.save(filepath)
+
+        results.append({
+            "filename": filename,
+            "subfolder": "",
+            "type": "temp"
+        })
+
+    return results
 
 
 # Resolution presets for common OLED displays
@@ -286,8 +327,12 @@ class KoshiOLEDScreen:
         screen_w, screen_h = screen_sizes.get(screen_preset, (256, 128))
 
         if not resize_to_screen or not PIL_AVAILABLE:
-            # Pass through unchanged
-            return (images,)
+            # Pass through unchanged with preview
+            preview_images = save_images_for_preview(images)
+            return {
+                "ui": {"images": preview_images},
+                "result": (images,)
+            }
 
         # Resize to screen dimensions
         results = []
@@ -298,7 +343,12 @@ class KoshiOLEDScreen:
             result_np = np.array(pil_img).astype(np.float32) / 255.0
             results.append(torch.from_numpy(result_np))
 
-        return (torch.stack(results).to(images.device),)
+        output_tensor = torch.stack(results).to(images.device)
+        preview_images = save_images_for_preview(output_tensor)
+        return {
+            "ui": {"images": preview_images},
+            "result": (output_tensor,)
+        }
 
 
 class KoshiXBMExport:
@@ -421,6 +471,6 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "Koshi_PixelScaler": "░▒░ KN Pixel Scaler",
     "Koshi_SpriteSheet": "░▒░ KN Sprite Sheet",
-    "Koshi_OLEDScreen": "░▒░ KN OLED Screen",
+    "Koshi_OLEDScreen": "░▒░ SIDKIT OLED Screen",
     "Koshi_XBMExport": "░▒░ KN XBM Export",
 }

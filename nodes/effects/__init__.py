@@ -1,7 +1,15 @@
-"""Koshi Effects Nodes - Bloom, Glitch, Chromatic Aberration, Hologram, Raymarcher."""
+"""Koshi Effects Nodes - Unified effects + individual effect nodes."""
 
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
+
+# Unified Effects node (main)
+try:
+    from .koshi_effects import KoshiEffects
+    NODE_CLASS_MAPPINGS["Koshi_Effects"] = KoshiEffects
+    NODE_DISPLAY_NAME_MAPPINGS["Koshi_Effects"] = "░▀░ Koshi Effects"
+except ImportError:
+    pass
 
 # Import bloom
 try:

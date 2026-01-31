@@ -140,12 +140,12 @@ class KoshiFrameIterator:
         return (image, {"samples": latent}, frame_index, strength, motion_schedule)
 
 
+# Deprecated: KoshiAnimationPipeline removed - use modular nodes with external KSampler
+
 NODE_CLASS_MAPPINGS = {
-    "Koshi_AnimationPipeline": KoshiAnimationPipeline,
     "Koshi_FrameIterator": KoshiFrameIterator,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_AnimationPipeline": "▄▀▄ KN Animation Pipeline [DEPRECATED]",
     "Koshi_FrameIterator": "▄▀▄ KN Frame Iterator",
 }
