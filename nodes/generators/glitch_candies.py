@@ -43,7 +43,7 @@ class KoshiGlitchCandies:
                 "pattern": (cls.PATTERNS, {"default": "glitch_candies"}),
                 "time": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 100.0, "step": 0.01}),
                 "scale": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 10.0, "step": 0.1}),
-                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffff}),
             },
             "optional": {
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
@@ -431,7 +431,7 @@ class KoshiNoiseDisplace:
                 "strength": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 1.0, "step": 0.01}),
                 "scale": ("FLOAT", {"default": 10.0, "min": 1.0, "max": 100.0, "step": 1.0}),
                 "octaves": ("INT", {"default": 4, "min": 1, "max": 8}),
-                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffff}),
             },
             "optional": {
                 "time": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 100.0}),

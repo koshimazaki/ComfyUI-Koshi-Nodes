@@ -262,7 +262,7 @@ class KoshiV2VProcessor:
                 "denoise": ("FLOAT", {"default": 0.65, "min": 0.0, "max": 1.0, "step": 0.05}),
                 "steps": ("INT", {"default": 20, "min": 1, "max": 100}),
                 "cfg": ("FLOAT", {"default": 3.5, "min": 1.0, "max": 20.0}),
-                "seed": ("INT", {"default": 42, "min": 0, "max": 0xffffffffffffffff}),
+                "seed": ("INT", {"default": 42, "min": 0, "max": 0xffffffff}),
             },
             "optional": {
                 "reference_image": ("IMAGE",),

@@ -40,7 +40,7 @@ class KoshiAnimationPipeline:
                 "height": ("INT", {"default": 1024, "min": 64, "max": 4096, "step": 64}),
                 "steps": ("INT", {"default": 20, "min": 1, "max": 100}),
                 "cfg": ("FLOAT", {"default": 3.5, "min": 1.0, "max": 30.0, "step": 0.5}),
-                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffff}),
             },
             "optional": {
                 "motion_schedule": ("KOSHI_MOTION_SCHEDULE",),

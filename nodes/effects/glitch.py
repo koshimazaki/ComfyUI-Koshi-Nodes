@@ -83,7 +83,7 @@ class GlitchShaderNode:
                 "seed": ("INT", {
                     "default": 0,
                     "min": 0,
-                    "max": 0xffffffffffffffff
+                    "max": 0xffffffff
                 }),
             }
         }
