@@ -985,7 +985,7 @@ app.registerExtension({
             },
 
             // Effects nodes
-            "KoshiGlitchShader": {
+            "Koshi_Glitch": {
                 effect: "glitch",
                 title: "Glitch Preview",
                 animated: true,

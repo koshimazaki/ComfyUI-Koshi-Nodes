@@ -1,59 +1,23 @@
 """
-Glitch Candies Generator - Procedural 3D shapes, fractals, and noise patterns.
-Based on SIDKIT shader system with raymarched shapes and seamless loops.
+Glitch Candies - Unified procedural pattern generator.
+Combines 2D patterns, 3D raymarched shapes, morphing, and effects.
 """
-
 import torch
 import numpy as np
-import math
-import os
-import uuid
-from PIL import Image
 
-# ComfyUI imports for preview
-try:
-    import folder_paths
-    COMFY_AVAILABLE = True
-except ImportError:
-    COMFY_AVAILABLE = False
-
-
-def save_images_for_preview(image_tensor):
-    """Save images to temp folder and return preview metadata."""
-    if not COMFY_AVAILABLE:
-        return []
-
-    results = []
-    output_dir = folder_paths.get_temp_directory()
-
-    # Handle batch
-    if len(image_tensor.shape) == 4:
-        batch = image_tensor
-    else:
-        batch = image_tensor.unsqueeze(0)
-
-    for i in range(batch.shape[0]):
-        img_np = batch[i].cpu().numpy()
-        img_np = (np.clip(img_np, 0, 1) * 255).astype(np.uint8)
-
-        pil_img = Image.fromarray(img_np)
-        filename = f"koshi_preview_{uuid.uuid4().hex[:8]}_{i}.png"
-        filepath = os.path.join(output_dir, filename)
-        pil_img.save(filepath)
-
-        results.append({
-            "filename": filename,
-            "subfolder": "",
-            "type": "temp"
-        })
-
-    return results
+from .utils import save_preview
+from .patterns_2d import PATTERNS_2D, generate_2d
+from .patterns_3d import PATTERNS_3D, generate_3d, SDF_SHAPES
+from .effects import (
+    noise_displace, noise_overlay, apply_glitch_lines,
+    apply_scanlines, apply_vignette, colorize
+)
 
 
 class KoshiGlitchCandies:
     """
-    Generate procedural patterns and raymarched 3D shapes.
-    Perfect for masks, backgrounds, and animated textures.
+    Unified procedural pattern generator with live WebGL preview.
+    Generates 2D patterns, 3D raymarched shapes, with morphing and effects.
     """
     COLOR = "#1a1a1a"
     BGCOLOR = "#2d2d2d"
@@ -64,17 +28,11 @@ class KoshiGlitchCandies:
     RETURN_NAMES = ("image", "mask")
     OUTPUT_NODE = True
 
-    PATTERNS = [
-        # 2D Patterns
-        "waves", "circles", "plasma", "voronoi", "checkerboard",
-        "mandelbrot", "julia", "sierpinski", "swirl", "ripple",
-        # Glitch Candies (seamless loops)
-        "glitch_candies", "fbm_noise", "cell_noise", "distorted_grid",
-        "height_map", "glitch_cubes",
-        # Raymarched 3D
-        "rm_cube", "rm_sphere", "rm_torus", "rm_octahedron",
-        "rm_gyroid", "rm_menger",
-    ]
+    # All available patterns
+    ALL_PATTERNS = list(PATTERNS_2D.keys()) + PATTERNS_3D
+
+    # Shapes for morphing
+    SHAPES = list(SDF_SHAPES.keys())
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -82,342 +40,128 @@ class KoshiGlitchCandies:
             "required": {
                 "width": ("INT", {"default": 512, "min": 64, "max": 4096, "step": 64}),
                 "height": ("INT", {"default": 512, "min": 64, "max": 4096, "step": 64}),
-                "pattern": (cls.PATTERNS, {"default": "glitch_candies"}),
-                "time": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 100.0, "step": 0.01}),
+                "pattern": (cls.ALL_PATTERNS, {"default": "glitch_candies"}),
+                "time": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1000.0, "step": 0.01}),
                 "scale": ("FLOAT", {"default": 1.0, "min": 0.1, "max": 10.0, "step": 0.1}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffff}),
             },
             "optional": {
+                # Batch/Animation
                 "batch_size": ("INT", {"default": 1, "min": 1, "max": 64}),
-                "loop_frames": ("INT", {"default": 0, "min": 0, "max": 1000}),
-                # Camera controls for raymarched 3D shapes
+                "loop_frames": ("INT", {"default": 0, "min": 0, "max": 1000,
+                                        "tooltip": "Generate seamless loop (0 = disabled)"}),
+
+                # 3D Camera (for rm_* patterns and shape_morph)
                 "camera_distance": ("FLOAT", {"default": 3.0, "min": 1.0, "max": 10.0, "step": 0.1}),
                 "rotation_x": ("FLOAT", {"default": 0.0, "min": -180.0, "max": 180.0, "step": 1.0}),
                 "rotation_y": ("FLOAT", {"default": 0.0, "min": -180.0, "max": 180.0, "step": 1.0}),
+
+                # Shape Morphing (for shape_morph pattern)
+                "shape_a": (cls.SHAPES, {"default": "sphere"}),
+                "shape_b": (cls.SHAPES, {"default": "cube"}),
+                "morph_amount": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01,
+                                           "display": "slider"}),
+
+                # Noise Effects
+                "noise_displacement": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01,
+                                                  "display": "slider"}),
+                "noise_frequency": ("FLOAT", {"default": 3.0, "min": 0.5, "max": 20.0, "step": 0.5}),
+                "noise_overlay": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01,
+                                            "display": "slider"}),
+
+                # Post Effects
+                "glitch_lines": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01,
+                                           "display": "slider"}),
+                "scanlines": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01,
+                                        "display": "slider"}),
+                "vignette": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01,
+                                       "display": "slider"}),
+
+                # Color
+                "color_mode": (["grayscale", "cyan", "green", "amber", "purple", "red"],
+                               {"default": "grayscale"}),
             }
         }
 
-    def _hash(self, p):
-        """2D hash function."""
-        return np.fmod(np.sin(p[..., 0] * 127.1 + p[..., 1] * 311.7) * 43758.5453, 1.0)
+    def generate(self, width, height, pattern, time, scale, seed,
+                 batch_size=1, loop_frames=0,
+                 camera_distance=3.0, rotation_x=0.0, rotation_y=0.0,
+                 shape_a="sphere", shape_b="cube", morph_amount=0.0,
+                 noise_displacement=0.0, noise_frequency=3.0, noise_overlay_amt=0.0,
+                 glitch_lines=0.0, scanlines=0.0, vignette=0.0,
+                 color_mode="grayscale"):
 
-    def _value_noise(self, p, t):
-        """Value noise with time animation."""
-        i = np.floor(p).astype(int)
-        f = p - np.floor(p)
-        f = f * f * (3.0 - 2.0 * f)
-        
-        def h(offset):
-            ip = i + offset
-            return self._hash(ip) + 0.2 * np.sin(t + self._hash(ip) * 6.28318)
-        
-        a = h(np.array([0, 0]))
-        b = h(np.array([1, 0]))
-        c = h(np.array([0, 1]))
-        d = h(np.array([1, 1]))
-        
-        return (a * (1 - f[..., 0]) + b * f[..., 0]) * (1 - f[..., 1]) + \
-               (c * (1 - f[..., 0]) + d * f[..., 0]) * f[..., 1]
-
-    def _fbm(self, p, t, octaves=5):
-        """Fractal Brownian Motion."""
-        result = np.zeros_like(p[..., 0])
-        amp = 0.5
-        for i in range(octaves):
-            result += amp * self._value_noise(p, t + i * 0.5)
-            p = p * 2.0
-            amp *= 0.5
-        return result
-
-    def _generate_pattern(self, width, height, pattern, time, scale, seed,
-                          camera_dist=3.0, rot_x=0.0, rot_y=0.0):
-        """Generate a single frame of the pattern."""
-        np.random.seed(seed)
-
-        # Create UV coordinates
-        y, x = np.mgrid[0:height, 0:width]
-        uv = np.stack([x / width, y / height], axis=-1)
-        p = (uv - 0.5) * 2.0 * scale
-        aspect = width / height
-        
-        if pattern == "waves":
-            result = np.sin(uv[..., 0] * 20 + time) * np.sin(uv[..., 1] * 20 + time * 0.7)
-            result += np.sin(np.linalg.norm(uv - 0.5, axis=-1) * 30 - time * 2) * 0.5
-            result = result * 0.5 + 0.5
-            
-        elif pattern == "circles":
-            d = np.linalg.norm(uv - 0.5, axis=-1)
-            result = np.sin(d * 40 - time * 3) * 0.5 + 0.5
-            
-        elif pattern == "plasma":
-            v1 = np.sin(uv[..., 0] * 10 + time)
-            v2 = np.sin(uv[..., 1] * 10 + time * 1.2)
-            v3 = np.sin((uv[..., 0] + uv[..., 1]) * 10 + time * 0.8)
-            v4 = np.sin(np.linalg.norm(uv - 0.5, axis=-1) * 20 + time * 1.5)
-            result = (v1 + v2 + v3 + v4) * 0.25 + 0.5
-            
-        elif pattern == "voronoi":
-            loop_time = (time % 10.0) * 6.28318 / 10.0
-            vp = uv * 5.0
-            ip = np.floor(vp).astype(int)
-            fp = vp - np.floor(vp)
-            
-            min_d = np.ones((height, width)) * 8.0
-            for j in range(-1, 2):
-                for i in range(-1, 2):
-                    g = np.array([i, j])
-                    cell_id = ip + g
-                    h = self._hash(cell_id)
-                    o = 0.5 + 0.4 * np.sin(loop_time + h * 6.28318)
-                    r = g[np.newaxis, np.newaxis, :] + o[..., np.newaxis] - fp
-                    d = np.linalg.norm(r, axis=-1)
-                    min_d = np.minimum(min_d, d)
-            result = min_d
-            
-        elif pattern == "checkerboard":
-            cp = np.floor(uv * 16 + time * 2)
-            result = np.mod(cp[..., 0] + cp[..., 1], 2.0)
-            
-        elif pattern == "swirl":
-            sp = uv - 0.5
-            l = np.linalg.norm(sp, axis=-1)
-            angle = 6.0 * np.arctan2(sp[..., 1], sp[..., 0]) + time * 2.0
-            twist = 1.2
-            offset = 1.0 / np.maximum(l, 0.001) ** twist + angle / 6.28318
-            mid = np.clip(l ** twist, 0, 1)
-            result = np.fmod(offset, 1.0) * mid
-            
-        elif pattern == "ripple":
-            rp = uv - 0.5
-            dist = np.linalg.norm(rp, axis=-1)
-            result = np.sin(dist ** 1.7 * 20 - time * 3) * 0.5 + 0.5
-            
-        elif pattern == "glitch_candies":
-            loop_time = (time % 10.0) * 6.28318 / 10.0
-            gp = (uv - 0.5) * 8.0 * scale
-            
-            # FBM
-            fbm_val = self._fbm(gp, loop_time)
-            
-            # Voronoi
-            ip = np.floor(gp).astype(int)
-            fp = gp - np.floor(gp)
-            min_d = np.ones((height, width))
-            for j in range(-1, 2):
-                for i in range(-1, 2):
-                    g = np.array([i, j])
-                    cell_id = ip + g
-                    h = self._hash(cell_id)
-                    o = 0.5 + 0.4 * np.sin(loop_time + h * 6.28318)
-                    r = g[np.newaxis, np.newaxis, :] + o[..., np.newaxis] - fp
-                    d = np.linalg.norm(r, axis=-1)
-                    min_d = np.minimum(min_d, d)
-            
-            # Distorted grid
-            grid_p = gp + 0.5 * np.stack([
-                np.sin(gp[..., 1] * 2 + loop_time * 2),
-                np.cos(gp[..., 0] * 2 + loop_time * 1.5)
-            ], axis=-1)
-            grid_val = np.abs(np.fmod(grid_p, 1.0) - 0.5)
-            grid_line = 1 - np.clip(np.minimum(grid_val[..., 0], grid_val[..., 1]) / 0.1, 0, 1)
-            
-            height_val = fbm_val * 0.6 + min_d * 0.4
-            result = height_val * 0.7 + grid_line * 0.3
-            
-        elif pattern == "fbm_noise":
-            loop_time = (time % 10.0) * 6.28318 / 10.0
-            np_p = uv * 6.0 * scale
-            result = self._fbm(np_p, loop_time)
-            
-        elif pattern == "cell_noise":
-            loop_time = (time % 10.0) * 6.28318 / 10.0
-            cp = uv * 5.0 * scale
-            ip = np.floor(cp).astype(int)
-            fp = cp - np.floor(cp)
-            
-            f1 = np.ones((height, width))
-            f2 = np.ones((height, width))
-            
-            for j in range(-1, 2):
-                for i in range(-1, 2):
-                    g = np.array([i, j])
-                    cell_id = ip + g
-                    h = self._hash(cell_id)
-                    o = np.stack([
-                        0.5 + 0.4 * np.sin(loop_time + h * 6.28318),
-                        0.5 + 0.4 * np.cos(loop_time * 1.3 + h * 8.0)
-                    ], axis=-1)
-                    r = g[np.newaxis, np.newaxis, :] + o - fp
-                    d = np.linalg.norm(r, axis=-1)
-                    
-                    mask = d < f1
-                    f2 = np.where(mask, f1, np.minimum(f2, d))
-                    f1 = np.where(mask, d, f1)
-            
-            result = f2 - f1
-            
-        elif pattern == "distorted_grid":
-            loop_time = (time % 10.0) * 6.28318 / 10.0
-            dgp = (uv - 0.5) * 10.0 * scale
-            
-            distort = np.stack([
-                np.sin(dgp[..., 1] * 0.5 + loop_time * 2) * 1.5 +
-                np.sin(dgp[..., 1] * 2.0 - loop_time * 3) * 0.5,
-                np.cos(dgp[..., 0] * 0.5 + loop_time * 1.7) * 1.5 +
-                np.cos(dgp[..., 0] * 2.0 - loop_time * 2.5) * 0.5
-            ], axis=-1)
-            
-            grid_p = dgp + distort
-            grid_val = np.abs(np.fmod(grid_p, 1.0) - 0.5)
-            lines = np.clip(np.minimum(grid_val[..., 0], grid_val[..., 1]) / 0.03, 0, 1)
-            cell_shade = 0.3 + 0.7 * self._hash(np.floor(grid_p).astype(int))
-            result = lines * cell_shade
-            
-        elif pattern == "height_map":
-            loop_time = (time % 10.0) * 6.28318 / 10.0
-            hp = uv * 4.0 * scale
-            
-            height_val = self._fbm(hp, loop_time)
-            
-            eps = 0.01
-            h_l = self._fbm(hp - np.array([eps, 0]), loop_time)
-            h_r = self._fbm(hp + np.array([eps, 0]), loop_time)
-            h_u = self._fbm(hp + np.array([0, eps]), loop_time)
-            h_d = self._fbm(hp - np.array([0, eps]), loop_time)
-            
-            normal = np.stack([h_l - h_r, h_d - h_u, np.ones_like(h_l) * 0.1], axis=-1)
-            normal = normal / np.linalg.norm(normal, axis=-1, keepdims=True)
-            
-            light_dir = np.array([np.cos(loop_time), np.sin(loop_time), 1.0])
-            light_dir = light_dir / np.linalg.norm(light_dir)
-            
-            lighting = 0.3 + 0.7 * np.maximum(0, np.sum(normal * light_dir, axis=-1))
-            result = height_val * lighting
-            
-        elif pattern.startswith("rm_"):
-            # Raymarched 3D shapes with camera controls
-            result = self._raymarch_shape(width, height, pattern, time, scale, aspect,
-                                          camera_dist, rot_x, rot_y)
-            
-        else:
-            result = np.ones((height, width)) * 0.5
-        
-        return np.clip(result, 0, 1).astype(np.float32)
-
-    def _raymarch_shape(self, width, height, shape, time, scale, aspect,
-                        camera_dist=3.0, rot_x=0.0, rot_y=0.0):
-        """Raymarch 3D shapes with camera controls."""
-        loop_time = (time % 10.0) * 6.28318 / 10.0
-
-        y, x = np.mgrid[0:height, 0:width]
-        uv = np.stack([x / width, y / height], axis=-1)
-        p = (uv - 0.5) * 2.0
-        p[..., 0] *= aspect
-
-        # Ray setup with controllable camera distance
-        ro = np.array([0.0, 0.0, camera_dist])
-        rd = np.stack([p[..., 0], p[..., 1], np.full((height, width), -1.5)], axis=-1)
-        rd = rd / np.linalg.norm(rd, axis=-1, keepdims=True)
-
-        # Rotation from controls + time animation
-        angle_x = np.radians(rot_x) + loop_time * 0.7
-        angle_y = np.radians(rot_y) + loop_time
-        ca, sa = np.cos(angle_y), np.sin(angle_y)
-        cb, sb = np.cos(angle_x), np.sin(angle_x)
-        
-        result = np.zeros((height, width))
-        t = np.zeros((height, width))
-        hit = np.zeros((height, width), dtype=bool)
-        
-        for _ in range(64):
-            pos = ro + rd * t[..., np.newaxis]
-            
-            # Rotate
-            rp = pos.copy()
-            rp_xz = rp[..., [0, 2]].copy()
-            rp[..., 0] = rp_xz[..., 0] * ca - rp_xz[..., 1] * sa
-            rp[..., 2] = rp_xz[..., 0] * sa + rp_xz[..., 1] * ca
-            rp_yz = rp[..., [1, 2]].copy()
-            rp[..., 1] = rp_yz[..., 0] * cb - rp_yz[..., 1] * sb
-            rp[..., 2] = rp_yz[..., 0] * sb + rp_yz[..., 1] * cb
-            
-            # SDF based on shape
-            if shape == "rm_cube":
-                q = np.abs(rp) - 0.8
-                d = np.linalg.norm(np.maximum(q, 0), axis=-1) + np.minimum(np.maximum(q[..., 0], np.maximum(q[..., 1], q[..., 2])), 0)
-            elif shape == "rm_sphere":
-                bump = 0.15 * np.sin(rp[..., 0] * 8 + loop_time * 2) * np.sin(rp[..., 1] * 8) * np.sin(rp[..., 2] * 8)
-                d = np.linalg.norm(rp, axis=-1) - 1.0 - bump
-            elif shape == "rm_torus":
-                q = np.stack([np.linalg.norm(rp[..., [0, 2]], axis=-1) - 0.8, rp[..., 1]], axis=-1)
-                d = np.linalg.norm(q, axis=-1) - 0.3
-            elif shape == "rm_octahedron":
-                ap = np.abs(rp)
-                d = (ap[..., 0] + ap[..., 1] + ap[..., 2] - 1.2) * 0.577
-            elif shape == "rm_gyroid":
-                s = 3.0
-                gyroid = np.sin(rp[..., 0] * s) * np.cos(rp[..., 1] * s) + \
-                         np.sin(rp[..., 1] * s) * np.cos(rp[..., 2] * s) + \
-                         np.sin(rp[..., 2] * s) * np.cos(rp[..., 0] * s)
-                sphere = np.linalg.norm(rp, axis=-1) - 1.5
-                d = np.maximum(np.abs(gyroid) - 0.1, sphere)
-            elif shape == "rm_menger":
-                d = np.linalg.norm(np.maximum(np.abs(rp) - 1.0, 0), axis=-1)
-                s = 1.0
-                for _ in range(3):
-                    a = np.mod(rp * s, 2.0) - 1.0
-                    s *= 3.0
-                    r = np.abs(1.0 - 3.0 * np.abs(a))
-                    c = np.maximum(r[..., 0], np.maximum(r[..., 1], r[..., 2]))
-                    c = (c - 1.0) / s
-                    d = np.maximum(d, c)
-            else:
-                d = np.linalg.norm(rp, axis=-1) - 1.0
-            
-            new_hit = (~hit) & (d < 0.001)
-            hit |= new_hit
-            
-            t = np.where(hit | (t > 10), t, t + np.maximum(d, 0.001))
-        
-        # Lighting (simplified)
-        result = np.where(hit, 1.0 - t * 0.08, 0.0)
-        return np.clip(result, 0, 1).astype(np.float32)
-
-    def generate(self, width, height, pattern, time, scale, seed, batch_size=1, loop_frames=0,
-                 camera_distance=3.0, rotation_x=0.0, rotation_y=0.0):
         results = []
 
+        # Determine frame count
         if loop_frames > 0:
-            # Generate animation frames
-            for i in range(loop_frames):
-                frame_time = (i / loop_frames) * 10.0  # 10 second loop
-                frame = self._generate_pattern(width, height, pattern, frame_time, scale, seed,
-                                               camera_distance, rotation_x, rotation_y)
-                results.append(frame)
+            frame_count = loop_frames
+            time_step = 10.0 / loop_frames  # 10 second loop
         else:
-            # Generate batch with same time
-            for b in range(batch_size):
-                frame = self._generate_pattern(width, height, pattern, time, scale, seed + b,
-                                               camera_distance, rotation_x, rotation_y)
-                results.append(frame)
+            frame_count = batch_size
+            time_step = 0
 
-        # Stack and convert to RGB
-        grey_stack = np.stack(results)
-        rgb_stack = np.stack([grey_stack] * 3, axis=-1)
+        for i in range(frame_count):
+            frame_time = time + (i * time_step if loop_frames > 0 else 0)
+            frame_seed = seed + (i if loop_frames == 0 else 0)
+
+            # Generate base pattern
+            if pattern in PATTERNS_2D:
+                frame = generate_2d(pattern, width, height, frame_time, scale, frame_seed)
+            elif pattern.startswith("rm_") or pattern == "shape_morph":
+                frame = generate_3d(
+                    pattern, width, height, frame_time, scale, frame_seed,
+                    camera_distance, rotation_x, rotation_y,
+                    shape_a, shape_b, morph_amount,
+                    noise_displacement, noise_frequency
+                )
+            else:
+                frame = np.zeros((height, width))
+
+            # Apply noise displacement (for 2D patterns)
+            if noise_displacement > 0 and pattern in PATTERNS_2D:
+                frame = noise_displace(frame, noise_displacement, noise_frequency * 10,
+                                       4, frame_seed, frame_time)
+
+            # Apply noise overlay
+            if noise_overlay_amt > 0:
+                frame = noise_overlay(frame, noise_overlay_amt, noise_frequency, frame_time)
+
+            # Apply glitch lines
+            if glitch_lines > 0:
+                frame = apply_glitch_lines(frame, glitch_lines, frame_time)
+
+            # Colorize
+            frame_rgb = colorize(frame, color_mode)
+
+            # Apply scanlines (after color)
+            if scanlines > 0:
+                frame_rgb = apply_scanlines(frame_rgb, scanlines)
+
+            # Apply vignette
+            if vignette > 0:
+                frame_rgb = apply_vignette(frame_rgb, vignette)
+
+            results.append(frame_rgb.astype(np.float32))
+
+        # Stack results
+        rgb_stack = np.stack(results)
+        grey_stack = np.mean(rgb_stack, axis=-1)
 
         image_tensor = torch.from_numpy(rgb_stack)
         mask_tensor = torch.from_numpy(grey_stack)
 
-        # Return with preview UI
-        preview_images = save_images_for_preview(image_tensor)
+        # Return with preview
+        preview_images = save_preview(image_tensor, "glitch_candies")
         return {
             "ui": {"images": preview_images},
             "result": (image_tensor, mask_tensor)
         }
 
 
+# Keep utility nodes separate (they process input images)
 class KoshiShapeMorph:
-    """Morph between two patterns/shapes."""
+    """Blend between two input images with easing."""
     COLOR = "#1a1a1a"
     BGCOLOR = "#2d2d2d"
 
@@ -433,32 +177,21 @@ class KoshiShapeMorph:
             "required": {
                 "image_a": ("IMAGE",),
                 "image_b": ("IMAGE",),
-                "blend": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "blend": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01,
+                                    "display": "slider"}),
                 "blend_mode": (["linear", "smooth", "ease_in", "ease_out", "sine"],),
             }
         }
 
     def morph(self, image_a, image_b, blend, blend_mode):
-        # Apply easing
-        if blend_mode == "smooth":
-            t = blend * blend * (3 - 2 * blend)
-        elif blend_mode == "ease_in":
-            t = blend * blend
-        elif blend_mode == "ease_out":
-            t = 1 - (1 - blend) * (1 - blend)
-        elif blend_mode == "sine":
-            t = 0.5 - 0.5 * np.cos(blend * np.pi)
-        else:
-            t = blend
-        
-        # Morph
-        result = image_a * (1 - t) + image_b * t
-        
-        # Create mask from luminance
+        from .effects import blend_images
+
+        result = blend_images(image_a.numpy(), image_b.numpy(), blend, blend_mode)
+        result = torch.from_numpy(result.astype(np.float32))
+
         mask = result[..., 0] * 0.299 + result[..., 1] * 0.587 + result[..., 2] * 0.114
 
-        # Return with preview UI
-        preview_images = save_images_for_preview(result)
+        preview_images = save_preview(result, "morph")
         return {
             "ui": {"images": preview_images},
             "result": (result, mask)
@@ -466,7 +199,7 @@ class KoshiShapeMorph:
 
 
 class KoshiNoiseDisplace:
-    """Apply noise displacement to an image or mask."""
+    """Apply noise displacement to an image."""
     COLOR = "#1a1a1a"
     BGCOLOR = "#2d2d2d"
 
@@ -480,7 +213,8 @@ class KoshiNoiseDisplace:
         return {
             "required": {
                 "image": ("IMAGE",),
-                "strength": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 1.0, "step": 0.01}),
+                "strength": ("FLOAT", {"default": 0.1, "min": 0.0, "max": 1.0, "step": 0.01,
+                                       "display": "slider"}),
                 "scale": ("FLOAT", {"default": 10.0, "min": 1.0, "max": 100.0, "step": 1.0}),
                 "octaves": ("INT", {"default": 4, "min": 1, "max": 8}),
                 "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffff}),
@@ -490,296 +224,18 @@ class KoshiNoiseDisplace:
             }
         }
 
-    def _fbm(self, p, seed, octaves):
-        np.random.seed(seed)
-        result = np.zeros_like(p[..., 0])
-        amp = 0.5
-        for i in range(octaves):
-            noise = np.sin(p[..., 0] * 12.9898 + p[..., 1] * 78.233 + i) * 43758.5453
-            noise = np.fmod(noise, 1.0)
-            result += amp * noise
-            p = p * 2.0
-            amp *= 0.5
-        return result
-
     def displace(self, image, strength, scale, octaves, seed, time=0.0):
-        batch, height, width, channels = image.shape
         results = []
 
-        for b in range(batch):
+        for b in range(image.shape[0]):
             img = image[b].cpu().numpy()
-
-            # Create displacement field
-            y, x = np.mgrid[0:height, 0:width]
-            uv = np.stack([x / width, y / height], axis=-1) * scale
-
-            # Animated noise
-            uv_offset = np.array([time * 0.1, time * 0.07])
-
-            dx = self._fbm(uv + uv_offset, seed, octaves)
-            dy = self._fbm(uv + uv_offset + 100, seed + 1, octaves)
-
-            # Apply displacement
-            new_x = np.clip(x + dx * width * strength, 0, width - 1).astype(int)
-            new_y = np.clip(y + dy * height * strength, 0, height - 1).astype(int)
-
-            displaced = img[new_y, new_x]
+            displaced = noise_displace(img, strength, scale, octaves, seed + b, time)
             results.append(displaced)
 
-        output_tensor = torch.from_numpy(np.stack(results))
+        output_tensor = torch.from_numpy(np.stack(results).astype(np.float32))
 
-        # Return with preview UI
-        preview_images = save_images_for_preview(output_tensor)
+        preview_images = save_preview(output_tensor, "displace")
         return {
             "ui": {"images": preview_images},
             "result": (output_tensor,)
-        }
-
-
-class KoshiShapeCandies:
-    """
-    Shape Candies - Morphing 3D shapes with noise displacement and overlay.
-    Combines two SDF shapes with smooth blending, noise displacement, and texture overlay.
-    """
-    COLOR = "#1a1a1a"
-    BGCOLOR = "#2d2d2d"
-
-    CATEGORY = "Koshi/Generators"
-    FUNCTION = "generate"
-    RETURN_TYPES = ("IMAGE", "MASK")
-    RETURN_NAMES = ("image", "mask")
-    OUTPUT_NODE = True
-
-    SHAPES = [
-        "cube", "sphere", "torus", "octahedron", "gyroid", "menger",
-        "cylinder", "cone", "capsule", "pyramid"
-    ]
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "width": ("INT", {"default": 512, "min": 64, "max": 4096, "step": 64}),
-                "height": ("INT", {"default": 512, "min": 64, "max": 4096, "step": 64}),
-                "shape_a": (cls.SHAPES, {"default": "sphere"}),
-                "shape_b": (cls.SHAPES, {"default": "cube"}),
-                "morph_amount": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01,
-                                           "display": "slider"}),
-                "time": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 100.0, "step": 0.01}),
-            },
-            "optional": {
-                # Noise displacement
-                "noise_displacement": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01,
-                                                  "display": "slider"}),
-                "noise_frequency": ("FLOAT", {"default": 3.0, "min": 0.5, "max": 20.0, "step": 0.5}),
-                # Noise overlay
-                "noise_overlay": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 1.0, "step": 0.01,
-                                            "display": "slider"}),
-                "overlay_scale": ("FLOAT", {"default": 5.0, "min": 1.0, "max": 50.0, "step": 1.0}),
-                # Camera
-                "camera_distance": ("FLOAT", {"default": 3.0, "min": 1.0, "max": 10.0, "step": 0.1}),
-                "rotation_x": ("FLOAT", {"default": 0.0, "min": -180.0, "max": 180.0, "step": 1.0}),
-                "rotation_y": ("FLOAT", {"default": 0.0, "min": -180.0, "max": 180.0, "step": 1.0}),
-                # Animation
-                "loop_frames": ("INT", {"default": 0, "min": 0, "max": 1000}),
-                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
-            }
-        }
-
-    def _sdf_shape(self, rp, shape, time):
-        """Calculate SDF for a given shape."""
-        if shape == "cube":
-            q = np.abs(rp) - 0.8
-            return np.linalg.norm(np.maximum(q, 0), axis=-1) + \
-                   np.minimum(np.maximum(q[..., 0], np.maximum(q[..., 1], q[..., 2])), 0)
-
-        elif shape == "sphere":
-            return np.linalg.norm(rp, axis=-1) - 1.0
-
-        elif shape == "torus":
-            q = np.stack([np.linalg.norm(rp[..., [0, 2]], axis=-1) - 0.8, rp[..., 1]], axis=-1)
-            return np.linalg.norm(q, axis=-1) - 0.3
-
-        elif shape == "octahedron":
-            ap = np.abs(rp)
-            return (ap[..., 0] + ap[..., 1] + ap[..., 2] - 1.2) * 0.577
-
-        elif shape == "gyroid":
-            s = 3.0
-            gyroid = np.sin(rp[..., 0] * s) * np.cos(rp[..., 1] * s) + \
-                     np.sin(rp[..., 1] * s) * np.cos(rp[..., 2] * s) + \
-                     np.sin(rp[..., 2] * s) * np.cos(rp[..., 0] * s)
-            sphere = np.linalg.norm(rp, axis=-1) - 1.5
-            return np.maximum(np.abs(gyroid) - 0.1, sphere)
-
-        elif shape == "menger":
-            d = np.linalg.norm(np.maximum(np.abs(rp) - 1.0, 0), axis=-1)
-            s = 1.0
-            for _ in range(3):
-                a = np.mod(rp * s, 2.0) - 1.0
-                s *= 3.0
-                r = np.abs(1.0 - 3.0 * np.abs(a))
-                c = np.maximum(r[..., 0], np.maximum(r[..., 1], r[..., 2]))
-                c = (c - 1.0) / s
-                d = np.maximum(d, c)
-            return d
-
-        elif shape == "cylinder":
-            d_xz = np.linalg.norm(rp[..., [0, 2]], axis=-1) - 0.5
-            d_y = np.abs(rp[..., 1]) - 1.0
-            return np.minimum(np.maximum(d_xz, d_y), 0) + \
-                   np.linalg.norm(np.maximum(np.stack([d_xz, d_y], axis=-1), 0), axis=-1)
-
-        elif shape == "cone":
-            q = np.linalg.norm(rp[..., [0, 2]], axis=-1)
-            return np.maximum(q * 0.7 + rp[..., 1] * 0.7 - 0.5, -rp[..., 1] - 1.0)
-
-        elif shape == "capsule":
-            rp_clamped = rp.copy()
-            rp_clamped[..., 1] = np.clip(rp[..., 1], -0.5, 0.5)
-            return np.linalg.norm(rp - rp_clamped * np.array([0, 1, 0]), axis=-1) - 0.5
-
-        elif shape == "pyramid":
-            h = 1.2
-            m2 = h * h + 0.25
-            rp_abs = np.abs(rp)
-            rp_xz = np.where(rp_abs[..., 2:3] > rp_abs[..., 0:1],
-                             rp[..., [2, 1, 0]], rp[..., [0, 1, 2]])
-            rp_xz[..., 0] = np.abs(rp_xz[..., 0])
-            rp_xz[..., 2] = rp_xz[..., 2] - 0.5
-            q = np.stack([rp_xz[..., 2], h * rp_xz[..., 1] - 0.5 * rp_xz[..., 0],
-                          h * rp_xz[..., 0] + 0.5 * rp_xz[..., 1]], axis=-1)
-            s = np.maximum(-q[..., 0], 0.0)
-            t = np.clip((q[..., 1] - 0.5 * q[..., 0]) / (m2 + 0.25), 0.0, 1.0)
-            a = m2 * (q[..., 0] + s) ** 2 + q[..., 1] ** 2
-            b = m2 * (q[..., 0] + 0.5 * t) ** 2 + (q[..., 1] - m2 * t) ** 2
-            d2 = np.where(np.minimum(q[..., 1], -q[..., 0] * m2 - q[..., 1] * 0.5) > 0, 0.0,
-                          np.minimum(a, b))
-            return np.sqrt((d2 + q[..., 2] ** 2) / m2) * np.sign(np.maximum(q[..., 2], -rp[..., 1]))
-
-        return np.linalg.norm(rp, axis=-1) - 1.0
-
-    def _fbm_3d(self, p, time, octaves=4):
-        """3D FBM noise for displacement."""
-        result = np.zeros_like(p[..., 0])
-        amp = 0.5
-        freq = 1.0
-        for i in range(octaves):
-            n = np.sin(p[..., 0] * freq * 12.9898 + p[..., 1] * freq * 78.233 +
-                       p[..., 2] * freq * 45.164 + time + i * 100) * 43758.5453
-            result += amp * np.fmod(n, 1.0)
-            freq *= 2.0
-            amp *= 0.5
-        return result * 2.0 - 1.0  # Range -1 to 1
-
-    def _generate_frame(self, width, height, shape_a, shape_b, morph, time,
-                        noise_disp, noise_freq, noise_over, over_scale,
-                        cam_dist, rot_x, rot_y, seed):
-        """Generate a single frame."""
-        np.random.seed(seed)
-        loop_time = (time % 10.0) * 6.28318 / 10.0
-        aspect = width / height
-
-        # Create rays
-        y, x = np.mgrid[0:height, 0:width]
-        uv = np.stack([x / width, y / height], axis=-1)
-        p = (uv - 0.5) * 2.0
-        p[..., 0] *= aspect
-
-        ro = np.array([0.0, 0.0, cam_dist])
-        rd = np.stack([p[..., 0], p[..., 1], np.full((height, width), -1.5)], axis=-1)
-        rd = rd / np.linalg.norm(rd, axis=-1, keepdims=True)
-
-        # Rotation
-        angle_x = np.radians(rot_x) + loop_time * 0.7
-        angle_y = np.radians(rot_y) + loop_time
-        ca, sa = np.cos(angle_y), np.sin(angle_y)
-        cb, sb = np.cos(angle_x), np.sin(angle_x)
-
-        result = np.zeros((height, width))
-        t = np.zeros((height, width))
-        hit = np.zeros((height, width), dtype=bool)
-
-        # Smooth morph using smoothstep
-        morph_t = morph * morph * (3 - 2 * morph)
-
-        for _ in range(64):
-            pos = ro + rd * t[..., np.newaxis]
-
-            # Rotate position
-            rp = pos.copy()
-            rp_xz = rp[..., [0, 2]].copy()
-            rp[..., 0] = rp_xz[..., 0] * ca - rp_xz[..., 1] * sa
-            rp[..., 2] = rp_xz[..., 0] * sa + rp_xz[..., 1] * ca
-            rp_yz = rp[..., [1, 2]].copy()
-            rp[..., 1] = rp_yz[..., 0] * cb - rp_yz[..., 1] * sb
-            rp[..., 2] = rp_yz[..., 0] * sb + rp_yz[..., 1] * cb
-
-            # Apply noise displacement to position
-            if noise_disp > 0:
-                disp = self._fbm_3d(rp * noise_freq, loop_time) * noise_disp * 0.3
-                rp = rp + rd * disp[..., np.newaxis]
-
-            # Morph between two SDFs
-            d_a = self._sdf_shape(rp, shape_a, loop_time)
-            d_b = self._sdf_shape(rp, shape_b, loop_time)
-            d = d_a * (1 - morph_t) + d_b * morph_t
-
-            new_hit = (~hit) & (d < 0.002)
-            hit |= new_hit
-
-            t = np.where(hit | (t > 10), t, t + np.maximum(d, 0.002))
-
-        # Shading
-        result = np.where(hit, 1.0 - t * 0.08, 0.0)
-
-        # Apply noise overlay
-        if noise_over > 0:
-            y_grid, x_grid = np.mgrid[0:height, 0:width]
-            uv_noise = np.stack([x_grid / width, y_grid / height], axis=-1) * over_scale
-            overlay = np.sin(uv_noise[..., 0] * 12.9898 + uv_noise[..., 1] * 78.233 + loop_time) * 43758.5453
-            overlay = np.fmod(np.abs(overlay), 1.0)
-            result = result * (1 - noise_over) + result * overlay * noise_over + overlay * noise_over * 0.2
-
-        return np.clip(result, 0, 1).astype(np.float32)
-
-    def generate(self, width, height, shape_a, shape_b, morph_amount, time,
-                 noise_displacement=0.0, noise_frequency=3.0,
-                 noise_overlay=0.0, overlay_scale=5.0,
-                 camera_distance=3.0, rotation_x=0.0, rotation_y=0.0,
-                 loop_frames=0, seed=0):
-        results = []
-
-        if loop_frames > 0:
-            for i in range(loop_frames):
-                frame_time = (i / loop_frames) * 10.0
-                # Animate morph through the loop
-                frame_morph = morph_amount
-                if morph_amount > 0:
-                    # Oscillate morph if set
-                    frame_morph = (np.sin(frame_time * 0.628) + 1) * 0.5 * morph_amount
-                frame = self._generate_frame(
-                    width, height, shape_a, shape_b, frame_morph, frame_time,
-                    noise_displacement, noise_frequency, noise_overlay, overlay_scale,
-                    camera_distance, rotation_x, rotation_y, seed
-                )
-                results.append(frame)
-        else:
-            frame = self._generate_frame(
-                width, height, shape_a, shape_b, morph_amount, time,
-                noise_displacement, noise_frequency, noise_overlay, overlay_scale,
-                camera_distance, rotation_x, rotation_y, seed
-            )
-            results.append(frame)
-
-        grey_stack = np.stack(results)
-        rgb_stack = np.stack([grey_stack] * 3, axis=-1)
-
-        image_tensor = torch.from_numpy(rgb_stack)
-        mask_tensor = torch.from_numpy(grey_stack)
-
-        preview_images = save_images_for_preview(image_tensor)
-        return {
-            "ui": {"images": preview_images},
-            "result": (image_tensor, mask_tensor)
         }

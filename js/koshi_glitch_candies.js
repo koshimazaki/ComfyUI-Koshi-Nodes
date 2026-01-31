@@ -745,7 +745,7 @@ app.registerExtension({
     name: "Koshi.GlitchCandies.LivePreview",
 
     async nodeCreated(node) {
-        if (node.comfyClass === "KoshiGlitchCandies") {
+        if (node.comfyClass === "Koshi_GlitchCandies") {
             // Create preview widget
             const preview = new GlitchCandiesPreview(node);
             previews.set(node.id, preview);
@@ -775,7 +775,7 @@ app.registerExtension({
     },
 
     async beforeRegisterNodeDef(nodeType, nodeData) {
-        if (nodeData.name === "KoshiGlitchCandies") {
+        if (nodeData.name === "Koshi_GlitchCandies") {
             const originalOnRemoved = nodeType.prototype.onRemoved;
             nodeType.prototype.onRemoved = function() {
                 const preview = previews.get(this.id);
@@ -1058,46 +1058,5 @@ class ShapeCandiesPreview {
     }
 }
 
-// Store Shape Candies previews
-const shapePreviews = new Map();
-
-// Register Shape Candies extension
-app.registerExtension({
-    name: "Koshi.ShapeCandies.LivePreview",
-
-    async nodeCreated(node) {
-        if (node.comfyClass === "Koshi_ShapeCandies") {
-            const preview = new ShapeCandiesPreview(node);
-            shapePreviews.set(node.id, preview);
-
-            node.addDOMWidget("preview", "customwidget", preview.container, {
-                serialize: false,
-                hideOnZoom: false
-            });
-
-            node.size[0] = Math.max(node.size[0], 280);
-            node.size[1] = node.size[1] + 310;
-
-            const originalOnWidgetChange = node.onWidgetChange;
-            node.onWidgetChange = function(name, value) {
-                if (originalOnWidgetChange) originalOnWidgetChange.call(this, name, value);
-                const p = shapePreviews.get(this.id);
-                if (p && !p.isPlaying) p.render();
-            };
-        }
-    },
-
-    async beforeRegisterNodeDef(nodeType, nodeData) {
-        if (nodeData.name === "Koshi_ShapeCandies") {
-            const originalOnRemoved = nodeType.prototype.onRemoved;
-            nodeType.prototype.onRemoved = function() {
-                const preview = shapePreviews.get(this.id);
-                if (preview) {
-                    preview.destroy();
-                    shapePreviews.delete(this.id);
-                }
-                if (originalOnRemoved) originalOnRemoved.call(this);
-            };
-        }
-    }
-});
+// ShapeCandies functionality merged into Koshi_GlitchCandies
+// 3D shape preview uses ShapeCandiesPreview class when pattern starts with "rm_" or is "shape_morph"

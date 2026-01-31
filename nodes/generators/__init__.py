@@ -1,30 +1,27 @@
-"""Koshi Generator Nodes - Procedural patterns and 3D shapes."""
+"""Koshi Generator Nodes - Unified procedural pattern generator."""
 from .glitch_candies import (
     KoshiGlitchCandies,
     KoshiShapeMorph,
     KoshiNoiseDisplace,
-    KoshiShapeCandies,
 )
 
 NODE_CLASS_MAPPINGS = {
     "Koshi_GlitchCandies": KoshiGlitchCandies,
     "Koshi_ShapeMorph": KoshiShapeMorph,
     "Koshi_NoiseDisplace": KoshiNoiseDisplace,
-    "Koshi_ShapeCandies": KoshiShapeCandies,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_GlitchCandies": "▄█▄ KN Glitch Candies",
-    "Koshi_ShapeMorph": "▄█▄ KN Shape Morph",
-    "Koshi_NoiseDisplace": "▄█▄ KN Noise Displace",
-    "Koshi_ShapeCandies": "▄█▄ KN Shape Candies",
+    "Koshi_GlitchCandies": "▄█▄ Glitch Candies",
+    "Koshi_ShapeMorph": "▄█▄ Shape Morph",
+    "Koshi_NoiseDisplace": "▄█▄ Noise Displace",
 }
 
-# Import raymarcher from effects folder (generates content)
+# Import raymarcher from effects folder
 try:
     from ..effects.raymarcher import DitheringRaymarcher
     NODE_CLASS_MAPPINGS["Koshi_Raymarcher"] = DitheringRaymarcher
-    NODE_DISPLAY_NAME_MAPPINGS["Koshi_Raymarcher"] = "▄█▄ KN Raymarcher"
+    NODE_DISPLAY_NAME_MAPPINGS["Koshi_Raymarcher"] = "▄█▄ Raymarcher"
 except ImportError:
     pass
 
