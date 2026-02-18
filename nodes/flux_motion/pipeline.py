@@ -141,11 +141,9 @@ class KoshiFrameIterator:
 
 
 NODE_CLASS_MAPPINGS = {
-    "Koshi_AnimationPipeline": KoshiAnimationPipeline,
     "Koshi_FrameIterator": KoshiFrameIterator,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_AnimationPipeline": "▄▀▄ KN Animation Pipeline [DEPRECATED]",
     "Koshi_FrameIterator": "▄▀▄ KN Frame Iterator",
 }

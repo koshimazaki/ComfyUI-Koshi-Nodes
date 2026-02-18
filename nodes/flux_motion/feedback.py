@@ -35,6 +35,7 @@ class KoshiFeedback:
             },
             "optional": {
                 "denoise_strength": ("FLOAT", {"default": 0.65, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "auto_correct": ("BOOLEAN", {"default": False}),
             }
         }
 
@@ -48,6 +49,7 @@ class KoshiFeedback:
         sharpen_amount: float,
         contrast_boost: float,
         denoise_strength: float = 0.65,
+        auto_correct: bool = False,
     ):
         """Apply feedback enhancement pipeline."""
         # Convert to numpy for processing (B, H, W, C) -> (H, W, C)
@@ -55,6 +57,16 @@ class KoshiFeedback:
         reference_np = (reference_image[0].cpu().numpy() * 255).astype(np.uint8)
 
         result = current_np.copy()
+
+        # 0. Auto-correction: detect burn/blur and compensate
+        if auto_correct:
+            if self.detect_burn(result):
+                # Burned out frame — blend heavily with reference to recover
+                result = (result.astype(np.float32) * 0.3 +
+                         reference_np.astype(np.float32) * 0.7).astype(np.uint8)
+            if self.detect_blur(result):
+                # Blurry frame — force stronger sharpening
+                sharpen_amount = max(sharpen_amount, 0.3)
 
         # 1. Color matching (LAB space histogram matching)
         if color_match_strength > 0:
