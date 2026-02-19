@@ -105,7 +105,7 @@ class KoshiEffects:
 
                 # Common
                 "time": ("FLOAT", {"default": 0.0, "min": 0.0, "max": 100.0, "step": 0.01}),
-                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffffffffffff}),
+                "seed": ("INT", {"default": 0, "min": 0, "max": 0xffffffff}),
             }
         }
 

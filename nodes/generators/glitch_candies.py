@@ -9,7 +9,7 @@ from .utils import save_preview
 from .patterns_2d import PATTERNS_2D, generate_2d
 from .patterns_3d import PATTERNS_3D, generate_3d, SDF_SHAPES
 from .effects import (
-    noise_displace, noise_overlay, apply_glitch_lines,
+    noise_displace, noise_overlay as apply_noise_overlay, apply_glitch_lines,
     apply_scanlines, apply_vignette, colorize
 )
 
@@ -87,7 +87,7 @@ class KoshiGlitchCandies:
                  batch_size=1, loop_frames=0,
                  camera_distance=3.0, rotation_x=0.0, rotation_y=0.0,
                  shape_a="sphere", shape_b="cube", morph_amount=0.0,
-                 noise_displacement=0.0, noise_frequency=3.0, noise_overlay_amt=0.0,
+                 noise_displacement=0.0, noise_frequency=3.0, noise_overlay=0.0,
                  glitch_lines=0.0, scanlines=0.0, vignette=0.0,
                  color_mode="grayscale"):
 
@@ -124,8 +124,8 @@ class KoshiGlitchCandies:
                                        4, frame_seed, frame_time)
 
             # Apply noise overlay
-            if noise_overlay_amt > 0:
-                frame = noise_overlay(frame, noise_overlay_amt, noise_frequency, frame_time)
+            if noise_overlay > 0:
+                frame = apply_noise_overlay(frame, noise_overlay, noise_frequency, frame_time)
 
             # Apply glitch lines
             if glitch_lines > 0:
