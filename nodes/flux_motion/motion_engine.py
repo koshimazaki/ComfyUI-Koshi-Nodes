@@ -12,8 +12,8 @@ class KoshiMotionEngine:
 
     CATEGORY = "Koshi/Motion"
     FUNCTION = "process"
-    RETURN_TYPES = ("LATENT",)
-    RETURN_NAMES = ("latent",)
+    RETURN_TYPES = ("LATENT", "FLOAT")
+    RETURN_NAMES = ("latent", "denoise_strength")
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -29,6 +29,7 @@ class KoshiMotionEngine:
                 "motion_mask": ("MASK",),
                 "motion_schedule": ("KOSHI_MOTION_SCHEDULE",),
                 "frame_index": ("INT", {"default": 0, "min": 0, "max": 10000}),
+                "normalize_output": ("BOOLEAN", {"default": False}),
             }
         }
 
@@ -42,11 +43,13 @@ class KoshiMotionEngine:
         motion_mask: Optional[torch.Tensor] = None,
         motion_schedule: Optional[Dict] = None,
         frame_index: int = 0,
+        normalize_output: bool = False,
     ):
         """Apply motion transform to latent."""
         samples = latent["samples"].clone()
 
         # Get motion params from schedule if provided
+        denoise_strength = 0.65  # default
         if motion_schedule is not None and "motion_frames" in motion_schedule:
             frames = motion_schedule["motion_frames"]
             if 0 <= frame_index < len(frames):
@@ -55,6 +58,7 @@ class KoshiMotionEngine:
                 angle = mf.angle
                 translation_x = mf.translation_x
                 translation_y = mf.translation_y
+                denoise_strength = mf.strength
 
         motion_params = {
             "zoom": zoom,
@@ -63,8 +67,11 @@ class KoshiMotionEngine:
             "translation_y": translation_y,
         }
 
-        # Apply transform
-        transformed = apply_composite_transform(samples, motion_params)
+        # Apply transform (snap_to_8=True prevents DiT token misalignment blur,
+        # normalize=True prevents std drift in iterative feedback loops)
+        transformed = apply_composite_transform(
+            samples, motion_params, snap_to_8=True, normalize=normalize_output
+        )
 
         # Apply mask if provided (blend between original and transformed)
         if motion_mask is not None:
@@ -83,7 +90,7 @@ class KoshiMotionEngine:
             mask = mask.expand_as(samples)
             transformed = samples * (1 - mask) + transformed * mask
 
-        return ({"samples": transformed},)
+        return ({"samples": transformed}, denoise_strength)
 
 
 class KoshiMotionBatch:
@@ -131,7 +138,7 @@ class KoshiMotionBatch:
             else:
                 motion_params = {"zoom": 1.0, "angle": 0.0, "translation_x": 0.0, "translation_y": 0.0}
 
-            transformed = apply_composite_transform(sample, motion_params)
+            transformed = apply_composite_transform(sample, motion_params, snap_to_8=True)
             results.append(transformed)
 
         output = torch.cat(results, dim=0)

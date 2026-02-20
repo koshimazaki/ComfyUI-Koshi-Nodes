@@ -47,12 +47,18 @@ class KoshiSchedule:
             interpolation=interpolation
         )
 
-        # Apply easing if specified
-        if easing != "none" and easing in EASING_PRESETS:
+        # Apply easing to remap the interpolated values between keyframe endpoints.
+        # This curves the transition timing without changing start/end values.
+        if easing != "none" and easing in EASING_PRESETS and len(values) > 1:
             from .core import apply_easing
-            # Easing is applied to the normalized position, not values directly
-            # This affects how values transition between keyframes
-            pass  # Easing is already handled in interpolation for this version
+            first_val = values[0]
+            last_val = values[-1]
+            val_range = last_val - first_val
+            if abs(val_range) > 1e-9:
+                for i in range(len(values)):
+                    t = i / (len(values) - 1)
+                    eased_t = apply_easing(t, easing)
+                    values[i] = first_val + eased_t * val_range
 
         schedule = {
             "name": parameter_name,
