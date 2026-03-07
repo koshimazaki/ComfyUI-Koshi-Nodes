@@ -14,6 +14,7 @@ import pytest
 import torch
 
 from nodes.effects.glitch import GlitchShaderNode
+from tests.conftest import unwrap_output
 
 
 # ---------------------------------------------------------------------------
@@ -66,7 +67,7 @@ class TestOutputShape:
 
     def test_shape_preserved(self, node, single_image):
         result = node.apply_glitch(single_image, **GLITCH_DEFAULTS)
-        output = result[0]
+        output = unwrap_output(result)[0]
         assert output.shape == single_image.shape
 
 
@@ -79,7 +80,7 @@ class TestOutputRange:
 
     def test_output_within_unit_range(self, node, single_image):
         result = node.apply_glitch(single_image, **GLITCH_DEFAULTS)
-        output = result[0]
+        output = unwrap_output(result)[0]
         assert output.min().item() >= 0.0 - 1e-6
         assert output.max().item() <= 1.0 + 1e-6
 
@@ -119,7 +120,7 @@ class TestSeedReproducibility:
         node_b = GlitchShaderNode()
         result_a = node_a.apply_glitch(single_image, **GLITCH_DEFAULTS)
         result_b = node_b.apply_glitch(single_image, **GLITCH_DEFAULTS)
-        assert torch.allclose(result_a[0], result_b[0], atol=1e-6)
+        assert torch.allclose(unwrap_output(result_a)[0], unwrap_output(result_b)[0], atol=1e-6)
 
 
 # ===================================================================
@@ -155,12 +156,12 @@ class TestBatchProcessing:
 
     def test_batch_output_shape(self, node, batch_image):
         result = node.apply_glitch(batch_image, **GLITCH_DEFAULTS)
-        output = result[0]
+        output = unwrap_output(result)[0]
         assert output.shape == batch_image.shape
 
     def test_batch_output_range(self, node, batch_image):
         result = node.apply_glitch(batch_image, **GLITCH_DEFAULTS)
-        output = result[0]
+        output = unwrap_output(result)[0]
         assert output.min().item() >= 0.0 - 1e-6
         assert output.max().item() <= 1.0 + 1e-6
 
@@ -180,7 +181,7 @@ class TestZeroIntensity:
         params["noise_amount"] = 0.0
         params["scan_line_intensity"] = 0.0
         result = node.apply_glitch(single_image, **params)
-        output = result[0]
+        output = unwrap_output(result)[0]
         assert output.shape == single_image.shape
 
 
@@ -193,5 +194,5 @@ class TestOutputDtype:
 
     def test_dtype_float32(self, node, single_image):
         result = node.apply_glitch(single_image, **GLITCH_DEFAULTS)
-        output = result[0]
+        output = unwrap_output(result)[0]
         assert output.dtype == torch.float32

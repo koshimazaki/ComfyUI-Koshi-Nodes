@@ -16,9 +16,10 @@ import pytest
 import torch
 import numpy as np
 
-from nodes.export.sidkit import SIDKITExport
+from nodes.sidkit.export import SIDKITExport
 from nodes.export.oled_preview import KoshiOLEDPreview
 from nodes.export.oled_screen import KoshiPixelScaler, KoshiSpriteSheet, KoshiXBMExport
+from tests.conftest import unwrap_output
 
 
 # ---------------------------------------------------------------------------
@@ -41,13 +42,11 @@ class TestSIDKITExportSIDV:
     def test_sidv_creates_file(self, tmp_path):
         node = SIDKITExport()
         images = _make_image(batch=2, h=128, w=256)
-        result = node.export_sidkit(
+        result = node.export(
             images=images,
+            format="sidv",
             bit_depth="1-bit (mono)",
-            target_width=256,
-            target_height=128,
-            fps=30,
-            output_format="sidv",
+            screen_preset="SSD1363 256x128",
             filename="test_out",
             output_path=str(tmp_path),
         )
@@ -58,13 +57,11 @@ class TestSIDKITExportSIDV:
         """SIDV header must start with 'SIDK' magic bytes."""
         node = SIDKITExport()
         images = _make_image(batch=1, h=128, w=256)
-        result = node.export_sidkit(
+        result = node.export(
             images=images,
+            format="sidv",
             bit_depth="1-bit (mono)",
-            target_width=256,
-            target_height=128,
-            fps=30,
-            output_format="sidv",
+            screen_preset="SSD1363 256x128",
             filename="magic_test",
             output_path=str(tmp_path),
         )
@@ -77,32 +74,28 @@ class TestSIDKITExportSIDV:
     def test_sidv_returns_frame_count(self, tmp_path):
         node = SIDKITExport()
         images = _make_image(batch=3, h=64, w=128)
-        result = node.export_sidkit(
+        result = node.export(
             images=images,
+            format="sidv",
             bit_depth="1-bit (mono)",
-            target_width=128,
-            target_height=64,
-            fps=24,
-            output_format="sidv",
+            screen_preset="SSD1306 128x64",
             filename="count_test",
             output_path=str(tmp_path),
         )
-        assert result[1] == 3  # frame_count
+        assert result[2] == 3  # frame_count
 
     def test_sidv_file_size_positive(self, tmp_path):
         node = SIDKITExport()
         images = _make_image(batch=1, h=64, w=128)
-        result = node.export_sidkit(
+        result = node.export(
             images=images,
+            format="sidv",
             bit_depth="4-bit (16 levels)",
-            target_width=128,
-            target_height=64,
-            fps=30,
-            output_format="sidv",
+            screen_preset="SSD1306 128x64",
             filename="size_test",
             output_path=str(tmp_path),
         )
-        assert result[2] > 16  # at least header size
+        assert result[3] > 16  # at least header size
 
 
 class TestSIDKITExportXBM:
@@ -111,13 +104,11 @@ class TestSIDKITExportXBM:
     def test_xbm_creates_text_file(self, tmp_path):
         node = SIDKITExport()
         images = _make_image(batch=1, h=64, w=128)
-        result = node.export_sidkit(
+        result = node.export(
             images=images,
+            format="xbm",
             bit_depth="1-bit (mono)",
-            target_width=128,
-            target_height=64,
-            fps=30,
-            output_format="xbm",
+            screen_preset="SSD1306 128x64",
             filename="xbm_test",
             output_path=str(tmp_path),
         )
@@ -189,7 +180,7 @@ class TestKoshiOLEDPreview:
         """Output shape should be (B, screen_height*scale, screen_width*scale, 3)."""
         node = KoshiOLEDPreview()
         image = _make_image(batch=1, h=128, w=256)
-        result = node.preview(
+        result = unwrap_output(node.preview(
             image=image,
             screen_width=256,
             screen_height=128,
@@ -197,7 +188,7 @@ class TestKoshiOLEDPreview:
             dither=False,
             show_pixel_grid=False,
             scale=2,
-        )
+        ))
         output = result[0]
         assert output.shape == (1, 128 * 2, 256 * 2, 3)
 
@@ -205,7 +196,7 @@ class TestKoshiOLEDPreview:
         """With show_pixel_grid=True and scale>=2, border pixels should be dark."""
         node = KoshiOLEDPreview()
         image = torch.ones(1, 32, 32, 3, dtype=torch.float32)
-        result = node.preview(
+        result = unwrap_output(node.preview(
             image=image,
             screen_width=32,
             screen_height=32,
@@ -213,7 +204,7 @@ class TestKoshiOLEDPreview:
             dither=False,
             show_pixel_grid=True,
             scale=4,
-        )
+        ))
         output = result[0]
         # At scale=4, gap = max(1, 4//8) = 1
         # The last row of each 4-pixel block should be dark (gap line)
@@ -224,7 +215,7 @@ class TestKoshiOLEDPreview:
         """All output values must be in [0, 1]."""
         node = KoshiOLEDPreview()
         image = _make_image(batch=2, h=64, w=64)
-        result = node.preview(
+        result = unwrap_output(node.preview(
             image=image,
             screen_width=64,
             screen_height=64,
@@ -232,7 +223,7 @@ class TestKoshiOLEDPreview:
             dither=True,
             show_pixel_grid=False,
             scale=1,
-        )
+        ))
         output = result[0]
         assert output.min().item() >= 0.0
         assert output.max().item() <= 1.0

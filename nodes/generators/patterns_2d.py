@@ -36,11 +36,10 @@ def voronoi(uv, time, scale):
 
     for j in range(-1, 2):
         for i in range(-1, 2):
-            g = np.array([i, j])
             cell_id = np.stack([ip[..., 0] + i, ip[..., 1] + j], axis=-1)
             h = hash2d(cell_id)
             o = 0.5 + 0.4 * np.sin(loop_time + h * 6.28318)
-            r = g + o - fp
+            r = np.array([i, j]) + o[..., np.newaxis] - fp
             d = np.linalg.norm(r, axis=-1)
             min_d = np.minimum(min_d, d)
 
@@ -151,7 +150,7 @@ def glitch_candies(uv, time, scale):
             cell_id = np.stack([ip[..., 0] + i, ip[..., 1] + j], axis=-1)
             h = hash2d(cell_id)
             o = 0.5 + 0.4 * np.sin(loop_time + h * 6.28318)
-            r = np.array([i, j]) + o - fp
+            r = np.array([i, j]) + o[..., np.newaxis] - fp
             d = np.linalg.norm(r, axis=-1)
             min_d = np.minimum(min_d, d)
 
@@ -187,7 +186,7 @@ def cell_noise(uv, time, scale):
             cell_id = np.stack([ip[..., 0] + i, ip[..., 1] + j], axis=-1)
             h = hash2d(cell_id)
             o = 0.5 + 0.4 * np.sin(time + h * 6.28318)
-            r = np.array([i, j]) + o - fp
+            r = np.array([i, j]) + o[..., np.newaxis] - fp
             d = np.linalg.norm(r, axis=-1)
             new_min1 = np.minimum(min_d1, d)
             new_min2 = np.where(d < min_d1, min_d1, np.minimum(min_d2, d))

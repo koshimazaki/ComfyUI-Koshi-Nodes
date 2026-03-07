@@ -12,19 +12,19 @@ _SUFFIXES = [
     # Image processing
     "Dither", "Greyscale", "Binary",
     # Effects
-    "Bloom", "ChromaticAberration", "Hologram", "Scanlines", "VideoGlitch", "Glitch",
+    "Effects", "Bloom", "ChromaticAberration", "Hologram", "Scanlines", "VideoGlitch", "Glitch",
     # Export
-    "SIDKITScreen", "OLEDPreview", "PixelScaler", "SpriteSheet", "OLEDScreen", "XBMExport",
+    "OLEDPreview", "PixelScaler", "SpriteSheet", "OLEDScreen", "XBMExport",
     # Generators
     "GlitchCandies", "ShapeMorph", "NoiseDisplace",
     # Utility
-    "CaptureSettings", "SaveMetadata", "DisplayMetadata",
+    "Metadata", "CaptureSettings", "SaveMetadata", "DisplayMetadata",
     # Flux Motion
     "Schedule", "ScheduleMulti", "MotionEngine", "MotionBatch",
     "SemanticMotion", "Feedback", "FeedbackSimple",
-    "AnimationPipeline", "FrameIterator",
+    "FrameIterator",
     # V2V
-    "ColorMatchLAB", "OpticalFlowWarp", "ImageBlend", "V2VProcessor", "V2VMetadata",
+    "ColorMatchLAB", "OpticalFlowWarp", "ImageBlend", "V2VMetadata",
 ]
 EXPECTED = {_PFX + s for s in _SUFFIXES}
 
