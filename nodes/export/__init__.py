@@ -1,5 +1,4 @@
-"""Koshi Export Nodes - OLED screen emulation and SIDKIT export."""
-from .sidkit import SIDKITExport
+"""Koshi Export Nodes - OLED screen emulation, scaling, and sprite sheets."""
 from .oled_preview import KoshiOLEDPreview
 from .oled_screen import (
     KoshiPixelScaler,
@@ -9,11 +8,7 @@ from .oled_screen import (
 )
 
 NODE_CLASS_MAPPINGS = {
-    # SIDKIT export (renamed to Screen)
-    "Koshi_SIDKITScreen": SIDKITExport,
-    # Legacy OLED preview (keep for compatibility)
     "Koshi_OLEDPreview": KoshiOLEDPreview,
-    # New enhanced nodes
     "Koshi_PixelScaler": KoshiPixelScaler,
     "Koshi_SpriteSheet": KoshiSpriteSheet,
     "Koshi_OLEDScreen": KoshiOLEDScreen,
@@ -21,7 +16,6 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_SIDKITScreen": "░▒░ KN SIDKIT Screen",
     "Koshi_OLEDPreview": "░▒░ KN OLED Preview",
     "Koshi_PixelScaler": "░▒░ KN Pixel Scaler",
     "Koshi_SpriteSheet": "░▒░ KN Sprite Sheet",

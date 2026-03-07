@@ -1,32 +1,7 @@
 """Shared utilities for Glitch Candies generators."""
 import numpy as np
-import os
-import uuid
 
-try:
-    from PIL import Image
-    import folder_paths
-    PREVIEW_AVAILABLE = True
-except ImportError:
-    PREVIEW_AVAILABLE = False
-
-
-def save_preview(image_tensor, prefix="koshi"):
-    """Save images for ComfyUI preview."""
-    if not PREVIEW_AVAILABLE:
-        return []
-
-    results = []
-    output_dir = folder_paths.get_temp_directory()
-
-    batch = image_tensor if len(image_tensor.shape) == 4 else image_tensor.unsqueeze(0)
-    for i in range(batch.shape[0]):
-        img_np = (np.clip(batch[i].cpu().numpy(), 0, 1) * 255).astype(np.uint8)
-        filename = f"{prefix}_{uuid.uuid4().hex[:8]}_{i}.png"
-        Image.fromarray(img_np).save(os.path.join(output_dir, filename))
-        results.append({"filename": filename, "subfolder": "", "type": "temp"})
-
-    return results
+from ..utils.preview import save_images_for_preview as save_preview
 
 
 def hash2d(p):

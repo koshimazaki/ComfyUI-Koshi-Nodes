@@ -21,6 +21,7 @@ from nodes.effects.chromatic_aberration import KoshiChromaticAberration
 from nodes.effects.bloom import BloomShaderNode
 from nodes.generators.glitch_candies import KoshiGlitchCandies
 from nodes.export.oled_preview import KoshiOLEDPreview
+from tests.conftest import unwrap_output
 
 
 # ---------------------------------------------------------------------------
@@ -160,10 +161,11 @@ class TestGlitchCandiesToDither:
         dither_node = KoshiDither()
 
         # Stage 1: Generate pattern
-        gen_image, gen_mask = gen_node.generate(
+        gen_result = gen_node.generate(
             width=64, height=64, pattern="plasma",
             time=0.0, scale=1.0, seed=42,
         )
+        gen_image, gen_mask = unwrap_output(gen_result)
         assert gen_image.shape == (1, 64, 64, 3)
 
         # Ensure float32 (generator may return float64)
@@ -198,7 +200,7 @@ class TestGreyscaleToOLEDPreview:
         _validate_image_tensor(greyed, 1, 64, 64)
 
         # Stage 2: OLED Preview (requires PIL for resize)
-        (preview,) = oled_node.preview(
+        oled_result = oled_node.preview(
             greyed,
             screen_width=64,
             screen_height=32,
@@ -207,6 +209,7 @@ class TestGreyscaleToOLEDPreview:
             show_pixel_grid=True,
             scale=2,
         )
+        (preview,) = unwrap_output(oled_result)
         # Output is scaled: 32*2=64 height, 64*2=128 width
         assert preview.shape[0] == 1
         assert preview.shape[1] == 32 * 2  # screen_height * scale

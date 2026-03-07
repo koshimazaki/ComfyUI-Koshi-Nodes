@@ -144,8 +144,8 @@ class KoshiGlitchCandies:
 
             results.append(frame_rgb.astype(np.float32))
 
-        # Stack results
-        rgb_stack = np.stack(results)
+        # Stack results and clamp to valid range
+        rgb_stack = np.clip(np.stack(results), 0.0, 1.0)
         grey_stack = np.mean(rgb_stack, axis=-1)
 
         image_tensor = torch.from_numpy(rgb_stack)

@@ -6,6 +6,17 @@ import pytest
 import torch
 import numpy as np
 
+
+def unwrap_output(result):
+    """Unwrap ComfyUI node output — handles both tuple and OUTPUT_NODE dict format.
+
+    OUTPUT_NODE=True nodes return {"ui": {...}, "result": (tensor, ...)}
+    Normal nodes return (tensor, ...) directly.
+    """
+    if isinstance(result, dict) and "result" in result:
+        return result["result"]
+    return result
+
 # Ensure the package root is importable
 PACKAGE_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PACKAGE_ROOT not in sys.path:

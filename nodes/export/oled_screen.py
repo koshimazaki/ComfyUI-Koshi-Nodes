@@ -1,8 +1,6 @@
 """OLED Screen Emulation, Scaling, and Sprite Sheet Generation."""
 import torch
 import numpy as np
-import os
-import uuid
 from typing import Tuple, List
 
 try:
@@ -11,44 +9,7 @@ try:
 except ImportError:
     PIL_AVAILABLE = False
 
-# ComfyUI imports for preview
-try:
-    import folder_paths
-    COMFY_AVAILABLE = True
-except ImportError:
-    COMFY_AVAILABLE = False
-
-
-def save_images_for_preview(image_tensor):
-    """Save images to temp folder and return preview metadata."""
-    if not COMFY_AVAILABLE or not PIL_AVAILABLE:
-        return []
-
-    results = []
-    output_dir = folder_paths.get_temp_directory()
-
-    # Handle batch
-    if len(image_tensor.shape) == 4:
-        batch = image_tensor
-    else:
-        batch = image_tensor.unsqueeze(0)
-
-    for i in range(batch.shape[0]):
-        img_np = batch[i].cpu().numpy()
-        img_np = (np.clip(img_np, 0, 1) * 255).astype(np.uint8)
-
-        pil_img = PILImage.fromarray(img_np)
-        filename = f"koshi_oled_{uuid.uuid4().hex[:8]}_{i}.png"
-        filepath = os.path.join(output_dir, filename)
-        pil_img.save(filepath)
-
-        results.append({
-            "filename": filename,
-            "subfolder": "",
-            "type": "temp"
-        })
-
-    return results
+from ..utils.preview import save_images_for_preview
 
 
 # Resolution presets for common OLED displays

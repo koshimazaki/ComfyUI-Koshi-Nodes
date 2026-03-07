@@ -1,4 +1,4 @@
-"""Tests for nodes.flux_motion.pipeline -- KoshiAnimationPipeline and KoshiFrameIterator."""
+"""Tests for nodes.flux_motion.pipeline -- KoshiFrameIterator."""
 
 import os
 import sys
@@ -12,21 +12,15 @@ sys.path.insert(
 
 import pytest
 import torch
-import warnings
 
-from nodes.flux_motion.pipeline import KoshiAnimationPipeline, KoshiFrameIterator
+from nodes.flux_motion.pipeline import KoshiFrameIterator
 from nodes.flux_motion.core.schedule_parser import MotionFrame
-from tests.mocks.comfyui import MockVAE, MockModel, MockCLIP, mock_conditioning
+from tests.mocks.comfyui import MockVAE
 
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
-
-@pytest.fixture
-def pipeline_node():
-    return KoshiAnimationPipeline()
-
 
 @pytest.fixture
 def iterator_node():
@@ -36,21 +30,6 @@ def iterator_node():
 @pytest.fixture
 def vae():
     return MockVAE()
-
-
-@pytest.fixture
-def model():
-    return MockModel()
-
-
-@pytest.fixture
-def clip():
-    return MockCLIP()
-
-
-@pytest.fixture
-def cond():
-    return mock_conditioning()
 
 
 @pytest.fixture
@@ -71,47 +50,6 @@ def motion_schedule_4():
         ],
         "interpolation": "linear",
     }
-
-
-# ===================================================================
-# KoshiAnimationPipeline (DEPRECATED)
-# ===================================================================
-
-class TestAnimationPipelineDeprecated:
-    """Deprecated pipeline emits warning."""
-
-    def test_emits_deprecation_warning(self, pipeline_node, model, clip, vae, cond):
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            pipeline_node.generate(
-                model=model, clip=clip, vae=vae,
-                positive=cond, negative=cond,
-                num_frames=5, width=512, height=512,
-                steps=10, cfg=3.5, seed=42,
-            )
-            deprecation_warnings = [
-                x for x in w if issubclass(x.category, DeprecationWarning)
-            ]
-            assert len(deprecation_warnings) >= 1
-
-
-class TestAnimationPipelineReturns:
-    """Deprecated pipeline returns expected output types."""
-
-    def test_returns_list_tuple(self, pipeline_node, model, clip, vae, cond):
-        init_img = torch.rand(1, 64, 64, 3)
-        with warnings.catch_warnings(record=True):
-            warnings.simplefilter("always")
-            result = pipeline_node.generate(
-                model=model, clip=clip, vae=vae,
-                positive=cond, negative=cond,
-                num_frames=5, width=512, height=512,
-                steps=10, cfg=3.5, seed=42,
-                init_image=init_img,
-            )
-        # Returns ([images],) tuple
-        assert isinstance(result, tuple)
-        assert isinstance(result[0], list)
 
 
 # ===================================================================
