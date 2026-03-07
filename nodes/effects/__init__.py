@@ -1,9 +1,8 @@
-"""Koshi Effects Nodes - Unified effects + individual effect nodes."""
+"""Koshi Effects Nodes - Unified effects + shader nodes."""
 
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}
 
-# Unified Effects node (main)
 try:
     from .koshi_effects import KoshiEffects
     NODE_CLASS_MAPPINGS["Koshi_Effects"] = KoshiEffects
@@ -11,7 +10,6 @@ try:
 except ImportError:
     pass
 
-# Import bloom
 try:
     from .bloom import BloomShaderNode
     NODE_CLASS_MAPPINGS["Koshi_Bloom"] = BloomShaderNode
@@ -19,7 +17,6 @@ try:
 except ImportError:
     pass
 
-# Import chromatic aberration (alien.js)
 try:
     from .chromatic_aberration import KoshiChromaticAberration
     NODE_CLASS_MAPPINGS["Koshi_ChromaticAberration"] = KoshiChromaticAberration
@@ -27,19 +24,6 @@ try:
 except ImportError:
     pass
 
-# Import hologram effects (alien.js + CreaturesSite)
-try:
-    from .hologram import KoshiHologram, KoshiScanlines, KoshiVideoGlitch
-    NODE_CLASS_MAPPINGS["Koshi_Hologram"] = KoshiHologram
-    NODE_CLASS_MAPPINGS["Koshi_Scanlines"] = KoshiScanlines
-    NODE_CLASS_MAPPINGS["Koshi_VideoGlitch"] = KoshiVideoGlitch
-    NODE_DISPLAY_NAME_MAPPINGS["Koshi_Hologram"] = "░▀░ KN Hologram"
-    NODE_DISPLAY_NAME_MAPPINGS["Koshi_Scanlines"] = "░▀░ KN Scanlines"
-    NODE_DISPLAY_NAME_MAPPINGS["Koshi_VideoGlitch"] = "░▀░ KN Video Glitch"
-except ImportError:
-    pass
-
-# Import glitch
 try:
     from .glitch import GlitchShaderNode
     NODE_CLASS_MAPPINGS["Koshi_Glitch"] = GlitchShaderNode

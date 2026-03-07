@@ -10,21 +10,17 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _PFX = "Koshi_"
 _SUFFIXES = [
     # Image processing
-    "Dither", "Greyscale", "Binary",
+    "Dither", "DitheringFilter", "Greyscale", "Binary",
     # Effects
-    "Effects", "Bloom", "ChromaticAberration", "Hologram", "Scanlines", "VideoGlitch", "Glitch",
-    # Export
-    "OLEDPreview", "PixelScaler", "SpriteSheet", "OLEDScreen", "XBMExport",
+    "Effects", "Bloom", "ChromaticAberration", "Glitch",
+    # Export / SIDKIT
+    "OLEDScreen", "SpriteSheet",
     # Generators
-    "GlitchCandies", "ShapeMorph", "NoiseDisplace",
+    "GlitchCandies", "ShapeMorph", "NoiseDisplace", "Raymarcher",
     # Utility
-    "Metadata", "CaptureSettings", "SaveMetadata", "DisplayMetadata",
+    "Metadata",
     # Flux Motion
-    "Schedule", "ScheduleMulti", "MotionEngine", "MotionBatch",
-    "SemanticMotion", "Feedback", "FeedbackSimple",
-    "FrameIterator",
-    # V2V
-    "ColorMatchLAB", "OpticalFlowWarp", "ImageBlend", "V2VMetadata",
+    "Schedule", "MotionEngine", "Feedback",
 ]
 EXPECTED = {_PFX + s for s in _SUFFIXES}
 
@@ -79,7 +75,7 @@ class TestNodeRegistration:
 
     def test_minimum_count(self):
         mapping = _gather_class_map()
-        assert len(mapping) >= 30, f"Only {len(mapping)} registered, expected >=30"
+        assert len(mapping) >= 18, f"Only {len(mapping)} registered, expected >=18"
 
 
 class TestNodeInterface:

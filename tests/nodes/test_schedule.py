@@ -1,4 +1,4 @@
-"""Tests for nodes.flux_motion.schedule -- KoshiSchedule and KoshiScheduleMulti."""
+"""Tests for nodes.flux_motion.schedule -- KoshiSchedule."""
 
 import os
 import sys
@@ -13,23 +13,13 @@ sys.path.insert(
 import pytest
 import numpy as np
 
-from nodes.flux_motion.schedule import KoshiSchedule, KoshiScheduleMulti
+from nodes.flux_motion.schedule import KoshiSchedule
 
-
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
 
 @pytest.fixture
 def schedule_node():
     """KoshiSchedule instance."""
     return KoshiSchedule()
-
-
-@pytest.fixture
-def multi_node():
-    """KoshiScheduleMulti instance."""
-    return KoshiScheduleMulti()
 
 
 # ===================================================================
@@ -110,86 +100,3 @@ class TestKoshiScheduleSingleKeyframe:
             assert abs(v - 3.14) < 1e-4
 
 
-# ===================================================================
-# KoshiScheduleMulti
-# ===================================================================
-
-class TestKoshiScheduleMultiReturnKey:
-    """Returns dict with 'motion_frames' key."""
-
-    def test_returns_motion_frames_key(self, multi_node):
-        result = multi_node.parse(max_frames=30, interpolation="linear")
-        schedule = result[0]
-        assert "motion_frames" in schedule
-
-
-class TestKoshiScheduleMultiFrameCount:
-    """motion_frames length equals max_frames."""
-
-    def test_motion_frames_length(self, multi_node):
-        max_frames = 45
-        result = multi_node.parse(max_frames=max_frames, interpolation="linear")
-        schedule = result[0]
-        assert len(schedule["motion_frames"]) == max_frames
-
-
-class TestKoshiScheduleMultiZoomParsed:
-    """Zoom schedule is parsed into motion frames."""
-
-    def test_zoom_schedule_parsed(self, multi_node):
-        result = multi_node.parse(
-            max_frames=30,
-            interpolation="linear",
-            zoom="0:(1.0), 29:(2.0)",
-        )
-        frames = result[0]["motion_frames"]
-        assert abs(frames[0].zoom - 1.0) < 1e-4
-        assert abs(frames[-1].zoom - 2.0) < 1e-4
-
-
-class TestKoshiScheduleMultiDefaults:
-    """Default values used for unspecified schedule strings."""
-
-    def test_default_values(self, multi_node):
-        result = multi_node.parse(max_frames=10, interpolation="linear")
-        frame = result[0]["motion_frames"][0]
-        assert abs(frame.zoom - 1.0) < 1e-4
-        assert abs(frame.angle - 0.0) < 1e-4
-        assert abs(frame.translation_x - 0.0) < 1e-4
-        assert abs(frame.translation_y - 0.0) < 1e-4
-
-
-class TestKoshiScheduleMultiAttributes:
-    """Motion frames have correct attributes."""
-
-    def test_motion_frame_attributes(self, multi_node):
-        result = multi_node.parse(max_frames=10, interpolation="linear")
-        frame = result[0]["motion_frames"][0]
-        assert hasattr(frame, "zoom")
-        assert hasattr(frame, "angle")
-        assert hasattr(frame, "translation_x")
-        assert hasattr(frame, "translation_y")
-        assert hasattr(frame, "frame_index")
-
-
-class TestKoshiScheduleMultiInterpolation:
-    """Different interpolation methods work without error."""
-
-    @pytest.mark.parametrize("method", ["linear", "cubic", "step"])
-    def test_interpolation_methods(self, multi_node, method):
-        result = multi_node.parse(
-            max_frames=30,
-            interpolation=method,
-            zoom="0:(1.0), 29:(1.5)",
-        )
-        assert len(result[0]["motion_frames"]) == 30
-
-
-class TestKoshiScheduleMultiFrameIndex:
-    """All frames have correct sequential frame_index."""
-
-    def test_frame_indices_sequential(self, multi_node):
-        result = multi_node.parse(max_frames=20, interpolation="linear")
-        frames = result[0]["motion_frames"]
-        for i, frame in enumerate(frames):
-            assert frame.frame_index == i

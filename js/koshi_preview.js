@@ -1136,8 +1136,9 @@ app.registerExtension({
     name: "Koshi.OLEDScreenPreview",
 
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
-        // Target SIDKIT OLED screen nodes (old and new names)
-        if (nodeData.name !== "Koshi_OLEDScreen" && nodeData.name !== "SIDKIT_OLEDScreen") return;
+        // Target unified OLED screen node (and legacy aliases)
+        const oledNodes = ["Koshi_OLEDScreen", "SIDKIT_OLEDScreen", "SIDKIT_Export"];
+        if (!oledNodes.includes(nodeData.name)) return;
 
         const onNodeCreated = nodeType.prototype.onNodeCreated;
         nodeType.prototype.onNodeCreated = function() {
@@ -1363,6 +1364,12 @@ app.registerExtension({
                     case "custom_height":
                         customHeight = w.value;
                         break;
+                    case "bit_depth":
+                        if (w.value && w.value.includes("1-bit")) params.bitDepth = 1;
+                        else if (w.value && w.value.includes("2-bit")) params.bitDepth = 2;
+                        else if (w.value && w.value.includes("4-bit")) params.bitDepth = 4;
+                        else params.bitDepth = 8;
+                        break;
                     case "color_mode":
                         params.colorMode = OLED_COLOR_MODES[w.value] ?? 0;
                         break;
@@ -1377,6 +1384,15 @@ app.registerExtension({
                         break;
                     case "bloom_intensity":
                         params.bloomIntensity = w.value ?? 0.3;
+                        break;
+                    case "brightness":
+                        params.brightness = w.value ?? 0.0;
+                        break;
+                    case "contrast":
+                        params.contrast = w.value ?? 1.0;
+                        break;
+                    case "invert":
+                        params.invert = w.value ? 1 : 0;
                         break;
                 }
             }

@@ -2,84 +2,59 @@
  * Koshi Nodes Appearance
  * Sets node colors based on category
  *
- * Prefixes:
- * - Effects: ░▀░ KN (light, symmetric)
- * - Motion/V2V: ▄▀▄ KN (wave pattern)
- * - Generators: ▄█▄ KN (solid)
- * - SIDKIT: ░▒░ KN (orange brand)
- * - Utility: ◊ KN (diamond)
+ * Groups (18 nodes):
+ * - Effects (4):      ░▀░ KN — Bloom, Chromatic Aberration, Glitch, Effects
+ * - Generators (4):   ▄█▄    — Glitch Candies, Shape Morph, Noise Displace, Raymarcher
+ * - Flux Motion (3):  ▄▀▄ KN — Schedule, Motion Engine, Feedback
+ * - SIDKIT (6):       ░▒░ KN — OLED Screen, Sprite Sheet, Binary, Greyscale, Dither, Dithering Filter
+ * - Utility (1):      ◊      — Metadata
  */
 
 import { app } from "../../../scripts/app.js";
 
 // Color schemes
 const COLORS = {
-    // Effects - Graphite (░▀░)
-    effects: { color: "#1a1a1a", bgcolor: "#2d2d2d" },
-    // Motion/V2V - Graphite (▄▀▄)
-    motion: { color: "#1a1a1a", bgcolor: "#2d2d2d" },
-    // Generators - Graphite (▄█▄)
-    generators: { color: "#1a1a1a", bgcolor: "#2d2d2d" },
-    // SIDKIT/Export - Orange brand (░▒░)
-    sidkit: { color: "#FF9F43", bgcolor: "#1a1a1a" },
-    // Utility - Subtle graphite (◊)
-    utility: { color: "#252525", bgcolor: "#333333" },
-    // Deprecated - Reddish tint
-    deprecated: { color: "#4a1a1a", bgcolor: "#2d2d2d" },
+    // Effects — white on graphite (░▀░)
+    effects: { color: "#ffffff", bgcolor: "#2d2d2d" },
+    // Flux Motion — white on graphite (▄▀▄)
+    motion: { color: "#ffffff", bgcolor: "#2d2d2d" },
+    // Generators — white on graphite (▄█▄)
+    generators: { color: "#ffffff", bgcolor: "#2d2d2d" },
+    // SIDKIT/Export — black text on orange/white (░▒░)
+    sidkit: { color: "#FF9F43", bgcolor: "#ffffff" },
+    // Utility — white on subtle graphite (◊)
+    utility: { color: "#ffffff", bgcolor: "#333333" },
 };
 
 // Node to category mapping
 const NODE_CATEGORIES = {
     // Effects (░▀░)
+    "Koshi_Effects": "effects",
     "Koshi_Bloom": "effects",
-    "KoshiBloomShader": "effects",
     "Koshi_ChromaticAberration": "effects",
-    "Koshi_Hologram": "effects",
-    "Koshi_Scanlines": "effects",
-    "Koshi_VideoGlitch": "effects",
     "Koshi_Glitch": "effects",
-    "Koshi_Dither": "effects",
-    "Koshi_DitheringFilter": "effects",
 
-    // Generators (▄█▄) - creates content
+    // Generators (▄█▄)
     "Koshi_GlitchCandies": "generators",
     "Koshi_ShapeMorph": "generators",
     "Koshi_NoiseDisplace": "generators",
     "Koshi_Raymarcher": "generators",
-    "KoshiDitheringRaymarcher": "generators",
 
-    // Motion & V2V (▄▀▄) - animation/video
-    "Koshi_ColorMatchLAB": "motion",
-    "Koshi_OpticalFlowWarp": "motion",
-    "Koshi_ImageBlend": "motion",
-    "Koshi_V2VMetadata": "motion",
+    // Flux Motion (▄▀▄)
     "Koshi_Schedule": "motion",
-    "Koshi_ScheduleMulti": "motion",
     "Koshi_MotionEngine": "motion",
-    "Koshi_MotionBatch": "motion",
-    "Koshi_SemanticMotion": "motion",
     "Koshi_Feedback": "motion",
-    "Koshi_FeedbackSimple": "motion",
-    "Koshi_FrameIterator": "motion",
 
-    // Deprecated nodes (reddish)
-    "Koshi_V2VProcessor": "deprecated",
-    "Koshi_AnimationPipeline": "deprecated",
-
-    // SIDKIT/Export (░▒░) - orange brand
+    // SIDKIT/Export (░▒░)
+    "Koshi_OLEDScreen": "sidkit",
+    "Koshi_SpriteSheet": "sidkit",
     "Koshi_Binary": "sidkit",
     "Koshi_Greyscale": "sidkit",
-    "Koshi_OLEDScreen": "sidkit",
-    "Koshi_OLEDPreview": "sidkit",
-    "Koshi_PixelScaler": "sidkit",
-    "Koshi_SpriteSheet": "sidkit",
-    "Koshi_SIDKITScreen": "sidkit",
-    "Koshi_XBMExport": "sidkit",
+    "Koshi_Dither": "sidkit",
+    "Koshi_DitheringFilter": "sidkit",
 
     // Utility (◊)
-    "Koshi_CaptureSettings": "utility",
-    "Koshi_SaveMetadata": "utility",
-    "Koshi_DisplayMetadata": "utility",
+    "Koshi_Metadata": "utility",
 };
 
 app.registerExtension({

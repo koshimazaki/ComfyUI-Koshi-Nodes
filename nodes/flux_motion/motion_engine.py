@@ -86,64 +86,10 @@ class KoshiMotionEngine:
         return ({"samples": transformed},)
 
 
-class KoshiMotionBatch:
-    """Apply motion to a batch of latents using schedule."""
-    COLOR = "#1a1a1a"
-    BGCOLOR = "#2d2d2d"
-
-    CATEGORY = "Koshi/Motion"
-    FUNCTION = "process"
-    RETURN_TYPES = ("LATENT",)
-    RETURN_NAMES = ("latents",)
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "latent": ("LATENT",),
-                "motion_schedule": ("KOSHI_MOTION_SCHEDULE",),
-            },
-            "optional": {
-                "start_frame": ("INT", {"default": 0, "min": 0, "max": 10000}),
-            }
-        }
-
-    def process(
-        self,
-        latent: Dict,
-        motion_schedule: Dict,
-        start_frame: int = 0,
-    ):
-        """Apply motion transforms to all frames in batch."""
-        samples = latent["samples"]
-        batch_size = samples.shape[0]
-
-        motion_frames = motion_schedule.get("motion_frames", [])
-        results = []
-
-        for i in range(batch_size):
-            frame_idx = start_frame + i
-            sample = samples[i:i+1]
-
-            if frame_idx < len(motion_frames):
-                mf = motion_frames[frame_idx]
-                motion_params = mf.to_dict()
-            else:
-                motion_params = {"zoom": 1.0, "angle": 0.0, "translation_x": 0.0, "translation_y": 0.0}
-
-            transformed = apply_composite_transform(sample, motion_params)
-            results.append(transformed)
-
-        output = torch.cat(results, dim=0)
-        return ({"samples": output},)
-
-
 NODE_CLASS_MAPPINGS = {
     "Koshi_MotionEngine": KoshiMotionEngine,
-    "Koshi_MotionBatch": KoshiMotionBatch,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_MotionEngine": "▀▄▀ KN Motion Engine",
-    "Koshi_MotionBatch": "▀▄▀ KN Motion Batch",
+    "Koshi_MotionEngine": "▄▀▄ KN Motion Engine",
 }

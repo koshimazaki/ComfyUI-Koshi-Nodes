@@ -184,26 +184,6 @@ class TestGracefulDegradation:
         assert result[0].shape == (1, 32, 32, 3)
         assert result[0].dtype == torch.float32
 
-    def test_hologram_edge_detection_fallback(self):
-        """Hologram edge detection works with or without scipy."""
-        from nodes.effects.hologram import KoshiHologram
-        node = KoshiHologram()
-        img = _make_image(1, 32, 32, 3)
-        result = node.apply(
-            img,
-            color_preset="cyan",
-            scanline_intensity=0.3,
-            scanline_count=100,
-            glitch_intensity=0.1,
-            edge_glow=0.5,
-            grid_opacity=0.2,
-            grid_size=20,
-            alpha=0.9,
-            time=0.0,
-        )
-        assert result[0].shape == (1, 32, 32, 3)
-        assert result[0].dtype == torch.float32
-
     def test_binary_adaptive_fallback(self):
         """Binary adaptive threshold works (cumsum fallback if no scipy)."""
         from nodes.image.binary.nodes import KoshiBinary
@@ -217,24 +197,6 @@ class TestGracefulDegradation:
         # Binary output should contain only 0s and 1s
         unique_vals = torch.unique(result[0])
         assert all(v in [0.0, 1.0] for v in unique_vals.tolist())
-
-    def test_pixel_scaler_without_pil(self):
-        """PixelScaler returns input unchanged when PIL is not available."""
-        from nodes.export.oled_screen import KoshiPixelScaler, PIL_AVAILABLE
-        node = KoshiPixelScaler()
-        img = _make_image(1, 64, 64, 3)
-        if not PIL_AVAILABLE:
-            result = node.scale(
-                img, "SSD1306 128x64", 128, 64, "lanczos", True, "black"
-            )
-            assert torch.equal(result[0], img)
-        else:
-            # PIL is available -- just verify no crash
-            result = node.scale(
-                img, "SSD1306 128x64", 128, 64, "lanczos", True, "black"
-            )
-            assert result[0].ndim == 4
-            assert result[0].dtype == torch.float32
 
     def test_oled_screen_without_pil(self):
         """OLEDScreen returns input unchanged when PIL is not available."""
@@ -351,21 +313,3 @@ class TestBatchEdgeCases:
         # At t=0.5, linear blend of 0 and 1 should be ~0.5
         assert torch.allclose(output, torch.full_like(output, 0.5), atol=1e-5)
 
-    def test_hologram_batch(self):
-        """Hologram with multi-image batch produces correct count."""
-        from nodes.effects.hologram import KoshiHologram
-        node = KoshiHologram()
-        img = _make_image(4, 32, 32, 3)
-        result = node.apply(
-            img,
-            color_preset="cyan",
-            scanline_intensity=0.3,
-            scanline_count=50,
-            glitch_intensity=0.0,
-            edge_glow=0.2,
-            grid_opacity=0.1,
-            grid_size=10,
-            alpha=0.9,
-            time=0.0,
-        )
-        assert result[0].shape[0] == 4

@@ -35,6 +35,7 @@ class KoshiFeedback:
             },
             "optional": {
                 "denoise_strength": ("FLOAT", {"default": 0.65, "min": 0.0, "max": 1.0, "step": 0.05}),
+                "auto_correct": ("BOOLEAN", {"default": False}),
             }
         }
 
@@ -48,6 +49,7 @@ class KoshiFeedback:
         sharpen_amount: float,
         contrast_boost: float,
         denoise_strength: float = 0.65,
+        auto_correct: bool = False,
     ):
         """Apply feedback enhancement pipeline."""
         # Convert to numpy for processing (B, H, W, C) -> (H, W, C)
@@ -55,6 +57,17 @@ class KoshiFeedback:
         reference_np = (reference_image[0].cpu().numpy() * 255).astype(np.uint8)
 
         result = current_np.copy()
+
+        # 0. Auto-correct burn/blur if enabled
+        if auto_correct:
+            if self.detect_burn(result):
+                # Burned out: blend back toward reference
+                result = (result.astype(np.float32) * 0.3 +
+                          reference_np.astype(np.float32) * 0.7)
+                result = np.clip(result, 0, 255).astype(np.uint8)
+            elif self.detect_blur(result):
+                # Blurry: force minimum sharpening
+                sharpen_amount = max(sharpen_amount, 0.3)
 
         # 1. Color matching (LAB space histogram matching)
         if color_match_strength > 0:
@@ -187,42 +200,10 @@ class KoshiFeedback:
             return bool(gradient_var < threshold)
 
 
-class KoshiFeedbackSimple:
-    """Simplified feedback - just encode previous frame with optional noise."""
-    COLOR = "#1a1a1a"
-    BGCOLOR = "#2d2d2d"
-
-    CATEGORY = "Koshi/Motion"
-    FUNCTION = "process"
-    RETURN_TYPES = ("LATENT",)
-    RETURN_NAMES = ("latent",)
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "image": ("IMAGE",),
-                "vae": ("VAE",),
-                "noise_amount": ("FLOAT", {"default": 0.02, "min": 0.0, "max": 0.1, "step": 0.005}),
-            }
-        }
-
-    def process(self, image: torch.Tensor, vae, noise_amount: float):
-        """Encode image to latent with optional noise."""
-        if noise_amount > 0:
-            noise = torch.randn_like(image) * noise_amount
-            image = torch.clamp(image + noise, 0, 1)
-
-        encoded = vae.encode(image[:, :, :, :3])
-        return ({"samples": encoded},)
-
-
 NODE_CLASS_MAPPINGS = {
     "Koshi_Feedback": KoshiFeedback,
-    "Koshi_FeedbackSimple": KoshiFeedbackSimple,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_Feedback": "▀▄▀ KN Feedback",
-    "Koshi_FeedbackSimple": "▀▄▀ KN Feedback Simple",
+    "Koshi_Feedback": "▄▀▄ KN Feedback",
 }

@@ -1,7 +1,7 @@
-"""OLED Screen Emulation, Scaling, and Sprite Sheet Generation."""
+"""OLED Screen Emulation and Sprite Sheet Generation."""
 import torch
 import numpy as np
-from typing import Tuple, List
+from typing import Tuple
 
 try:
     from PIL import Image as PILImage
@@ -10,124 +10,6 @@ except ImportError:
     PIL_AVAILABLE = False
 
 from ..utils.preview import save_images_for_preview
-
-
-# Resolution presets for common OLED displays
-OLED_PRESETS = {
-    "SSD1306 128x64": (128, 64),
-    "SSD1306 128x32": (128, 32),
-    "SSD1309 128x64": (128, 64),
-    "SSD1322 256x64": (256, 64),
-    "SSD1363 256x128": (256, 128),
-    "SH1106 128x64": (128, 64),
-    "Custom": (0, 0),
-}
-
-# Region presets for 256x128 display
-REGION_PRESETS = {
-    "full": (0, 0, 256, 128),           # Full screen
-    "left_half": (0, 0, 128, 128),      # Left 128x128
-    "right_half": (128, 0, 128, 128),   # Right 128x128
-    "top_left_64": (0, 0, 64, 64),      # Top-left quadrant
-    "top_right_64": (64, 0, 64, 64),
-    "bottom_left_64": (0, 64, 64, 64),
-    "bottom_right_64": (64, 64, 64, 64),
-    "center_128": (64, 0, 128, 128),    # Centered 128x128
-    "left_64": (0, 32, 64, 64),         # Left side centered vertically
-    "right_64": (192, 32, 64, 64),      # Right side centered vertically
-    "custom": (0, 0, 0, 0),
-}
-
-SCALE_METHODS = ["nearest", "lanczos", "bilinear", "bicubic", "box"]
-
-
-class KoshiPixelScaler:
-    """
-    Scale images for pixel-perfect display on OLED screens.
-    Supports Lanczos downscaling from generated images to target resolution.
-    """
-    COLOR = "#FF9F43"
-    BGCOLOR = "#1a1a1a"
-
-    CATEGORY = "Koshi/Export"
-    FUNCTION = "scale"
-    RETURN_TYPES = ("IMAGE",)
-    RETURN_NAMES = ("scaled",)
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "images": ("IMAGE",),
-                "preset": (list(OLED_PRESETS.keys()),),
-                "custom_width": ("INT", {"default": 256, "min": 8, "max": 1024, "step": 8}),
-                "custom_height": ("INT", {"default": 128, "min": 8, "max": 1024, "step": 8}),
-                "method": (SCALE_METHODS, {"default": "lanczos"}),
-                "maintain_aspect": ("BOOLEAN", {"default": True}),
-                "fill_color": (["black", "white", "gray"],),
-            }
-        }
-
-    def scale(
-        self,
-        images: torch.Tensor,
-        preset: str,
-        custom_width: int,
-        custom_height: int,
-        method: str,
-        maintain_aspect: bool,
-        fill_color: str,
-    ) -> Tuple[torch.Tensor]:
-        if not PIL_AVAILABLE:
-            return (images,)
-
-        # Get target size
-        if preset == "Custom":
-            target_w, target_h = custom_width, custom_height
-        else:
-            target_w, target_h = OLED_PRESETS[preset]
-
-        # Map method to PIL
-        pil_methods = {
-            "nearest": PILImage.NEAREST,
-            "lanczos": PILImage.LANCZOS,
-            "bilinear": PILImage.BILINEAR,
-            "bicubic": PILImage.BICUBIC,
-            "box": PILImage.BOX,
-        }
-        resample = pil_methods.get(method, PILImage.LANCZOS)
-
-        fill_values = {"black": 0, "white": 255, "gray": 128}
-        fill = fill_values.get(fill_color, 0)
-
-        results = []
-        for b in range(images.shape[0]):
-            img_np = (images[b].cpu().numpy() * 255).astype(np.uint8)
-            pil_img = PILImage.fromarray(img_np)
-
-            if maintain_aspect:
-                # Calculate aspect-preserving size
-                src_w, src_h = pil_img.size
-                scale = min(target_w / src_w, target_h / src_h)
-                new_w = int(src_w * scale)
-                new_h = int(src_h * scale)
-
-                # Resize maintaining aspect
-                resized = pil_img.resize((new_w, new_h), resample)
-
-                # Create canvas and paste centered
-                canvas = PILImage.new("RGB", (target_w, target_h), (fill, fill, fill))
-                offset_x = (target_w - new_w) // 2
-                offset_y = (target_h - new_h) // 2
-                canvas.paste(resized, (offset_x, offset_y))
-                result = canvas
-            else:
-                result = pil_img.resize((target_w, target_h), resample)
-
-            result_np = np.array(result).astype(np.float32) / 255.0
-            results.append(torch.from_numpy(result_np))
-
-        return (torch.stack(results).to(images.device),)
 
 
 class KoshiSpriteSheet:
@@ -312,126 +194,12 @@ class KoshiOLEDScreen:
         }
 
 
-class KoshiXBMExport:
-    """
-    Export images directly to XBM format for embedded displays.
-    Supports variable names for direct C inclusion.
-    """
-    COLOR = "#FF9F43"
-    BGCOLOR = "#1a1a1a"
-
-    CATEGORY = "Koshi/Export"
-    FUNCTION = "export"
-    RETURN_TYPES = ("STRING",)
-    RETURN_NAMES = ("xbm_path",)
-    OUTPUT_NODE = True
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "images": ("IMAGE",),
-                "filename": ("STRING", {"default": "sprite"}),
-                "width": ("INT", {"default": 128, "min": 8, "max": 512, "step": 8}),
-                "height": ("INT", {"default": 64, "min": 8, "max": 256, "step": 8}),
-                "threshold": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.05}),
-                "invert": ("BOOLEAN", {"default": False}),
-            },
-            "optional": {
-                "output_path": ("STRING", {"default": ""}),
-            }
-        }
-
-    def export(
-        self,
-        images: torch.Tensor,
-        filename: str,
-        width: int,
-        height: int,
-        threshold: float,
-        invert: bool,
-        output_path: str = "",
-    ) -> Tuple[str]:
-        import os
-
-        if not PIL_AVAILABLE:
-            return ("Error: PIL not available",)
-
-        # Setup output directory
-        if output_path and os.path.isdir(output_path):
-            out_dir = output_path
-        else:
-            out_dir = os.path.join(os.path.expanduser("~"), "ComfyUI", "output", "xbm")
-        os.makedirs(out_dir, exist_ok=True)
-
-        # Sanitize filename
-        safe_name = "".join(c for c in filename if c.isalnum() or c == "_")
-        if not safe_name:
-            safe_name = "sprite"
-
-        batch_size = images.shape[0]
-        output_files = []
-
-        for idx in range(batch_size):
-            img_np = images[idx].cpu().numpy()
-
-            # Resize to target
-            pil_img = PILImage.fromarray((img_np * 255).astype(np.uint8))
-            pil_img = pil_img.resize((width, height), PILImage.NEAREST)
-
-            # Convert to grayscale and threshold
-            gray = pil_img.convert("L")
-            gray_np = np.array(gray).astype(np.float32) / 255.0
-            binary = (gray_np > threshold).astype(np.uint8)
-
-            if invert:
-                binary = 1 - binary
-
-            # Pack to bytes (MSB first, 8 pixels per byte)
-            pad_w = (8 - width % 8) % 8
-            if pad_w > 0:
-                binary = np.pad(binary, ((0, 0), (0, pad_w)), constant_values=0)
-
-            packed = np.zeros((height, binary.shape[1] // 8), dtype=np.uint8)
-            for bit in range(8):
-                packed |= (binary[:, bit::8] << bit)  # XBM uses LSB first!
-
-            packed_bytes = packed.flatten()
-
-            # Generate XBM content
-            frame_name = f"{safe_name}_{idx:04d}" if batch_size > 1 else safe_name
-            lines = [
-                f"#define {frame_name}_width {width}",
-                f"#define {frame_name}_height {height}",
-                f"static unsigned char {frame_name}_bits[] = {{"
-            ]
-
-            hex_values = [f"0x{b:02x}" for b in packed_bytes]
-            for i in range(0, len(hex_values), 12):
-                lines.append("   " + ", ".join(hex_values[i:i+12]) + ",")
-
-            lines.append("};")
-
-            # Write file
-            file_path = os.path.join(out_dir, f"{frame_name}.xbm")
-            with open(file_path, "w") as f:
-                f.write("\n".join(lines))
-
-            output_files.append(file_path)
-
-        return (output_files[0] if len(output_files) == 1 else out_dir,)
-
-
 NODE_CLASS_MAPPINGS = {
-    "Koshi_PixelScaler": KoshiPixelScaler,
     "Koshi_SpriteSheet": KoshiSpriteSheet,
     "Koshi_OLEDScreen": KoshiOLEDScreen,
-    "Koshi_XBMExport": KoshiXBMExport,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_PixelScaler": "░▒░ KN Pixel Scaler",
     "Koshi_SpriteSheet": "░▒░ KN Sprite Sheet",
-    "Koshi_OLEDScreen": "░▒░ SIDKIT OLED Screen",
-    "Koshi_XBMExport": "░▒░ KN XBM Export",
+    "Koshi_OLEDScreen": "░▒░ KN OLED Screen",
 }

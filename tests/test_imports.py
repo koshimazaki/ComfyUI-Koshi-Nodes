@@ -116,10 +116,6 @@ class TestGracefulDegradation:
         assert isinstance(MODERNGL_AVAILABLE, bool)
         assert isinstance(SCIPY_AVAILABLE, bool)
 
-    def test_hologram_scipy_flag(self):
-        from nodes.effects.hologram import SCIPY_AVAILABLE
-        assert isinstance(SCIPY_AVAILABLE, bool)
-
     def test_oled_screen_pil_flag(self):
         from nodes.export.oled_screen import PIL_AVAILABLE
         assert isinstance(PIL_AVAILABLE, bool)

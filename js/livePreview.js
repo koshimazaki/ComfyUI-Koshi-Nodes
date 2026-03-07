@@ -21,8 +21,6 @@ const PREVIEW_NODES = [
     "Koshi_Glitch",
     "Koshi_Raymarcher",
     // OLED/Export
-    "Koshi_OLEDScreen",
-    "Koshi_PixelScaler",
     "Koshi_SpriteSheet",
     // SIDKIT Image
     "Koshi_Dither",

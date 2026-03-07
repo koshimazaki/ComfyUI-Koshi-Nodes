@@ -1,4 +1,4 @@
-"""Tests for nodes.flux_motion.feedback -- KoshiFeedback and KoshiFeedbackSimple."""
+"""Tests for nodes.flux_motion.feedback -- KoshiFeedback."""
 
 import os
 import sys
@@ -13,24 +13,14 @@ sys.path.insert(
 import pytest
 import torch
 
-from nodes.flux_motion.feedback import KoshiFeedback, KoshiFeedbackSimple
+from nodes.flux_motion.feedback import KoshiFeedback
 from tests.mocks.comfyui import MockVAE
 
-
-# ---------------------------------------------------------------------------
-# Fixtures
-# ---------------------------------------------------------------------------
 
 @pytest.fixture
 def feedback_node():
     """KoshiFeedback instance."""
     return KoshiFeedback()
-
-
-@pytest.fixture
-def simple_node():
-    """KoshiFeedbackSimple instance."""
-    return KoshiFeedbackSimple()
 
 
 @pytest.fixture
@@ -150,46 +140,3 @@ class TestFeedbackNoiseInjection:
         assert diff > 0.001
 
 
-# ===================================================================
-# KoshiFeedbackSimple
-# ===================================================================
-
-class TestFeedbackSimpleReturnsLatent:
-    """Returns latent dict with 'samples' key."""
-
-    def test_returns_latent_dict(self, simple_node, image, vae):
-        result = simple_node.process(image=image, vae=vae, noise_amount=0.0)
-        latent = result[0]
-        assert isinstance(latent, dict)
-        assert "samples" in latent
-
-
-class TestFeedbackSimpleLatentShape:
-    """Latent shape is (B, 4, H//8, W//8)."""
-
-    def test_latent_shape(self, simple_node, image, vae):
-        result = simple_node.process(image=image, vae=vae, noise_amount=0.0)
-        samples = result[0]["samples"]
-        b, h, w, c = image.shape
-        assert samples.shape == (b, 4, h // 8, w // 8)
-
-
-class TestFeedbackSimpleMockVAE:
-    """Works with MockVAE without errors."""
-
-    def test_works_with_mock_vae(self, simple_node, image, vae):
-        result = simple_node.process(image=image, vae=vae, noise_amount=0.02)
-        assert result[0]["samples"] is not None
-
-
-class TestFeedbackSimpleNoiseEffect:
-    """Noise amount affects the encoded latent (different random seeds)."""
-
-    def test_noise_affects_output(self, simple_node, image, vae):
-        torch.manual_seed(0)
-        result_no = simple_node.process(image=image, vae=vae, noise_amount=0.0)
-        torch.manual_seed(0)
-        result_yes = simple_node.process(image=image, vae=vae, noise_amount=0.05)
-        # MockVAE produces random output, but the input image differs due to noise
-        # We verify the function completes successfully with both settings
-        assert result_no[0]["samples"].shape == result_yes[0]["samples"].shape

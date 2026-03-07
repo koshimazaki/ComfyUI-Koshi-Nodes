@@ -66,86 +66,10 @@ class KoshiSchedule:
         return (schedule,)
 
 
-class KoshiScheduleMulti:
-    """Parse multiple Deforum-style schedules for full motion control."""
-    COLOR = "#1a1a1a"
-    BGCOLOR = "#2d2d2d"
-
-    CATEGORY = "Koshi/Motion"
-    FUNCTION = "parse"
-    RETURN_TYPES = ("KOSHI_MOTION_SCHEDULE",)
-    RETURN_NAMES = ("motion_schedule",)
-
-    @classmethod
-    def INPUT_TYPES(cls):
-        return {
-            "required": {
-                "max_frames": ("INT", {"default": 120, "min": 1, "max": 10000}),
-                "interpolation": (["linear", "cubic", "step"],),
-            },
-            "optional": {
-                "zoom": ("STRING", {
-                    "multiline": True,
-                    "default": "0:(1.0)"
-                }),
-                "angle": ("STRING", {
-                    "multiline": True,
-                    "default": "0:(0)"
-                }),
-                "translation_x": ("STRING", {
-                    "multiline": True,
-                    "default": "0:(0)"
-                }),
-                "translation_y": ("STRING", {
-                    "multiline": True,
-                    "default": "0:(0)"
-                }),
-                "strength": ("STRING", {
-                    "multiline": True,
-                    "default": "0:(0.65)"
-                }),
-            }
-        }
-
-    def parse(
-        self,
-        max_frames: int,
-        interpolation: str,
-        zoom: str = "0:(1.0)",
-        angle: str = "0:(0)",
-        translation_x: str = "0:(0)",
-        translation_y: str = "0:(0)",
-        strength: str = "0:(0.65)",
-    ):
-        """Parse all motion schedules into unified motion data."""
-        from .core import parse_deforum_params
-
-        params = {
-            "zoom": zoom,
-            "angle": angle,
-            "translation_x": translation_x,
-            "translation_y": translation_y,
-            "strength": strength,
-        }
-
-        motion_frames = parse_deforum_params(params, max_frames, interpolation)
-
-        schedule = {
-            "frames": max_frames,
-            "motion_frames": motion_frames,
-            "interpolation": interpolation,
-            "params": params,
-        }
-
-        return (schedule,)
-
-
 NODE_CLASS_MAPPINGS = {
     "Koshi_Schedule": KoshiSchedule,
-    "Koshi_ScheduleMulti": KoshiScheduleMulti,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_Schedule": "▀▄▀ KN Schedule Parser",
-    "Koshi_ScheduleMulti": "▀▄▀ KN Multi-Schedule",
+    "Koshi_Schedule": "▄▀▄ KN Schedule",
 }
