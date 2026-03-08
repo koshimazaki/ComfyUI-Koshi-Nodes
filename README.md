@@ -59,29 +59,27 @@ Post-processing effects based on [alien.js](https://github.com/alienkitty/alien.
 
 | Node | Description |
 |------|-------------|
-| `░▀░ Koshi Effects` | **Unified effects node** — select from 7 effect types (dither, bloom, glitch, hologram, video glitch, scanlines, chromatic). Stack multiple to combine. |
+| `░▀░ Koshi Effects` | **Unified** — 7 effects: dither, bloom, glitch, hologram, video glitch, scanlines, chromatic. Stack to combine. |
 | `░▀░ KN Bloom` | Unreal-style bloom (GPU/CPU fallback) |
 | `░▀░ KN Chromatic` | RGB channel separation |
 | `░▀░ KN Glitch` | Shader-based glitch distortion |
-| `░▀░ KN Dither` | All dithering: bayer, floyd-steinberg, atkinson, halftone |
-
-**Koshi Effects types:** dither (4 methods), bloom, glitch, hologram (5 colors), video glitch, scanlines, chromatic aberration
+| `░▀░ KN Dither` | Bayer, floyd-steinberg, atkinson, halftone |
 
 ### Motion (3 nodes)
 Deforum-inspired animation engine for FLUX models.
 
 **Pipeline:**
 ```
-▄▀▄ Schedule → ▄▀▄ Motion Engine → KSampler
-                                      ↓
-                              ▄▀▄ Feedback (loop)
+▄▀▄ Schedule → ▄▀▄ Motion → KSampler
+                                ↓
+                        ▄▀▄ Feedback (loop)
 ```
 
 | Node | Description |
 |------|-------------|
-| `▄▀▄ KN Schedule` | Parse Deforum-style keyframe strings (`0:(1.0), 30:(0.5)`) with interpolation and easing |
-| `▄▀▄ KN Motion Engine` | Apply motion vectors and transforms to latents (zoom, angle, translation) |
-| `▄▀▄ KN Feedback` | Frame-to-frame coherence with color matching, sharpening, noise injection, auto-correct |
+| `▄▀▄ KN Schedule` | Parse keyframe strings (`0:(1.0), 30:(0.5)`) with interpolation and easing |
+| `▄▀▄ KN Motion` | Apply motion transforms to latents (zoom, angle, translation) |
+| `▄▀▄ KN Feedback` | Frame-to-frame coherence: color match, sharpen, noise, auto-correct |
 
 ### Generators (4 nodes)
 Procedural patterns, fractals, and raymarched 3D shapes.
@@ -91,7 +89,7 @@ Procedural patterns, fractals, and raymarched 3D shapes.
 | `▄█▄ Glitch Candies` | 22 patterns: waves, plasma, voronoi, fractals, raymarched 3D |
 | `▄█▄ Shape Morph` | Blend/morph between two images with easing |
 | `▄█▄ Noise Displace` | FBM noise displacement with animation |
-| `▄█▄ Raymarcher` | Dedicated raymarched 3D shapes with dithering (requires ModernGL) |
+| `▄█▄ Raymarcher` | Raymarched 3D shapes with dithering (requires ModernGL) |
 
 **Patterns:**
 - **2D:** waves, circles, plasma, voronoi, checkerboard, swirl, ripple
@@ -108,11 +106,11 @@ Nodes for [SIDKIT](https://sidkit.pages.dev/) synthesizer OLED displays (SSD1306
 
 | Node | Description |
 |------|-------------|
-| `░▒░ KN Binary` | Threshold methods (simple, adaptive, otsu, dither) + hex export for C headers |
-| `░▒░ KN Greyscale` | Greyscale conversion with bit depth quantization (1/2/4/8-bit) |
-| `░▀░ KN Dithering Filter (GPU)` | GPU-accelerated dithering filter |
-| `░▒░ KN OLED Screen` | OLED display viewer with screen presets and WebGL preview |
-| `░▒░ KN Sprite Sheet` | Combine frame sequence into sprite sheet grid |
+| `░▒░ KN Binary` | Threshold (simple, adaptive, otsu, dither) + hex export |
+| `░▒░ KN Greyscale` | Greyscale with bit depth quantization (1/2/4/8-bit) |
+| `░▀░ KN Dither GPU` | GPU-accelerated dithering filter |
+| `░▒░ KN OLED Screen` | OLED display viewer with screen presets |
+| `░▒░ KN Sprite Sheet` | Combine frames into sprite sheet grid |
 
 **OLED Presets:** SSD1306 128x64, SSD1306 128x32, SSD1363 256x128, custom
 
