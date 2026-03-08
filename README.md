@@ -12,7 +12,9 @@
 
 # ComfyUI-Koshi-Nodes
 
-Custom nodes for ComfyUI: **Flux Motion** (Deforum-inspired animation & V2V), **Effects** (hologram, bloom, glitch, dither), **Generators** (procedural patterns, raymarched 3D), and **SIDKIT Edition** (OLED/embedded display export).
+**18 focused nodes** for ComfyUI: **Motion** (Deforum-style animation), **Effects** (unified effects + standalone bloom/glitch/chromatic), **Generators** (procedural patterns, raymarched 3D), **SIDKIT** (OLED/embedded display export), and **Utility** (metadata capture).
+
+> Consolidated from 40 nodes down to 18 — same functionality, cleaner interface, fewer clicks.
 
 ## Installation
 
@@ -42,69 +44,54 @@ Includes: ComfyUI, Koshi Nodes, ComfyUI-Manager, VideoHelperSuite, ComfyUI-GGUF,
 
 Nodes are prefixed by category for easy identification:
 
-| Prefix | Category | Description |
-|--------|----------|-------------|
-| `░▀░ KN` | Effects | Hologram, bloom, glitch, chromatic aberration, dither |
-| `▄▀▄ KN` | Motion | V2V, color match, optical flow, semantic motion |
-| `▀▄▀ KN` | Motion Core | Schedule, motion engine, feedback |
-| `▄█▄ KN` | Generators | Procedural patterns, fractals, raymarched 3D |
-| `░▒░ KN` | SIDKIT | OLED display, binary, greyscale, export |
-| `◊ KN` | Utility | Metadata capture, settings save |
+| Prefix | Category | Nodes |
+|--------|----------|-------|
+| `░▀░` | Effects | Koshi Effects (unified), Bloom, Chromatic Aberration, Glitch, Dither |
+| `▄▀▄` | Motion | Schedule, Motion Engine, Feedback |
+| `▄█▄` | Generators | Glitch Candies, Shape Morph, Noise Displace, Raymarcher |
+| `░▒░` | SIDKIT/Export | Binary, Greyscale, Dithering Filter, OLED Screen, Sprite Sheet |
+| `◊` | Utility | Metadata |
 
-## Node Categories
+## All 18 Nodes
 
-### Flux Motion (V2V)
-Deforum-inspired animation engine and V2V processing for FLUX models.
-
-**Modular pipeline** (recommended):
-```
-▀▄▀ Schedule → ▀▄▀ Multi-Schedule → ▀▄▀ Motion Engine → KSampler
-                                                      ↓
-                                              ▀▄▀ Feedback (loop)
-```
-
-| Node | Description |
-|------|-------------|
-| `▀▄▀ KN Schedule Parser` | Parse Deforum-style keyframe strings (`0:(1.0), 30:(0.5)`) |
-| `▀▄▀ KN Multi-Schedule` | Combine multiple schedules (zoom, angle, translation) |
-| `▀▄▀ KN Motion Engine` | Apply motion vectors and transforms to latents |
-| `▀▄▀ KN Motion Batch` | Batch process motion across frame sequences |
-| `▀▄▀ KN Feedback` | Frame-to-frame coherence with color matching and enhancement |
-| `▀▄▀ KN Feedback Simple` | Lightweight feedback for quick iteration |
-| `▄▀▄ KN Semantic Motion` | Generate motion from text descriptions ("slow zoom in, pan left") |
-| `▄▀▄ KN Color Match LAB` | Match colors to anchor frame (LAB space) |
-| `▄▀▄ KN Optical Flow Warp` | Warp frames using optical flow |
-| `▄▀▄ KN Image Blend` | Blend images with configurable strength |
-| `▄▀▄ KN Frame Iterator` | Iterate frames for animation loops |
-| `▄▀▄ KN V2V Metadata` | Save V2V processing metadata alongside output |
-
-**Semantic Motion Presets:** zoom in/out, pan left/right/up/down, rotate, dolly, orbit, push/pull, spin, static
-
-### Effects
+### Effects (5 nodes)
 Post-processing effects based on [alien.js](https://github.com/alienkitty/alien.js) and custom shaders.
 
 | Node | Description |
 |------|-------------|
-| `░▀░ KN Hologram` | Full hologram (scanlines, glitch, edge glow, grid, color tint) |
-| `░▀░ KN Scanlines` | Horizontal/vertical scanlines |
-| `░▀░ KN Video Glitch` | RGB split glitch distortion |
-| `░▀░ KN Chromatic Aberration` | RGB channel separation |
+| `░▀░ Koshi Effects` | **Unified effects node** — select from 7 effect types (dither, bloom, glitch, hologram, video glitch, scanlines, chromatic). Stack multiple to combine. |
 | `░▀░ KN Bloom` | Unreal-style bloom (GPU/CPU fallback) |
+| `░▀░ KN Chromatic Aberration` | RGB channel separation |
 | `░▀░ KN Glitch` | Shader-based glitch distortion |
 | `░▀░ KN Dither` | All dithering: bayer, floyd-steinberg, atkinson, halftone |
-| `░▀░ KN Dithering Filter` | GPU-accelerated dithering filter |
 
-**Hologram presets:** cyan, red_error, green_matrix, purple, orange, white
+**Koshi Effects types:** dither (4 methods), bloom, glitch, hologram (5 colors), video glitch, scanlines, chromatic aberration
 
-### Generators
-Procedural patterns, fractals, and raymarched 3D shapes. Based on SIDKIT shader system.
+### Motion (3 nodes)
+Deforum-inspired animation engine for FLUX models.
+
+**Pipeline:**
+```
+▄▀▄ Schedule → ▄▀▄ Motion Engine → KSampler
+                                      ↓
+                              ▄▀▄ Feedback (loop)
+```
 
 | Node | Description |
 |------|-------------|
-| `▄█▄ KN Glitch Candies` | 22 patterns: waves, plasma, voronoi, fractals, raymarched 3D |
-| `▄█▄ KN Shape Morph` | Blend/morph between two patterns with easing |
-| `▄█▄ KN Noise Displace` | FBM noise displacement with animation |
-| `▄█▄ KN Raymarcher` | Dedicated raymarched 3D shapes with dithering |
+| `▄▀▄ KN Schedule` | Parse Deforum-style keyframe strings (`0:(1.0), 30:(0.5)`) with interpolation and easing |
+| `▄▀▄ KN Motion Engine` | Apply motion vectors and transforms to latents (zoom, angle, translation) |
+| `▄▀▄ KN Feedback` | Frame-to-frame coherence with color matching, sharpening, noise injection, auto-correct |
+
+### Generators (4 nodes)
+Procedural patterns, fractals, and raymarched 3D shapes.
+
+| Node | Description |
+|------|-------------|
+| `▄█▄ Glitch Candies` | 22 patterns: waves, plasma, voronoi, fractals, raymarched 3D |
+| `▄█▄ Shape Morph` | Blend/morph between two images with easing |
+| `▄█▄ Noise Displace` | FBM noise displacement with animation |
+| `▄█▄ Raymarcher` | Dedicated raymarched 3D shapes with dithering (requires ModernGL) |
 
 **Patterns:**
 - **2D:** waves, circles, plasma, voronoi, checkerboard, swirl, ripple
@@ -116,48 +103,37 @@ All patterns support `loop_frames` for seamless animation loops.
 
 **3D Camera Controls:** Raymarched shapes have `rotation_x`, `rotation_y`, and `camera_distance` inputs for orbital control.
 
-### Utility
-Metadata capture, workflow settings, and helper nodes.
+### SIDKIT / Export (5 nodes)
+Nodes for [SIDKIT](https://sidkit.pages.dev/) synthesizer OLED displays (SSD1306, SSD1363) and export.
 
 | Node | Description |
 |------|-------------|
-| `◊ KN Capture Settings` | Extract all workflow settings as JSON (seed, steps, model, prompts) |
-| `◊ KN Save Metadata` | Save metadata JSON to file with timestamp |
-| `◊ KN Display Metadata` | Display metadata in UI |
+| `░▒░ KN Binary` | Threshold methods (simple, adaptive, otsu, dither) + hex export for C headers |
+| `░▒░ KN Greyscale` | Greyscale conversion with bit depth quantization (1/2/4/8-bit) |
+| `░▀░ KN Dithering Filter (GPU)` | GPU-accelerated dithering filter |
+| `░▒░ KN OLED Screen` | OLED display viewer with screen presets and WebGL preview |
+| `░▒░ KN Sprite Sheet` | Combine frame sequence into sprite sheet grid |
 
-**Captured params:** seed, steps, cfg, sampler, scheduler, model, LoRAs, positive/negative prompts, dimensions
-
-### SIDKIT Edition
-Nodes optimized for [SIDKIT](https://sidkit.pages.dev/) synthesizer OLED displays (SSD1306, SSD1363).
-
-| Node | Description |
-|------|-------------|
-| `░▒░ KN Binary` | Threshold methods + hex export for C headers |
-| `░▒░ KN Greyscale` | Greyscale conversion with bit depth quantization |
-| `░▒░ KN OLED Screen` | OLED emulator with region presets |
-| `░▒░ KN OLED Preview` | Inline OLED preview in node |
-| `░▒░ KN Pixel Scaler` | Lanczos/nearest scaling to OLED resolutions |
-| `░▒░ KN Sprite Sheet` | Combine frames into sprite grid |
-| `░▒░ KN XBM Export` | Export frames as XBM format |
-| `░▒░ KN SIDKIT Screen` | Export to .sidv/.xbm/.h for Teensy |
-
-**OLED Presets:** SSD1306 128x64, SSD1363 256x128, custom
-
-**Region Presets:** full, left_half (128x128), right_half, quadrants (64x64)
+**OLED Presets:** SSD1306 128x64, SSD1306 128x32, SSD1363 256x128, custom
 
 **Bit Depths:** 1-bit (2), 2-bit (4), 4-bit (16), 8-bit (256)
+
+### Utility (1 node)
+| Node | Description |
+|------|-------------|
+| `◊ Koshi Metadata` | **Unified metadata node** — capture workflow settings, display, and save as JSON/text. Extracts seed, steps, cfg, model, LoRAs, prompts. |
 
 ## Project Structure
 
 ```
 ComfyUI-Koshi-Nodes/
 ├── nodes/
-│   ├── effects/        # Hologram, bloom, glitch, chromatic aberration
-│   ├── export/         # OLED screen, SIDKIT export, sprite sheets, XBM
-│   ├── flux_motion/    # Motion engine, schedule, feedback, V2V, semantic
+│   ├── effects/        # Koshi Effects (unified), bloom, glitch, chromatic aberration, raymarcher
+│   ├── export/         # OLED screen, sprite sheet
+│   ├── flux_motion/    # Schedule, motion engine, feedback
 │   │   └── core/       # Interpolation, easing, transforms
 │   ├── generators/     # Glitch Candies, shape morph, noise displace, raymarcher
-│   ├── utility/        # Metadata capture, settings save
+│   ├── utility/        # Metadata (unified capture/display/save)
 │   ├── utils/          # Shared utilities (tensor ops, metadata)
 │   ├── audio/          # (Reserved for future audio-reactive nodes)
 │   └── image/          # SIDKIT Edition
@@ -171,7 +147,7 @@ ComfyUI-Koshi-Nodes/
 
 ## Live Preview & WebGL
 
-31 nodes include **inline live preview** directly in the node UI - no Preview Image node needed.
+Most nodes include **inline live preview** directly in the node UI - no Preview Image node needed.
 
 - Toggle preview on/off per node
 - Batch preview (first 4 frames, "+N more" indicator)
@@ -199,26 +175,26 @@ In `workflows/`:
 
 ## Quick Pipelines
 
-**Motion Animation (modular):**
+**Motion Animation:**
 ```
-▀▄▀ Schedule → ▀▄▀ Multi-Schedule → ▀▄▀ Motion Engine → KSampler
-                                                      ↓
-                                              ▀▄▀ Feedback (loop)
-```
-
-**Semantic Motion:**
-```
-▄▀▄ Semantic Motion ("zoom in, pan left") → ▀▄▀ Motion Engine → KSampler
+▄▀▄ Schedule → ▄▀▄ Motion Engine → KSampler
+                                      ↓
+                              ▄▀▄ Feedback (loop)
 ```
 
-**Hologram Effect:**
+**Stacked Effects:**
 ```
-Image → ░▀░ Hologram → ░▀░ Chromatic Aberration → ░▀░ Bloom
+Image → ░▀░ Koshi Effects (hologram) → ░▀░ Koshi Effects (chromatic) → ░▀░ KN Bloom
 ```
 
 **SIDKIT OLED Export:**
 ```
-Image → ░▒░ Pixel Scaler → ░▀░ Dither → ░▒░ OLED Screen → ░▒░ SIDKIT Screen
+Image → ░▒░ KN Greyscale → ░▀░ KN Dither → ░▒░ KN OLED Screen → ░▒░ KN Sprite Sheet
+```
+
+**Generator → Effect → Export:**
+```
+▄█▄ Glitch Candies → ░▀░ Koshi Effects (scanlines) → ░▒░ KN Sprite Sheet
 ```
 
 ## Dependencies
@@ -228,7 +204,7 @@ Image → ░▒░ Pixel Scaler → ░▀░ Dither → ░▒░ OLED Screen 
 **Optional:**
 - `moderngl` - GPU effects
 - `scipy` - Better dithering/edge detection
-- `opencv-python` - Optical flow for V2V motion mode
+- `opencv-python` - Color matching in Feedback node (LAB space)
 
 ## Credits
 
