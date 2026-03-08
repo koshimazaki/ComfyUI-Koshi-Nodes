@@ -20,7 +20,7 @@ except ImportError:
 try:
     from .chromatic_aberration import KoshiChromaticAberration
     NODE_CLASS_MAPPINGS["Koshi_ChromaticAberration"] = KoshiChromaticAberration
-    NODE_DISPLAY_NAME_MAPPINGS["Koshi_ChromaticAberration"] = "░▀░ KN Chromatic Aberration"
+    NODE_DISPLAY_NAME_MAPPINGS["Koshi_ChromaticAberration"] = "░▀░ KN Chromatic"
 except ImportError:
     pass
 

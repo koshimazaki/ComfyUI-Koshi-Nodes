@@ -46,7 +46,7 @@ Nodes are prefixed by category for easy identification:
 
 | Prefix | Category | Nodes |
 |--------|----------|-------|
-| `░▀░` | Effects | Koshi Effects (unified), Bloom, Chromatic Aberration, Glitch, Dither |
+| `░▀░` | Effects | Koshi Effects (unified), Bloom, Chromatic, Glitch, Dither |
 | `▄▀▄` | Motion | Schedule, Motion Engine, Feedback |
 | `▄█▄` | Generators | Glitch Candies, Shape Morph, Noise Displace, Raymarcher |
 | `░▒░` | SIDKIT/Export | Binary, Greyscale, Dithering Filter, OLED Screen, Sprite Sheet |
@@ -61,7 +61,7 @@ Post-processing effects based on [alien.js](https://github.com/alienkitty/alien.
 |------|-------------|
 | `░▀░ Koshi Effects` | **Unified effects node** — select from 7 effect types (dither, bloom, glitch, hologram, video glitch, scanlines, chromatic). Stack multiple to combine. |
 | `░▀░ KN Bloom` | Unreal-style bloom (GPU/CPU fallback) |
-| `░▀░ KN Chromatic Aberration` | RGB channel separation |
+| `░▀░ KN Chromatic` | RGB channel separation |
 | `░▀░ KN Glitch` | Shader-based glitch distortion |
 | `░▀░ KN Dither` | All dithering: bayer, floyd-steinberg, atkinson, halftone |
 
