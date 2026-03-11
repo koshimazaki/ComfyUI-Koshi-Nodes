@@ -8,7 +8,6 @@ https://github.com/hughsk/glsl-dither
 
 import torch
 import numpy as np
-import os
 from pathlib import Path
 
 # Optional ModernGL import (GPU required for raymarching)
@@ -128,7 +127,7 @@ class DitheringRaymarcher:
             if self.prog is not None:
                 try:
                     self.prog.release()
-                except:
+                except Exception:
                     pass
 
             self.prog = self.ctx.program(

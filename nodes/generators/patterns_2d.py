@@ -1,4 +1,6 @@
 """2D pattern generators for Glitch Candies."""
+import inspect
+
 import numpy as np
 from .utils import hash2d, fbm, value_noise, make_uv
 
@@ -264,7 +266,6 @@ def generate_2d(pattern, width, height, time, scale, seed):
     if pattern in PATTERNS_2D:
         func = PATTERNS_2D[pattern]
         # Check function signature for scale parameter
-        import inspect
         sig = inspect.signature(func)
         if 'scale' in sig.parameters:
             return func(uv, time, scale)

@@ -108,7 +108,7 @@ Nodes for [SIDKIT](https://sidkit.pages.dev/) synthesizer OLED displays (SSD1306
 |------|-------------|
 | `░▒░ KN Binary` | Threshold (simple, adaptive, otsu, dither) + hex export |
 | `░▒░ KN Greyscale` | Greyscale with bit depth quantization (1/2/4/8-bit) |
-| `░▀░ KN Dither GPU` | GPU-accelerated dithering filter |
+| `░▀░ KN Dithering Filter (GPU)` | GPU-accelerated dithering filter |
 | `░▒░ KN OLED Screen` | OLED display viewer with screen presets |
 | `░▒░ KN Sprite Sheet` | Combine frames into sprite sheet grid |
 

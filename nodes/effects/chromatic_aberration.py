@@ -64,7 +64,7 @@ class KoshiChromaticAberration:
         try:
             self.ctx = moderngl.create_standalone_context()
         except Exception as e:
-            logger.debug(f"[Koshi] Failed to create GL context: {e}")
+            logger.debug("[Koshi] Failed to create GL context: %s", e)
             self.use_gpu = False
             return False
 
@@ -91,7 +91,7 @@ class KoshiChromaticAberration:
             return True
 
         except Exception as e:
-            logger.debug(f"[Koshi] Shader error: {e}")
+            logger.debug("[Koshi] Shader error: %s", e)
             self.use_gpu = False
             return False
 

@@ -13,7 +13,7 @@ try:
     NODE_CLASS_MAPPINGS.update(schedule_nodes)
     NODE_DISPLAY_NAME_MAPPINGS.update(schedule_names)
 except ImportError as e:
-    logger.debug(f"Failed to load schedule nodes: {e}")
+    logger.debug("Failed to load schedule nodes: %s", e)
 
 try:
     from .motion_engine import NODE_CLASS_MAPPINGS as motion_nodes
@@ -21,7 +21,7 @@ try:
     NODE_CLASS_MAPPINGS.update(motion_nodes)
     NODE_DISPLAY_NAME_MAPPINGS.update(motion_names)
 except ImportError as e:
-    logger.debug(f"Failed to load motion engine nodes: {e}")
+    logger.debug("Failed to load motion engine nodes: %s", e)
 
 try:
     from .feedback import NODE_CLASS_MAPPINGS as feedback_nodes
@@ -29,6 +29,6 @@ try:
     NODE_CLASS_MAPPINGS.update(feedback_nodes)
     NODE_DISPLAY_NAME_MAPPINGS.update(feedback_names)
 except ImportError as e:
-    logger.debug(f"Failed to load feedback nodes: {e}")
+    logger.debug("Failed to load feedback nodes: %s", e)
 
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]
