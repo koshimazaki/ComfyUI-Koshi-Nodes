@@ -66,6 +66,6 @@ def make_preview_result(output_tensor, *additional_outputs, prefix="koshi"):
     """
     preview_images = save_images_for_preview(output_tensor, prefix)
     return {
-        "ui": {"images": preview_images},
+        "ui": {"koshi_frames": preview_images},
         "result": (output_tensor,) + additional_outputs
     }

@@ -893,7 +893,14 @@ class KoshiPreviewWidget {
     
     getHeight() {
         if (!this.visible) return 30;
-        return (this.options.height || 128) + 60;
+        // Scale height based on node width to maintain aspect ratio
+        const srcW = this.options.width || 256;
+        const srcH = this.options.height || 128;
+        const nodeWidth = this.node?.size?.[0] || 300;
+        const padding = 30; // horizontal padding inside node
+        const availWidth = Math.max(nodeWidth - padding, 100);
+        const scaledHeight = (availWidth / srcW) * srcH;
+        return scaledHeight + 60; // +60 for header + status
     }
 }
 
@@ -1060,11 +1067,19 @@ app.registerExtension({
             domWidget.computeSize = (width) => [width, widget.getHeight()];
             this.koshiPreview = widget;
             this.koshiPreviewConfig = config;
-            
+
             // Start animation for animated effects
             if (config.animated) {
                 widget.startAnimation();
             }
+
+            // Recalculate height when node is resized
+            const origOnResize = this.onResize;
+            this.onResize = function(size) {
+                if (origOnResize) origOnResize.call(this, size);
+                this.setSize([size[0], this.computeSize()[1]]);
+                this.graph?.setDirtyCanvas(true);
+            };
         };
         
         // Update preview when widgets change
@@ -1101,8 +1116,9 @@ app.registerExtension({
         nodeType.prototype.onExecuted = function(message) {
             if (onExecuted) onExecuted.apply(this, arguments);
             
-            if (this.koshiPreview && message?.images?.length > 0) {
-                const img = message.images[0];
+            const frames = message?.koshi_frames || message?.images;
+            if (this.koshiPreview && frames?.length > 0) {
+                const img = frames[0];
                 const url = `/view?filename=${encodeURIComponent(img.filename)}&type=${img.type}&subfolder=${encodeURIComponent(img.subfolder || "")}`;
                 this.koshiPreview.setImage(url);
             }
@@ -1137,7 +1153,7 @@ app.registerExtension({
 
     async beforeRegisterNodeDef(nodeType, nodeData, app) {
         // Target unified OLED screen node (and legacy aliases)
-        const oledNodes = ["Koshi_OLEDScreen", "SIDKIT_OLEDScreen", "SIDKIT_Export"];
+        const oledNodes = ["Koshi_OLEDScreen", "Koshi_Binary", "SIDKIT_OLEDScreen", "SIDKIT_Export"];
         if (!oledNodes.includes(nodeData.name)) return;
 
         const onNodeCreated = nodeType.prototype.onNodeCreated;
@@ -1182,11 +1198,29 @@ app.registerExtension({
             this.playbackInterval = null;
             this.fps = 12;
 
-            // Add video controls
-            this._createVideoControls();
+            // Add video controls only for OLEDScreen (not Binary)
+            const isBinary = this.comfyClass === "Koshi_Binary";
+            if (!isBinary) {
+                this._createVideoControls();
+            }
 
             // Initial param sync
             this._syncOLEDPreviewParams();
+
+            // Recalculate height when node is resized
+            const origOnResize = this.onResize;
+            this._resizing = false;
+            this.onResize = function(size) {
+                if (origOnResize) origOnResize.call(this, size);
+                if (this._resizing) return;
+                this._resizing = true;
+                const newH = this.computeSize()[1];
+                if (Math.abs(size[1] - newH) > 5) {
+                    this.setSize([size[0], newH]);
+                }
+                this._resizing = false;
+                this.graph?.setDirtyCanvas(true);
+            };
         };
 
         // Create video playback controls
@@ -1217,7 +1251,7 @@ app.registerExtension({
             playBtn.style.cssText = `
                 background: #333;
                 border: 1px solid #555;
-                color: #0f0;
+                color: #FF9F43;
                 padding: 2px 8px;
                 cursor: pointer;
                 font-size: 10px;
@@ -1237,7 +1271,7 @@ app.registerExtension({
             slider.min = 0;
             slider.max = 0;
             slider.value = 0;
-            slider.style.cssText = "width: 100px; accent-color: #0f0;";
+            slider.style.cssText = "width: 100px; accent-color: #FF9F43;";
             slider.oninput = () => {
                 this.currentFrame = parseInt(slider.value);
                 this._showFrame(this.currentFrame);
@@ -1251,7 +1285,7 @@ app.registerExtension({
             fpsInput.min = 1;
             fpsInput.max = 60;
             fpsInput.value = this.fps;
-            fpsInput.style.cssText = "width: 35px; background: #222; border: 1px solid #444; color: #0f0; text-align: center;";
+            fpsInput.style.cssText = "width: 35px; background: #222; border: 1px solid #444; color: #FF9F43; text-align: center;";
             fpsInput.onchange = () => {
                 this.fps = Math.max(1, Math.min(60, parseInt(fpsInput.value) || 12));
                 if (this.isPlaying) {
@@ -1425,14 +1459,23 @@ app.registerExtension({
             this._syncOLEDPreviewParams?.();
         };
 
-        // Handle execution result - load all frames for video playback
+        // Handle execution result - load frames for preview
         const onExecuted = nodeType.prototype.onExecuted;
         nodeType.prototype.onExecuted = function(message) {
             if (onExecuted) onExecuted.apply(this, arguments);
 
-            if (this.oledPreview && message?.images?.length > 0) {
-                // Load all frames for video playback
-                this._loadVideoFrames(message.images);
+            // Check both standard images and custom oled_frames key
+            const frames = message?.oled_frames || message?.images;
+            if (this.oledPreview && frames?.length > 0) {
+                const isBinary = this.comfyClass === "Koshi_Binary";
+                if (frames.length === 1 || isBinary) {
+                    // Single frame or Binary node — just show first frame
+                    const img = frames[0];
+                    const url = `/view?filename=${encodeURIComponent(img.filename)}&type=${img.type}&subfolder=${encodeURIComponent(img.subfolder || "")}`;
+                    this.oledPreview.setImage(url);
+                } else {
+                    this._loadVideoFrames(frames);
+                }
             }
         };
 

@@ -72,6 +72,9 @@ class KoshiEffects:
             "required": {
                 "image": ("IMAGE",),
                 "effect_type": (cls.EFFECT_TYPES, {"default": "glitch"}),
+                "enabled": ("BOOLEAN", {"default": True}),
+                "mix": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 1.0, "step": 0.01,
+                                   "display": "slider"}),
                 "intensity": ("FLOAT", {"default": 0.5, "min": 0.0, "max": 1.0, "step": 0.01,
                                          "display": "slider"}),
             },
@@ -319,7 +322,7 @@ class KoshiEffects:
         return result
 
     # ========== MAIN APPLY ==========
-    def apply(self, image, effect_type, intensity,
+    def apply(self, image, effect_type, enabled, mix, intensity,
               dither_method="bayer", dither_levels=4,
               bloom_threshold=0.8, bloom_radius=0.5,
               rgb_shift=6.0, shake_amount=8.0, noise_amount=0.15, scan_lines=0.15,
@@ -327,6 +330,11 @@ class KoshiEffects:
               scanline_count=100, scanline_direction="horizontal",
               red_offset=1.0, blue_offset=-1.0,
               time=0.0, seed=0):
+
+        # Bypass: pass through unchanged
+        if not enabled or mix <= 0:
+            preview = save_preview(image)
+            return {"ui": {"koshi_frames": preview}, "result": (image,)}
 
         results = []
         for b in range(image.shape[0]):
@@ -352,12 +360,16 @@ class KoshiEffects:
             else:
                 out = img
 
+            # Mix: blend between original and effect
+            if mix < 1.0:
+                out = img * (1.0 - mix) + out * mix
+
             results.append(torch.from_numpy(out.astype(np.float32)))
 
         output = torch.stack(results).to(image.device)
         preview = save_preview(output)
 
-        return {"ui": {"images": preview}, "result": (output,)}
+        return {"ui": {"koshi_frames": preview}, "result": (output,)}
 
 
 NODE_CLASS_MAPPINGS = {"Koshi_Effects": KoshiEffects}

@@ -7,7 +7,7 @@ NODE_CLASS_MAPPINGS = {
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "Koshi_OLEDScreen": "░▒░ KN OLED Screen",
+    "Koshi_OLEDScreen": "░▒░ KN SIDKIT OLED",
     "Koshi_SpriteSheet": "░▒░ KN Sprite Sheet",
 }
 

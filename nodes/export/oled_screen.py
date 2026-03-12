@@ -9,7 +9,22 @@ try:
 except ImportError:
     PIL_AVAILABLE = False
 
-from ..utils.preview import save_images_for_preview
+try:
+    import folder_paths
+    import os, uuid
+    def save_images_for_preview(image_tensor, prefix="koshi_oled"):
+        results = []
+        output_dir = folder_paths.get_temp_directory()
+        batch = image_tensor if len(image_tensor.shape) == 4 else image_tensor.unsqueeze(0)
+        for i in range(batch.shape[0]):
+            img_np = (np.clip(batch[i].cpu().numpy(), 0, 1) * 255).astype(np.uint8)
+            filename = f"{prefix}_{uuid.uuid4().hex[:8]}_{i}.png"
+            PILImage.fromarray(img_np).save(os.path.join(output_dir, filename))
+            results.append({"filename": filename, "subfolder": "", "type": "temp"})
+        return results
+except ImportError:
+    def save_images_for_preview(image_tensor, prefix="koshi_oled"):
+        return []
 
 
 class KoshiSpriteSheet:
@@ -173,7 +188,7 @@ class KoshiOLEDScreen:
             # Pass through unchanged with preview
             preview_images = save_images_for_preview(images)
             return {
-                "ui": {"images": preview_images},
+                "ui": {"oled_frames": preview_images},
                 "result": (images,)
             }
 
@@ -189,7 +204,7 @@ class KoshiOLEDScreen:
         output_tensor = torch.stack(results).to(images.device)
         preview_images = save_images_for_preview(output_tensor)
         return {
-            "ui": {"images": preview_images},
+            "ui": {"oled_frames": preview_images},
             "result": (output_tensor,)
         }
 
@@ -201,5 +216,5 @@ NODE_CLASS_MAPPINGS = {
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "Koshi_SpriteSheet": "░▒░ KN Sprite Sheet",
-    "Koshi_OLEDScreen": "░▒░ KN OLED Screen",
+    "Koshi_OLEDScreen": "░▒░ KN SIDKIT OLED",
 }

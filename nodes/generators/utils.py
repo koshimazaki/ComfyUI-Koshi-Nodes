@@ -1,7 +1,23 @@
 """Shared utilities for Glitch Candies generators."""
 import numpy as np
 
-from ..utils.preview import save_images_for_preview as save_preview
+try:
+    import folder_paths
+    import os, uuid
+    from PIL import Image as _PILImage
+    def save_preview(image_tensor, prefix="koshi_gen"):
+        results = []
+        output_dir = folder_paths.get_temp_directory()
+        batch = image_tensor if len(image_tensor.shape) == 4 else image_tensor.unsqueeze(0)
+        for i in range(batch.shape[0]):
+            img_np = (np.clip(batch[i].cpu().numpy(), 0, 1) * 255).astype(np.uint8)
+            filename = f"{prefix}_{uuid.uuid4().hex[:8]}_{i}.png"
+            _PILImage.fromarray(img_np).save(os.path.join(output_dir, filename))
+            results.append({"filename": filename, "subfolder": "", "type": "temp"})
+        return results
+except ImportError:
+    def save_preview(image_tensor, prefix="koshi_gen"):
+        return []
 
 
 def hash2d(p):

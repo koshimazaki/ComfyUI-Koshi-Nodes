@@ -239,7 +239,7 @@ class GlitchShaderNode:
         # Return with preview UI
         preview_images = save_images_for_preview(output_tensor)
         return {
-            "ui": {"images": preview_images},
+            "ui": {"koshi_frames": preview_images},
             "result": (output_tensor,)
         }
 

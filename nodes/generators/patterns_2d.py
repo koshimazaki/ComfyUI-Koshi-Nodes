@@ -199,7 +199,7 @@ def distorted_grid(uv, time, scale):
     """Grid with noise distortion."""
     p = uv * 10 * scale
     offset = fbm(uv * 3, time) * 0.5
-    p = p + offset
+    p = p + offset[..., np.newaxis]
     grid = np.abs(np.sin(p[..., 0] * np.pi)) * np.abs(np.sin(p[..., 1] * np.pi))
     return grid
 

@@ -154,7 +154,7 @@ class KoshiGlitchCandies:
         # Return with preview
         preview_images = save_preview(image_tensor, "glitch_candies")
         return {
-            "ui": {"images": preview_images},
+            "ui": {"koshi_frames": preview_images},
             "result": (image_tensor, mask_tensor)
         }
 
@@ -193,7 +193,7 @@ class KoshiShapeMorph:
 
         preview_images = save_preview(result, "morph")
         return {
-            "ui": {"images": preview_images},
+            "ui": {"koshi_frames": preview_images},
             "result": (result, mask)
         }
 
@@ -236,6 +236,6 @@ class KoshiNoiseDisplace:
 
         preview_images = save_preview(output_tensor, "displace")
         return {
-            "ui": {"images": preview_images},
+            "ui": {"koshi_frames": preview_images},
             "result": (output_tensor,)
         }
