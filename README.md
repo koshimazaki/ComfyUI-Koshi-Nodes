@@ -16,6 +16,10 @@
 
 > Consolidated from 40 nodes down to 18 — same functionality, cleaner interface, fewer clicks.
 
+https://github.com/user-attachments/assets/8c9f2c39-71c7-405a-bb94-10b0b9e96c32
+
+*Glitch Candies shaders, OLED emulation and binary export.*
+
 ## Installation
 
 **One-liner** (existing ComfyUI):

@@ -421,23 +421,26 @@ class KoshiSIDKITBinary:
         if export_format in ("c_header", "sidv + c_header"):
             hex_str = self._generate_c_header(gray_frames, screen_w, screen_h, bpp, export_name, fps)
             c_filename = f"{export_name}_{screen_w}x{screen_h}_{bpp}bit.h"
-            with open(os.path.join(output_dir, c_filename), 'w') as f:
+            c_path = os.path.join(output_dir, c_filename)
+            with open(c_path, 'w') as f:
                 f.write(hex_str)
-            export_path = c_filename
+            export_path = c_path
 
         if export_format == "xbm":
             hex_str = self._generate_xbm(gray_frames, screen_w, screen_h, export_name)
             xbm_filename = f"{export_name}_{screen_w}x{screen_h}.xbm"
-            with open(os.path.join(output_dir, xbm_filename), 'w') as f:
+            xbm_path = os.path.join(output_dir, xbm_filename)
+            with open(xbm_path, 'w') as f:
                 f.write(hex_str)
-            export_path = xbm_filename
+            export_path = xbm_path
 
         if export_format in ("sidv", "sidv + c_header"):
             sidv_data = self._generate_sidv(gray_frames, screen_w, screen_h, bpp, fps)
             sidv_filename = f"{export_name}_{screen_w}x{screen_h}_{bpp}bit_{fps}fps.sidv"
-            with open(os.path.join(output_dir, sidv_filename), 'wb') as f:
+            sidv_path = os.path.join(output_dir, sidv_filename)
+            with open(sidv_path, 'wb') as f:
                 f.write(sidv_data)
-            export_path = sidv_filename
+            export_path = sidv_path
 
         # Return with oled_frames (custom key) so ComfyUI doesn't add default preview
         # The WebGL OLED preview JS picks these up via onExecuted
