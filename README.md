@@ -46,15 +46,15 @@ Nodes are prefixed by category for easy identification:
 
 | Prefix | Category | Nodes |
 |--------|----------|-------|
-| `░▀░` | Effects | Koshi Effects (unified), Bloom, Chromatic, Glitch, Dither |
+| `░▀░` | Effects | Koshi Effects (unified), Bloom, Chromatic, Glitch, Dither, Dithering Filter |
 | `▄▀▄` | Motion | Schedule, Motion Engine, Feedback |
 | `▄█▄` | Generators | Glitch Candies, Shape Morph, Noise Displace, Raymarcher |
-| `░▒░` | SIDKIT/Export | Binary, Greyscale, Dithering Filter, OLED Screen, Sprite Sheet |
+| `░▒░` | SIDKIT/Export | SIDKIT Binary, Greyscale, SIDKIT OLED, Sprite Sheet |
 | `◊` | Utility | Metadata |
 
 ## All 18 Nodes
 
-### Effects (5 nodes)
+### Effects (6 nodes)
 Post-processing effects based on [alien.js](https://github.com/alienkitty/alien.js) and custom shaders.
 
 | Node | Description |
@@ -64,21 +64,22 @@ Post-processing effects based on [alien.js](https://github.com/alienkitty/alien.
 | `░▀░ KN Chromatic` | RGB channel separation |
 | `░▀░ KN Glitch` | Shader-based glitch distortion |
 | `░▀░ KN Dither` | Bayer, floyd-steinberg, atkinson, halftone |
+| `░▀░ KN Dithering Filter` | GPU-accelerated dithering filter |
 
 ### Motion (3 nodes)
 Deforum-inspired animation engine for FLUX models.
 
 **Pipeline:**
 ```
-▄▀▄ Schedule → ▄▀▄ Motion → KSampler
-                                ↓
-                        ▄▀▄ Feedback (loop)
+▄▀▄ Schedule → ▄▀▄ Motion Engine → KSampler
+                                      ↓
+                              ▄▀▄ Feedback (loop)
 ```
 
 | Node | Description |
 |------|-------------|
 | `▄▀▄ KN Schedule` | Parse keyframe strings (`0:(1.0), 30:(0.5)`) with interpolation and easing |
-| `▄▀▄ KN Motion` | Apply motion transforms to latents (zoom, angle, translation) |
+| `▄▀▄ KN Motion Engine` | Apply motion transforms to latents (zoom, angle, translation) |
 | `▄▀▄ KN Feedback` | Frame-to-frame coherence: color match, sharpen, noise, auto-correct |
 
 ### Generators (4 nodes)
@@ -86,7 +87,7 @@ Procedural patterns, fractals, and raymarched 3D shapes.
 
 | Node | Description |
 |------|-------------|
-| `▄█▄ Glitch Candies` | 22 patterns: waves, plasma, voronoi, fractals, raymarched 3D |
+| `▄█▄ Glitch Candies` | 27 patterns: waves, plasma, voronoi, fractals, raymarched 3D |
 | `▄█▄ Shape Morph` | Blend/morph between two images with easing |
 | `▄█▄ Noise Displace` | FBM noise displacement with animation |
 | `▄█▄ Raymarcher` | Raymarched 3D shapes with dithering (requires ModernGL) |
@@ -94,22 +95,21 @@ Procedural patterns, fractals, and raymarched 3D shapes.
 **Patterns:**
 - **2D:** waves, circles, plasma, voronoi, checkerboard, swirl, ripple
 - **Fractals:** mandelbrot, julia, sierpinski
-- **Glitch Candies:** fbm_noise, cell_noise, distorted_grid, height_map
-- **Raymarched 3D:** rm_cube, rm_sphere, rm_torus, rm_octahedron, rm_gyroid, rm_menger
+- **Glitch:** fbm_noise, cell_noise, distorted_grid, height_map, glitch_cubes
+- **Raymarched 3D:** rm_cube, rm_sphere, rm_torus, rm_octahedron, rm_gyroid, rm_menger, rm_cylinder, rm_cone, rm_capsule, rm_pyramid
 
 All patterns support `loop_frames` for seamless animation loops.
 
 **3D Camera Controls:** Raymarched shapes have `rotation_x`, `rotation_y`, and `camera_distance` inputs for orbital control.
 
-### SIDKIT / Export (5 nodes)
+### SIDKIT / Export (4 nodes)
 Nodes for [SIDKIT](https://sidkit.pages.dev/) synthesizer OLED displays (SSD1306, SSD1363) and export.
 
 | Node | Description |
 |------|-------------|
-| `░▒░ KN Binary` | Threshold (simple, adaptive, otsu, dither) + hex export |
+| `░▒░ KN SIDKIT Binary` | Threshold (simple, adaptive, otsu, dither) + hex/XBM/C header export |
 | `░▒░ KN Greyscale` | Greyscale with bit depth quantization (1/2/4/8-bit) |
-| `░▀░ KN Dither GPU` | GPU-accelerated dithering filter |
-| `░▒░ KN OLED Screen` | OLED display viewer with screen presets |
+| `░▒░ KN SIDKIT OLED` | OLED display viewer with WebGL preview and screen presets |
 | `░▒░ KN Sprite Sheet` | Combine frames into sprite sheet grid |
 
 **OLED Presets:** SSD1306 128x64, SSD1306 128x32, SSD1363 256x128, custom
@@ -127,7 +127,7 @@ Nodes for [SIDKIT](https://sidkit.pages.dev/) synthesizer OLED displays (SSD1306
 ComfyUI-Koshi-Nodes/
 ├── nodes/
 │   ├── effects/        # Koshi Effects (unified), bloom, glitch, chromatic aberration, raymarcher
-│   ├── export/         # OLED screen, sprite sheet
+│   ├── export/         # SIDKIT OLED, sprite sheet
 │   ├── flux_motion/    # Schedule, motion engine, feedback
 │   │   └── core/       # Interpolation, easing, transforms
 │   ├── generators/     # Glitch Candies, shape morph, noise displace, raymarcher
@@ -140,7 +140,7 @@ ComfyUI-Koshi-Nodes/
 │       └── greyscale/  # Quantization, algorithms
 ├── shaders/            # GLSL shaders (bloom, chromatic aberration)
 ├── workflows/          # Example workflow JSONs
-└── js/                 # Live preview + orbital controls
+└── js/                 # Live preview, orbital controls, Nodes 2.0 theme
 ```
 
 ## Live Preview & WebGL
@@ -187,7 +187,7 @@ Image → ░▀░ Koshi Effects (hologram) → ░▀░ Koshi Effects (chroma
 
 **SIDKIT OLED Export:**
 ```
-Image → ░▒░ KN Greyscale → ░▀░ KN Dither → ░▒░ KN OLED Screen → ░▒░ KN Sprite Sheet
+Image → ░▒░ KN Greyscale → ░▀░ KN Dither → ░▒░ KN SIDKIT OLED → ░▒░ KN Sprite Sheet
 ```
 
 **Generator → Effect → Export:**
