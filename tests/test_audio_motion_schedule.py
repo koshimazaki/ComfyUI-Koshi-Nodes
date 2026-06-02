@@ -179,6 +179,13 @@ def main():
         check("empty analysis_json raises", False)
     except ValueError:
         check("empty analysis_json raises", True)
+    try:
+        bad = make_audio_input()
+        bad["sample_rate"] = 0
+        node.generate(source="audio", zoom_gain=0.3, smoothing=0.1, audio=bad, **common)
+        check("audio sample_rate<=0 raises ValueError", False)
+    except ValueError:
+        check("audio sample_rate<=0 raises ValueError", True)
 
     print()
     if failures:

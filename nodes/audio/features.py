@@ -163,6 +163,8 @@ def tracks_from_audio(
     if not isinstance(audio, dict) or "waveform" not in audio:
         raise ValueError("AUDIO input missing 'waveform'.")
     sr = int(audio.get("sample_rate", 44100))
+    if sr <= 0:
+        raise ValueError("AUDIO 'sample_rate' must be positive.")
 
     waveform = audio["waveform"]
     try:
