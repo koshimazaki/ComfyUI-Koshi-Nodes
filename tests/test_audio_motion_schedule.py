@@ -187,6 +187,23 @@ def main():
     except ValueError:
         check("audio sample_rate<=0 raises ValueError", True)
 
+    print("[9] forced-feature fallback (no silent flat schedule)")
+    wf_only = json.dumps({"analyzedDuration": 4.0, "markers": [],
+                          "waveform": [{"time": i / 90, "amplitude": abs(math.sin(i / 8)),
+                                        "low": abs(math.sin(i / 8)), "mid": 0.3, "high": 0.2}
+                                       for i in range(360)]})
+    sched_f, _ = node.generate(source="analysis_json", num_frames=num, fps=24.0, feature="markers",
+                               base_zoom=1.0, zoom_gain=0.3, translation_gain=0.0, angle_gain=0.0,
+                               base_strength=0.65, strength_gain=0.0, smoothing=0.1, analysis_json=wf_only)
+    zf = [f.zoom for f in sched_f["motion_frames"]]
+    check("forced 'markers' on waveform-only falls back to waveform", sched_f.get("driver") == "waveform")
+    check("fallback still produces motion (not a flat schedule)", (max(zf) - min(zf)) > 0.02)
+    times_only = json.dumps({"kick_times": [0.0, 0.5, 1.0, 1.5], "duration": 2.0})
+    sched_g, _ = node.generate(source="analysis_json", num_frames=num, fps=24.0, feature="waveform",
+                               base_zoom=1.0, zoom_gain=0.3, translation_gain=0.0, angle_gain=0.0,
+                               base_strength=0.65, strength_gain=0.0, smoothing=0.0, analysis_json=times_only)
+    check("forced 'waveform' on markers-only falls back to markers", sched_g.get("driver") == "markers")
+
     print()
     if failures:
         print(f"RESULT: {len(failures)} FAILED -> {failures}")

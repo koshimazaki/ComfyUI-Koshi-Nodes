@@ -14,12 +14,15 @@ from __future__ import annotations
 
 import importlib.machinery
 import importlib.util
+import logging
 import os
 import sys
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+
+logger = logging.getLogger("koshi.audio")
 
 
 @dataclass
@@ -165,7 +168,13 @@ def _bands_from_markers(markers: List[dict], num_frames: int) -> Dict[str, np.nd
 
 
 def frame_bands(tracks: dict, num_frames: int, feature: str, smoothing: float) -> Dict[str, np.ndarray]:
-    """Resolve per-frame band arrays (low/mid/high/amplitude) from feature tracks."""
+    """Resolve per-frame band arrays (low/mid/high/amplitude) from feature tracks.
+
+    ``feature`` chooses the driver: ``auto`` (waveform if present, else markers),
+    ``waveform`` (dense continuous envelope), or ``markers`` (sparse impacts). If a
+    driver is explicitly requested but the tracks lack that data, fall back to the
+    other driver (with a warning) rather than silently emitting a flat schedule.
+    """
     keys = ("low", "mid", "high", "amplitude")
     time = tracks.get("time")
     has_cont = (
@@ -174,17 +183,30 @@ def frame_bands(tracks: dict, num_frames: int, feature: str, smoothing: float) -
         and tracks.get("amplitude") is not None
         and len(tracks["amplitude"]) == len(time)
     )
+    has_markers = bool(tracks.get("markers"))
 
-    mode = feature
     if feature == "auto":
         mode = "waveform" if has_cont else "markers"
+    else:
+        mode = feature
+
+    # Forced-mode fallback: the requested driver has no data -> use the other one.
+    if mode == "waveform" and not has_cont and has_markers:
+        if feature != "auto":
+            logger.warning("feature='waveform' but no continuous waveform data; falling back to markers.")
+        mode = "markers"
+    elif mode == "markers" and not has_markers and has_cont:
+        if feature != "auto":
+            logger.warning("feature='markers' but no marker data; falling back to waveform.")
+        mode = "waveform"
 
     if mode == "waveform" and has_cont:
         t = np.asarray(time, dtype=float)
         out = {k: _resample(t, np.asarray(tracks.get(k, []), dtype=float), num_frames) for k in keys}
-    elif mode == "markers":
-        out = _bands_from_markers(tracks.get("markers", []), num_frames)
+    elif mode == "markers" and has_markers:
+        out = _bands_from_markers(tracks["markers"], num_frames)
     else:
+        logger.warning("No usable feature data for driver '%s'; emitting a flat (no-motion) schedule.", mode)
         out = {k: np.zeros(num_frames, dtype=float) for k in keys}
 
     out = {k: _smooth(v, smoothing) for k, v in out.items()}
