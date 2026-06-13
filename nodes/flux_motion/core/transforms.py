@@ -38,9 +38,13 @@ def create_affine_matrix(
     tx_norm = translation_x / width * 2
     ty_norm = translation_y / height * 2
 
+    # affine_grid maps output coordinates back into the input. Invert the
+    # user-facing Deforum zoom so values > 1 sample a smaller area and zoom in.
+    inv_zoom = 1.0 / zoom if abs(zoom) > 1e-8 else 1.0
+
     matrix = torch.tensor([
-        [zoom * cos_a, -zoom * sin_a, tx_norm],
-        [zoom * sin_a,  zoom * cos_a, ty_norm]
+        [inv_zoom * cos_a, -inv_zoom * sin_a, tx_norm],
+        [inv_zoom * sin_a,  inv_zoom * cos_a, ty_norm]
     ], device=device, dtype=dtype)
 
     return matrix

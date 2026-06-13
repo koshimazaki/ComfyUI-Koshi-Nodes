@@ -105,6 +105,44 @@ class TestMotionEngineOutputDict:
         assert "samples" in result[0]
 
 
+class TestMotionEngineScheduleInput:
+    """Schedule output should wire directly into MotionEngine."""
+
+    def test_input_type_accepts_koshi_schedule(self, engine):
+        input_types = engine.INPUT_TYPES()
+        assert input_types["optional"]["motion_schedule"][0] == "KOSHI_SCHEDULE"
+
+    def test_schedule_value_overrides_matching_parameter(self, engine, latent):
+        schedule = {
+            "name": "zoom",
+            "frames": 2,
+            "values": [1.0, 1.5],
+            "interpolation": "linear",
+            "easing": "none",
+            "raw": "0:(1.0), 1:(1.5)",
+        }
+
+        scheduled = engine.process(
+            latent=latent,
+            zoom=1.0,
+            angle=0.0,
+            translation_x=0.0,
+            translation_y=0.0,
+            motion_schedule=schedule,
+            frame_index=1,
+        )[0]["samples"]
+
+        identity = engine.process(
+            latent=latent,
+            zoom=1.0,
+            angle=0.0,
+            translation_x=0.0,
+            translation_y=0.0,
+        )[0]["samples"]
+
+        assert not torch.allclose(scheduled, identity, atol=1e-4)
+
+
 class TestMotionEngineMask:
     """Motion mask blends selectively between original and transformed."""
 
@@ -118,5 +156,4 @@ class TestMotionEngineMask:
         )
         output = result[0]["samples"]
         assert torch.allclose(output, latent["samples"], atol=1e-5)
-
 

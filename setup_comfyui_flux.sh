@@ -65,6 +65,7 @@ INSTALL_COMFY=true
 INSTALL_NODES=true
 INSTALL_MODELS=true
 INSTALL_TAILSCALE=false
+INSTALL_FLUX2_NATIVE_AE=false
 MODEL_PRESET=""
 INSTALL_MODE=""
 HF_TOKEN="${HF_TOKEN:-}"
@@ -83,6 +84,7 @@ for arg in "$@"; do
         --models-only) INSTALL_COMFY=false; INSTALL_NODES=false ;;
         --nodes-only) INSTALL_COMFY=false; INSTALL_MODELS=false ;;
         --tailscale) INSTALL_TAILSCALE=true ;;
+        --flux2-native-ae) INSTALL_FLUX2_NATIVE_AE=true ;;
         --token=*) HF_TOKEN="${arg#*=}" ;;
         --authkey=*) TS_AUTHKEY="${arg#*=}" ;;
         --help)
@@ -100,6 +102,7 @@ for arg in "$@"; do
             printf "  --models-only   Only download models\n"
             printf "  --nodes-only    Only install nodes\n"
             printf "  --tailscale     Setup Tailscale SSH\n"
+            printf "  --flux2-native-ae  Also download FLUX.2-dev family ae.safetensors for native SDK use\n"
             printf "  --token=XXX     HuggingFace token\n"
             printf "  --authkey=XXX   Tailscale auth key\n"
             exit 0
@@ -328,6 +331,7 @@ if [ "$INSTALL_MODELS" = true ] && [ -n "$MODEL_PRESET" ]; then
     }
 
     HF_KLEIN="https://huggingface.co/black-forest-labs/FLUX.2-klein-4B/resolve/main"
+    HF_FLUX2_DEV="https://huggingface.co/black-forest-labs/FLUX.2-dev/resolve/main"
     HF_FLUX="https://huggingface.co/black-forest-labs"
     HF_CLIP="https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main"
     HF_FP8="https://huggingface.co/Kijai/flux-fp8/resolve/main"
@@ -338,7 +342,11 @@ if [ "$INSTALL_MODELS" = true ] && [ -n "$MODEL_PRESET" ]; then
         klein)
             MODEL_NAME="FLUX.2-klein-4B"
             download_model "checkpoints/flux2-klein-4b.safetensors" "$HF_KLEIN/flux2-klein-4b.safetensors" "Klein 4B (8GB)" true
-            download_model "vae/klein_vae.safetensors" "$HF_KLEIN/vae/diffusion_pytorch_model.safetensors" "Klein VAE" true
+            download_model "vae/klein_vae.safetensors" "$HF_KLEIN/vae/diffusion_pytorch_model.safetensors" "Klein diffusers-format VAE" true
+            print_warn "Klein ships no native ae.safetensors; this ComfyUI preset uses the diffusers-format VAE."
+            if [ "$INSTALL_FLUX2_NATIVE_AE" = true ]; then
+                download_model "vae/flux2-dev-ae.safetensors" "$HF_FLUX2_DEV/ae.safetensors" "FLUX.2-dev family native AE (336MB)" true
+            fi
             download_model "clip/t5xxl_fp8_e4m3fn.safetensors" "$HF_CLIP/t5xxl_fp8_e4m3fn.safetensors" "T5-XXL FP8"
             download_model "clip/clip_l.safetensors" "$HF_CLIP/clip_l.safetensors" "CLIP-L"
             ;;

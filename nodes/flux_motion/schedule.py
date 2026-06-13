@@ -44,15 +44,9 @@ class KoshiSchedule:
             schedule_string,
             max_frames,
             default=1.0 if parameter_name == "zoom" else 0.0,
-            interpolation=interpolation
+            interpolation=interpolation,
+            easing=easing,
         )
-
-        # Apply easing if specified
-        if easing != "none" and easing in EASING_PRESETS:
-            from .core import apply_easing
-            # Easing is applied to the normalized position, not values directly
-            # This affects how values transition between keyframes
-            pass  # Easing is already handled in interpolation for this version
 
         schedule = {
             "name": parameter_name,

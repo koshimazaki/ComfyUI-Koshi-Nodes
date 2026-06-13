@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Any, Union
 from dataclasses import dataclass
 import re
 
+from .easing import apply_easing_to_range
 from .interpolation import interpolate_array
 
 
@@ -45,7 +46,8 @@ def parse_schedule_string(
     schedule: str,
     num_frames: int,
     default: float = 0.0,
-    interpolation: str = "linear"
+    interpolation: str = "linear",
+    easing: str = "none"
 ) -> List[float]:
     """
     Parse Deforum keyframe schedule string.
@@ -60,6 +62,7 @@ def parse_schedule_string(
         num_frames: Total number of frames
         default: Default value for unspecified frames
         interpolation: "linear", "step", or "cubic"
+        easing: Optional easing preset applied within each linear segment
 
     Returns:
         List of values, one per frame
@@ -75,7 +78,45 @@ def parse_schedule_string(
     frames = sorted(keyframes.keys())
     values = [keyframes[f] for f in frames]
 
+    if easing not in ("none", "linear") and interpolation == "linear":
+        return _interpolate_eased_array(frames, values, num_frames, easing)
+
     return interpolate_array(frames, values, num_frames, interpolation).tolist()
+
+
+def _interpolate_eased_array(
+    frames: List[int],
+    values: List[float],
+    num_frames: int,
+    easing: str,
+) -> List[float]:
+    """Interpolate keyframes with easing applied per segment."""
+    if not frames:
+        return [0.0] * num_frames
+    if len(frames) == 1:
+        return [float(values[0])] * num_frames
+
+    result = []
+    for frame in range(num_frames):
+        if frame <= frames[0]:
+            result.append(float(values[0]))
+            continue
+        if frame >= frames[-1]:
+            result.append(float(values[-1]))
+            continue
+
+        for i in range(len(frames) - 1):
+            start_frame = frames[i]
+            end_frame = frames[i + 1]
+            if start_frame <= frame <= end_frame:
+                span = max(end_frame - start_frame, 1)
+                t = (frame - start_frame) / span
+                result.append(
+                    float(apply_easing_to_range(t, values[i], values[i + 1], easing))
+                )
+                break
+
+    return result
 
 
 def _extract_keyframes(schedule: str) -> Dict[int, float]:
@@ -100,7 +141,8 @@ def _extract_keyframes(schedule: str) -> Dict[int, float]:
 def parse_deforum_params(
     params: Dict[str, Any],
     num_frames: int,
-    interpolation: str = "linear"
+    interpolation: str = "linear",
+    easing: str = "none",
 ) -> List[MotionFrame]:
     """
     Convert Deforum parameters to motion frames.
@@ -116,7 +158,7 @@ def parse_deforum_params(
     """
     def parse_param(param: Union[str, float, int], default: float) -> List[float]:
         if isinstance(param, str):
-            return parse_schedule_string(param, num_frames, default, interpolation)
+            return parse_schedule_string(param, num_frames, default, interpolation, easing)
         elif isinstance(param, (int, float)):
             return [float(param)] * num_frames
         return [default] * num_frames

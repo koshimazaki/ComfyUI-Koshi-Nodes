@@ -418,13 +418,17 @@ class TestCrossGroupPipelines:
             easing="none",
         )
 
-        # MotionEngine with direct params (no schedule feed for simplicity)
         torch.manual_seed(42)
         latent = {"samples": torch.randn(1, 4, 8, 8)}
 
         result = engine.process(
-            latent=latent, zoom=1.05, angle=5.0,
-            translation_x=2.0, translation_y=0.0,
+            latent=latent,
+            zoom=1.0,
+            angle=5.0,
+            translation_x=2.0,
+            translation_y=0.0,
+            motion_schedule=schedule_result[0],
+            frame_index=30,
         )
 
         out_latent = result[0]

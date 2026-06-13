@@ -363,11 +363,11 @@ class KoshiSIDKITBinary:
         self,
         image,
         method,
-        bit_depth,
-        threshold,
-        invert,
-        screen_preset,
-        show_preview,
+        bit_depth="1-bit (mono)",
+        threshold=0.5,
+        invert=False,
+        screen_preset=None,
+        show_preview=True,
         custom_width=256,
         custom_height=128,
         block_size=11,
@@ -380,8 +380,26 @@ class KoshiSIDKITBinary:
         pixel_gap=0.15,
         bloom_glow=True,
         bloom_intensity=0.3,
+        output_hex=None,
     ):
-        screen_w, screen_h = self._get_screen_size(screen_preset, custom_width, custom_height)
+        if not isinstance(bit_depth, str):
+            old_threshold = bit_depth
+            old_invert = threshold
+            old_output_hex = invert
+            bit_depth = "1-bit (mono)"
+            threshold = old_threshold
+            invert = old_invert
+            output_hex = old_output_hex
+
+        legacy_tuple_output = output_hex is not None
+        if output_hex is not None:
+            export_format = "c_header" if output_hex else "none"
+
+        if screen_preset is None:
+            screen_w, screen_h = int(image.shape[2]), int(image.shape[1])
+        else:
+            screen_w, screen_h = self._get_screen_size(screen_preset, custom_width, custom_height)
+
         bpp = self._parse_bit_depth(bit_depth)
 
         results = []
@@ -413,8 +431,13 @@ class KoshiSIDKITBinary:
 
         # Export based on selected format — all files go to ComfyUI output dir
         import os
-        import folder_paths
-        output_dir = folder_paths.get_output_directory()
+        import tempfile
+        try:
+            import folder_paths
+            output_dir = folder_paths.get_output_directory()
+        except ImportError:
+            output_dir = tempfile.gettempdir()
+
         hex_str = ""
         export_path = ""
 
@@ -445,6 +468,9 @@ class KoshiSIDKITBinary:
         # Return with oled_frames (custom key) so ComfyUI doesn't add default preview
         # The WebGL OLED preview JS picks these up via onExecuted
         preview_images = save_images_for_preview(output_tensor)
+        if legacy_tuple_output:
+            return (output_tensor, hex_str)
+
         return {
             "ui": {"oled_frames": preview_images},
             "result": (output_tensor, hex_str, export_path)

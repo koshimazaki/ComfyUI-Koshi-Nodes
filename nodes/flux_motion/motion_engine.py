@@ -14,6 +14,7 @@ class KoshiMotionEngine:
     FUNCTION = "process"
     RETURN_TYPES = ("LATENT",)
     RETURN_NAMES = ("latent",)
+    SCHEDULE_PARAMS = {"zoom", "angle", "translation_x", "translation_y"}
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -27,7 +28,7 @@ class KoshiMotionEngine:
             },
             "optional": {
                 "motion_mask": ("MASK",),
-                "motion_schedule": ("KOSHI_MOTION_SCHEDULE",),
+                "motion_schedule": ("KOSHI_SCHEDULE",),
                 "frame_index": ("INT", {"default": 0, "min": 0, "max": 10000}),
             }
         }
@@ -46,15 +47,14 @@ class KoshiMotionEngine:
         """Apply motion transform to latent."""
         samples = latent["samples"].clone()
 
-        # Get motion params from schedule if provided
-        if motion_schedule is not None and "motion_frames" in motion_schedule:
-            frames = motion_schedule["motion_frames"]
-            if 0 <= frame_index < len(frames):
-                mf = frames[frame_index]
-                zoom = mf.zoom
-                angle = mf.angle
-                translation_x = mf.translation_x
-                translation_y = mf.translation_y
+        zoom, angle, translation_x, translation_y = self._resolve_schedule(
+            motion_schedule,
+            frame_index,
+            zoom,
+            angle,
+            translation_x,
+            translation_y,
+        )
 
         motion_params = {
             "zoom": zoom,
@@ -84,6 +84,46 @@ class KoshiMotionEngine:
             transformed = samples * (1 - mask) + transformed * mask
 
         return ({"samples": transformed},)
+
+    def _resolve_schedule(
+        self,
+        motion_schedule: Optional[Dict],
+        frame_index: int,
+        zoom: float,
+        angle: float,
+        translation_x: float,
+        translation_y: float,
+    ):
+        """Apply a connected Koshi schedule to the matching motion parameter."""
+        if motion_schedule is None:
+            return zoom, angle, translation_x, translation_y
+
+        # Legacy richer schedules are still accepted for old callers.
+        if "motion_frames" in motion_schedule:
+            frames = motion_schedule["motion_frames"]
+            if frames:
+                index = max(0, min(frame_index, len(frames) - 1))
+                frame = frames[index]
+                return frame.zoom, frame.angle, frame.translation_x, frame.translation_y
+
+        values = motion_schedule.get("values")
+        parameter = motion_schedule.get("name", "zoom")
+        if not values or parameter not in self.SCHEDULE_PARAMS:
+            return zoom, angle, translation_x, translation_y
+
+        index = max(0, min(frame_index, len(values) - 1))
+        value = float(values[index])
+
+        if parameter == "zoom":
+            zoom = value
+        elif parameter == "angle":
+            angle = value
+        elif parameter == "translation_x":
+            translation_x = value
+        elif parameter == "translation_y":
+            translation_y = value
+
+        return zoom, angle, translation_x, translation_y
 
 
 NODE_CLASS_MAPPINGS = {

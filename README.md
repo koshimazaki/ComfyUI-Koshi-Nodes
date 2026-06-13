@@ -44,6 +44,8 @@ curl -sL https://raw.githubusercontent.com/koshimazaki/ComfyUI-Koshi-Nodes/main/
 
 Includes: ComfyUI, Koshi Nodes, ComfyUI-Manager, VideoHelperSuite, ComfyUI-GGUF, FLUX Dev Q4
 
+For FLUX.2 Klein, the setup uses Klein's diffusers-format VAE because the Klein repo does not ship a native `ae.safetensors`. If you also run native BFL SDK scripts, add `--flux2-native-ae` to download the shared FLUX.2-dev family AE, or set `AE_MODEL_PATH` yourself.
+
 ## Node Naming
 
 Nodes are prefixed by category for easy identification:

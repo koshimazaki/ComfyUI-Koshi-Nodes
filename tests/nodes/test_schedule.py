@@ -84,6 +84,16 @@ class TestKoshiScheduleLinearMiddle:
         values = result[0]["values"]
         assert abs(values[50] - 50.0) < 1.0
 
+    def test_easing_is_applied(self, schedule_node):
+        result = schedule_node.parse(
+            schedule_string="0:(0.0), 10:(1.0)",
+            max_frames=11,
+            interpolation="linear",
+            easing="easeIn",
+        )
+        values = result[0]["values"]
+        assert values[5] < 0.5
+
 
 class TestKoshiScheduleSingleKeyframe:
     """Single keyframe produces constant value array."""
@@ -98,5 +108,4 @@ class TestKoshiScheduleSingleKeyframe:
         values = result[0]["values"]
         for v in values:
             assert abs(v - 3.14) < 1e-4
-
 

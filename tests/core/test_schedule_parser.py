@@ -109,6 +109,18 @@ class TestParseScheduleString:
         assert values[5] == pytest.approx(0.5, abs=1e-4)
         assert values[10] == pytest.approx(1.0, abs=1e-4)
 
+    def test_linear_easing_changes_segment_shape(self):
+        """Named easing is applied per keyframe segment."""
+        values = parse_schedule_string(
+            "0:(0.0), 10:(1.0)",
+            num_frames=11,
+            interpolation="linear",
+            easing="easeIn",
+        )
+        assert values[0] == pytest.approx(0.0, abs=1e-4)
+        assert values[10] == pytest.approx(1.0, abs=1e-4)
+        assert values[5] < 0.5
+
     def test_result_is_list_of_floats(self):
         values = parse_schedule_string("0:(1.0), 30:(2.0)", num_frames=30)
         assert isinstance(values, list)

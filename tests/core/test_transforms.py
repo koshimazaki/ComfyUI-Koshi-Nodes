@@ -37,11 +37,11 @@ class TestCreateAffineMatrix:
                                   [0.0, 1.0, 0.0]], dtype=torch.float32)
         assert torch.allclose(mat, expected, atol=1e-6)
 
-    def test_zoom_scales_diagonal(self):
-        """Zoom=2 should double the top-left 2x2 diagonal (no rotation)."""
+    def test_zoom_inverts_sampling_diagonal(self):
+        """Zoom=2 samples a half-size area so the image zooms in."""
         mat = create_affine_matrix(zoom=2.0, angle=0.0)
-        assert mat[0, 0].item() == pytest.approx(2.0, abs=1e-6)
-        assert mat[1, 1].item() == pytest.approx(2.0, abs=1e-6)
+        assert mat[0, 0].item() == pytest.approx(0.5, abs=1e-6)
+        assert mat[1, 1].item() == pytest.approx(0.5, abs=1e-6)
         # Off-diagonals should be zero (no rotation)
         assert mat[0, 1].item() == pytest.approx(0.0, abs=1e-6)
         assert mat[1, 0].item() == pytest.approx(0.0, abs=1e-6)

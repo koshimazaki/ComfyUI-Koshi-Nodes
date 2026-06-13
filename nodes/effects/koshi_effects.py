@@ -322,7 +322,7 @@ class KoshiEffects:
         return result
 
     # ========== MAIN APPLY ==========
-    def apply(self, image, effect_type, enabled, mix, intensity,
+    def apply(self, image, effect_type, enabled=True, mix=1.0, intensity=0.5,
               dither_method="bayer", dither_levels=4,
               bloom_threshold=0.8, bloom_radius=0.5,
               rgb_shift=6.0, shake_amount=8.0, noise_amount=0.15, scan_lines=0.15,
