@@ -29,9 +29,15 @@ LoRA-patched CLIP ─┐
 Editable Text ─────┘
 ```
 
-The Text field remains user-authored. The controller shows a live read-only
-preview of the combined prompt; the selected treatment is appended and encoded
-when the workflow runs.
+The Text field remains user-authored. The selected treatment is appended and
+encoded when the workflow runs; the room overlay does not duplicate the prompt.
+
+To inspect the generated suffix without covering the room visualization, connect
+the modular node to Comfy's separate text viewer:
+
+```text
+AKUSPACE Prompt → Preview as Text
+```
 
 ## Controls
 
@@ -42,7 +48,8 @@ when the workflow runs.
 
 The holographic room is a relative visualization, not a physical room
 measurement. Its controls snap to trained categories rather than implying
-unsupported continuous conditioning.
+unsupported continuous conditioning. The Comfy overlay uses shorter faders and
+tighter spacing than the standalone website controller so the room stays visible.
 
 ## Model and demo
 

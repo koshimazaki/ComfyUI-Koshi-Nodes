@@ -136,7 +136,7 @@ pack. See the [AKUSPACE guide](./docs/AKUSPACE.md) and
 | Node | Description |
 |------|-------------|
 | `◉ AKUSPACE Prompt` | Modular Prompt → Prompt treatment node, compatible with camera and other string controls. |
-| `◉ AKUSPACE Text Encode` | CLIP + editable Text → Conditioning convenience node with live combined-prompt preview. |
+| `◉ AKUSPACE Text Encode` | CLIP + editable Text → Conditioning convenience node; the AKUSPACE suffix is appended on Run. |
 
 ## Project Structure
 
@@ -215,6 +215,11 @@ Image → ░▒░ KN Greyscale → ░▀░ KN Dither → ░▒░ KN SIDKIT
 **AKUSPACE modular prompt:**
 ```
 Base Prompt → ◉ AKUSPACE Prompt → CLIP Text Encode → Conditioning
+```
+
+Optional text inspection follows the standard camera-control pattern:
+```
+◉ AKUSPACE Prompt → Preview as Text
 ```
 
 **AKUSPACE integrated encode:**
