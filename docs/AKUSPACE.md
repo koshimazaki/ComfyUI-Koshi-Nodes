@@ -54,6 +54,39 @@ measurement. Its controls snap to trained categories rather than implying
 unsupported continuous conditioning. The Comfy overlay uses shorter faders and
 tighter spacing than the standalone website controller so the room stays visible.
 
+### Mode and Application
+
+Application is a single control shared by every mode, so each mode reads only
+the values it defines:
+
+| Mode | Application values | Falls back to |
+|------|--------------------|---------------|
+| Off | *(none — conditioning is bypassed)* | — |
+| Room | Low, Moderate, Heavy | Dry / wet widget |
+| Space | Day, Night | Space widget |
+| SFX | Low, High | Dry / wet widget |
+
+`Application = Off` is **not** a bypass — it means "no override, use the mode's
+own level widget". Only `Mode = Off` bypasses conditioning and returns the
+prompt untouched.
+
+The graph UI keeps Mode and Application in step. API and headless callers can
+set a pair a mode does not define (say Room + Night); those normalise to the
+mode's own level widget and log a warning rather than silently returning a
+different caption.
+
+### Widget loading
+
+The room visualization ships as a prebuilt bundle (`js/akuspace-widget.mjs`,
+~980KB with a Vue runtime and Three.js). `js/akuspace-loader.js` imports it on
+demand the first time an AKUSPACE node appears, so graphs without these nodes
+pay nothing at startup — the same approach ComfyUI core uses for its Three.js
+Load3D extension. The `.mjs` extension is deliberate: it keeps the bundle out
+of ComfyUI's `**/*.js` extension auto-load glob.
+
+Third-party licences for the bundled libraries are listed in
+[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
+
 ## Model and demo
 
 - Interactive project page: [audiolora.dev](https://audiolora.dev/)

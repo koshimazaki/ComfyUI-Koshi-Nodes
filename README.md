@@ -14,7 +14,7 @@
 
 **20 focused nodes** for ComfyUI: **Motion** (Deforum-style animation), **Effects** (unified effects + standalone bloom/glitch/chromatic), **Generators** (procedural patterns, raymarched 3D), **Space / Conditioning** (AKUSPACE prompt and CLIP encoding), **SIDKIT** (OLED/embedded display export), and **Utility** (metadata capture).
 
-> Consolidated core plus two AKUSPACE spatial-audio conditioning nodes — cleaner interfaces, fewer clicks.
+> Consolidated from 40 nodes down to 18 — same functionality, cleaner interface, fewer clicks — plus two AKUSPACE spatial-audio conditioning nodes.
 
 https://github.com/user-attachments/assets/8c9f2c39-71c7-405a-bb94-10b0b9e96c32
 
@@ -137,6 +137,10 @@ pack. See the [AKUSPACE guide](./docs/AKUSPACE.md) and
 |------|-------------|
 | `◉ AKUSPACE Prompt` | Modular Prompt → Prompt treatment node, compatible with camera and other string controls. |
 | `◉ AKUSPACE Text Encode` | CLIP + editable Text → Conditioning convenience node; the AKUSPACE suffix is appended on Run. |
+
+The WebGL controller is a ~980KB prebuilt bundle (Vue + Three.js) that loads on
+demand the first time an AKUSPACE node appears, so graphs without these nodes
+pay nothing at startup.
 
 ## Project Structure
 

@@ -1,15 +1,20 @@
 """AKUSPACE prompt and text-encoding controls for the spatial-audio LoRA."""
 
+import logging
+
 from .conditioning import (
     EFFECT_LEVELS,
     OUTDOOR_TIMES,
     ROOM_PRESETS,
     SFX_LEVELS,
-    build_scene,
+    build_caption,
     compose_prompt,
     encode_conditioning,
+    validate_choice,
 )
 
+
+logger = logging.getLogger(__name__)
 
 MODE_OPTIONS = ["Off", "Room", "Space", "Sound effects"]
 APPLICATION_OPTIONS = ["Off", "Low", "Moderate", "Heavy", "Day", "Night", "High"]
@@ -26,6 +31,19 @@ MODE_VALUES = {
 ROOM_APPLICATION = {"Low": "low", "Moderate": "mid", "Heavy": "high"}
 SPACE_APPLICATION = {"Day": "day", "Night": "night"}
 SFX_APPLICATION = {"Low": "low", "High": "high"}
+
+# Application is one flat combo shared by every mode, so only 8 of the 28
+# mode x application pairs mean anything. The graph UI keeps the pair
+# consistent; API and headless callers get no such help, so map each mode to
+# the applications it actually understands and report the rest.
+APPLICATION_BY_MODE = {
+    "room": ROOM_APPLICATION,
+    "outside": SPACE_APPLICATION,
+    "sfx": SFX_APPLICATION,
+}
+# "Off" means "no Application override, use the mode's own level widget".
+# It is not a bypass -- only space_mode="Off" bypasses conditioning.
+APPLICATION_NEUTRAL = "Off"
 
 
 def _controls():
@@ -55,13 +73,34 @@ def _controls():
 
 
 def _resolve_application(mode, application, effect_level, outdoor_time, sfx_level):
+    """Fold the compact Application control into the level widget `mode` uses.
+
+    An Application the mode does not define normalises to that mode's own level
+    widget and warns, so a headless caller sees the mismatch instead of getting
+    a caption it never asked for.
+    """
+
+    allowed = APPLICATION_BY_MODE.get(mode)
+    if allowed is None:  # dry: nothing to apply
+        return effect_level, outdoor_time, sfx_level
+
+    if application not in allowed:
+        if application != APPLICATION_NEUTRAL:
+            logger.warning(
+                "AKUSPACE: %s; using the mode's own level widget instead. "
+                "Valid for %s mode: %s.",
+                validate_choice(application, sorted(allowed), f"{mode} application"),
+                mode,
+                ", ".join(sorted(allowed)),
+            )
+        return effect_level, outdoor_time, sfx_level
+
+    value = allowed[application]
     if mode == "room":
-        effect_level = ROOM_APPLICATION.get(application, effect_level)
-    elif mode == "outside":
-        outdoor_time = SPACE_APPLICATION.get(application, outdoor_time)
-    elif mode == "sfx":
-        sfx_level = SFX_APPLICATION.get(application, sfx_level)
-    return effect_level, outdoor_time, sfx_level
+        return value, outdoor_time, sfx_level
+    if mode == "outside":
+        return effect_level, value, sfx_level
+    return effect_level, outdoor_time, value
 
 
 def _conditioned_prompt(
@@ -81,7 +120,7 @@ def _conditioned_prompt(
         outdoor_time,
         sfx_level,
     )
-    scene = build_scene(
+    caption = build_caption(
         space_mode=mode,
         room_preset=room_preset,
         outdoor_time=outdoor_time,
@@ -89,7 +128,7 @@ def _conditioned_prompt(
         source_type="",
         sfx_level=sfx_level,
     )
-    return compose_prompt(text, scene["caption"], enabled=mode != "dry")
+    return compose_prompt(text, caption, enabled=mode != "dry")
 
 
 class KoshiAKUSPACEPrompt:
