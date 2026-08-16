@@ -1,4 +1,8 @@
-from nodes.audio.akuspace import KoshiAKUSPACEPrompt, KoshiAKUSPACETextEncode
+from nodes.audio.akuspace import (
+    NODE_DISPLAY_NAME_MAPPINGS,
+    KoshiAKUSPACEPrompt,
+    KoshiAKUSPACETextEncode,
+)
 
 
 class FakeClip:
@@ -21,6 +25,15 @@ DEFAULTS = {
     "outdoor_time": "day",
     "sfx_level": "low",
 }
+
+
+def test_nodes_use_space_category_and_circle_mark():
+    assert KoshiAKUSPACEPrompt.CATEGORY == "Koshi/Space"
+    assert KoshiAKUSPACETextEncode.CATEGORY == "Koshi/Space"
+    assert NODE_DISPLAY_NAME_MAPPINGS == {
+        "Koshi_AKUSPACEPrompt": "◉ AKUSPACE Prompt",
+        "Koshi_AKUSPACETextEncode": "◉ AKUSPACE Text Encode",
+    }
 
 
 def test_prompt_variant_appends_effect_only_caption():

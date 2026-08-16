@@ -93,7 +93,7 @@ def _conditioned_prompt(
 
 
 class KoshiAKUSPACEPrompt:
-    CATEGORY = "Koshi/Audio/Conditioning"
+    CATEGORY = "Koshi/Space"
     FUNCTION = "execute"
     RETURN_TYPES = ("STRING",)
     RETURN_NAMES = ("Prompt",)
@@ -139,7 +139,7 @@ class KoshiAKUSPACEPrompt:
 
 
 class KoshiAKUSPACETextEncode:
-    CATEGORY = "Koshi/Audio/Conditioning"
+    CATEGORY = "Koshi/Space"
     FUNCTION = "execute"
     RETURN_TYPES = ("CONDITIONING",)
     RETURN_NAMES = ("Conditioning",)

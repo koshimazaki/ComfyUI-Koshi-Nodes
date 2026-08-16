@@ -6,13 +6,13 @@
 ██║  ██╗╚██████╔╝███████║██║  ██║██║    ██║ ╚████║╚██████╔╝██████╔╝███████╗███████║
 ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝    ╚═╝  ╚═══╝ ╚═════╝ ╚═════╝ ╚══════╝╚══════╝
 ```
-░░█ **Custom nodes for ComfyUI** - Flux Motion V2V | Effects | Generators | Audio Conditioning | SIDKIT OLED █░░
+░░█ **Custom nodes for ComfyUI** - Flux Motion V2V | Effects | Generators | Spatial Conditioning | SIDKIT OLED █░░
 
 ---
 
 # ComfyUI-Koshi-Nodes
 
-**20 focused nodes** for ComfyUI: **Motion** (Deforum-style animation), **Effects** (unified effects + standalone bloom/glitch/chromatic), **Generators** (procedural patterns, raymarched 3D), **Audio / Conditioning** (AKUSPACE prompt and CLIP encoding), **SIDKIT** (OLED/embedded display export), and **Utility** (metadata capture).
+**20 focused nodes** for ComfyUI: **Motion** (Deforum-style animation), **Effects** (unified effects + standalone bloom/glitch/chromatic), **Generators** (procedural patterns, raymarched 3D), **Space / Conditioning** (AKUSPACE prompt and CLIP encoding), **SIDKIT** (OLED/embedded display export), and **Utility** (metadata capture).
 
 > Consolidated core plus two AKUSPACE spatial-audio conditioning nodes — cleaner interfaces, fewer clicks.
 
@@ -55,7 +55,7 @@ Nodes are prefixed by category for easy identification:
 | `▄█▄` | Generators | Glitch Candies, Shape Morph, Noise Displace, Raymarcher |
 | `░▒░` | SIDKIT/Export | SIDKIT Binary, Greyscale, SIDKIT OLED, Sprite Sheet |
 | `◊` | Utility | Metadata |
-| `◉` | Audio / Conditioning | AKUSPACE Prompt, AKUSPACE Text Encode |
+| `◉` | Space / Conditioning | AKUSPACE Prompt, AKUSPACE Text Encode |
 
 ## All 20 Nodes
 
@@ -126,7 +126,7 @@ Nodes for [SIDKIT](https://sidkit.pages.dev/) synthesizer OLED displays (SSD1306
 |------|-------------|
 | `◊ Koshi Metadata` | **Unified metadata node** — capture workflow settings, display, and save as JSON/text. Extracts seed, steps, cfg, model, LoRAs, prompts. |
 
-### Audio / Conditioning (2 nodes)
+### Space / Conditioning (2 nodes)
 
 AKUSPACE provides a shared WebGL spatial controller for an experimental LTX
 audio LoRA. The LoRA checkpoint is external and is not bundled with this node

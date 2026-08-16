@@ -7,6 +7,9 @@ training.
 
 ## Nodes
 
+Both nodes appear under **Koshi → Space** and use the circular `◉` category
+mark in the node title.
+
 ### ◉ AKUSPACE Prompt
 
 Use this modular variant beside camera, lighting, or other prompt-building

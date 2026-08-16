@@ -19,7 +19,7 @@ _SUFFIXES = [
     "GlitchCandies", "ShapeMorph", "NoiseDisplace", "Raymarcher",
     # Utility
     "Metadata",
-    # Audio / Conditioning
+    # Space / Conditioning
     "AKUSPACEPrompt", "AKUSPACETextEncode",
     # Flux Motion
     "Schedule", "MotionEngine", "Feedback",

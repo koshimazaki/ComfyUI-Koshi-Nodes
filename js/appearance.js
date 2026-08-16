@@ -9,7 +9,7 @@
  * - Flux Motion (3):  ▄▀▄ KN — Schedule, Motion Engine, Feedback
  * - SIDKIT (6):       ░▒░ KN — SIDKIT OLED, Sprite Sheet, Binary, Greyscale, Dither, Dithering Filter
  * - Utility (1):      ◊      — Metadata
- * - Audio (2):        ◉      — AKUSPACE Prompt, AKUSPACE Text Encode
+ * - Space (2):        ◉      — AKUSPACE Prompt, AKUSPACE Text Encode
  */
 
 import { app } from "../../../scripts/app.js";
@@ -21,7 +21,7 @@ const COLORS = {
     generators: { color: "#FF9F43", bgcolor: "#1a1a1a" },
     sidkit: { color: "#FF9F43", bgcolor: "#ffffff" },
     utility: { color: "#FF9F43", bgcolor: "#1a1a1a" },
-    audio: { color: "#FF9F43", bgcolor: "#1a1a1a" },
+    space: { color: "#FF9F43", bgcolor: "#1a1a1a" },
 };
 
 // Node to category mapping
@@ -44,8 +44,8 @@ const NODE_CATEGORIES = {
     "Koshi_Dither": "sidkit",
     "Koshi_DitheringFilter": "sidkit",
     "Koshi_Metadata": "utility",
-    "Koshi_AKUSPACEPrompt": "audio",
-    "Koshi_AKUSPACETextEncode": "audio",
+    "Koshi_AKUSPACEPrompt": "space",
+    "Koshi_AKUSPACETextEncode": "space",
 };
 
 // Default node width — ~50% wider than ComfyUI default 225px
