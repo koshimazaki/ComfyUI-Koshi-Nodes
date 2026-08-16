@@ -97,7 +97,10 @@ class TestCategoryImports:
     def test_import_audio(self):
         from nodes.audio import NODE_CLASS_MAPPINGS
         assert isinstance(NODE_CLASS_MAPPINGS, dict)
-        assert len(NODE_CLASS_MAPPINGS) == 0  # Empty, but importable
+        assert set(NODE_CLASS_MAPPINGS) == {
+            "Koshi_AKUSPACEPrompt",
+            "Koshi_AKUSPACETextEncode",
+        }
 
 
 class TestGracefulDegradation:

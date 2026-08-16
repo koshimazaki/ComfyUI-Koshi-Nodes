@@ -6,15 +6,15 @@
 ██║  ██╗╚██████╔╝███████║██║  ██║██║    ██║ ╚████║╚██████╔╝██████╔╝███████╗███████║
 ╚═╝  ╚═╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝    ╚═╝  ╚═══╝ ╚═════╝ ╚═════╝ ╚══════╝╚══════╝
 ```
-░░█ **Custom nodes for ComfyUI** - Flux Motion V2V | Effects | Generators | SIDKIT OLED █░░
+░░█ **Custom nodes for ComfyUI** - Flux Motion V2V | Effects | Generators | Audio Conditioning | SIDKIT OLED █░░
 
 ---
 
 # ComfyUI-Koshi-Nodes
 
-**18 focused nodes** for ComfyUI: **Motion** (Deforum-style animation), **Effects** (unified effects + standalone bloom/glitch/chromatic), **Generators** (procedural patterns, raymarched 3D), **SIDKIT** (OLED/embedded display export), and **Utility** (metadata capture).
+**20 focused nodes** for ComfyUI: **Motion** (Deforum-style animation), **Effects** (unified effects + standalone bloom/glitch/chromatic), **Generators** (procedural patterns, raymarched 3D), **Audio / Conditioning** (AKUSPACE prompt and CLIP encoding), **SIDKIT** (OLED/embedded display export), and **Utility** (metadata capture).
 
-> Consolidated from 40 nodes down to 18 — same functionality, cleaner interface, fewer clicks.
+> Consolidated core plus two AKUSPACE spatial-audio conditioning nodes — cleaner interfaces, fewer clicks.
 
 https://github.com/user-attachments/assets/8c9f2c39-71c7-405a-bb94-10b0b9e96c32
 
@@ -55,8 +55,9 @@ Nodes are prefixed by category for easy identification:
 | `▄█▄` | Generators | Glitch Candies, Shape Morph, Noise Displace, Raymarcher |
 | `░▒░` | SIDKIT/Export | SIDKIT Binary, Greyscale, SIDKIT OLED, Sprite Sheet |
 | `◊` | Utility | Metadata |
+| `◉` | Audio / Conditioning | AKUSPACE Prompt, AKUSPACE Text Encode |
 
-## All 18 Nodes
+## All 20 Nodes
 
 ### Effects (6 nodes)
 Post-processing effects based on [alien.js](https://github.com/alienkitty/alien.js) and custom shaders.
@@ -125,6 +126,18 @@ Nodes for [SIDKIT](https://sidkit.pages.dev/) synthesizer OLED displays (SSD1306
 |------|-------------|
 | `◊ Koshi Metadata` | **Unified metadata node** — capture workflow settings, display, and save as JSON/text. Extracts seed, steps, cfg, model, LoRAs, prompts. |
 
+### Audio / Conditioning (2 nodes)
+
+AKUSPACE provides a shared WebGL spatial controller for an experimental LTX
+audio LoRA. The LoRA checkpoint is external and is not bundled with this node
+pack. See the [AKUSPACE guide](./docs/AKUSPACE.md) and
+[interactive project page](https://audiolora.dev/).
+
+| Node | Description |
+|------|-------------|
+| `◉ AKUSPACE Prompt` | Modular Prompt → Prompt treatment node, compatible with camera and other string controls. |
+| `◉ AKUSPACE Text Encode` | CLIP + editable Text → Conditioning convenience node with live combined-prompt preview. |
+
 ## Project Structure
 
 ```
@@ -137,7 +150,7 @@ ComfyUI-Koshi-Nodes/
 │   ├── generators/     # Glitch Candies, shape morph, noise displace, raymarcher
 │   ├── utility/        # Metadata (unified capture/display/save)
 │   ├── utils/          # Shared utilities (tensor ops, metadata)
-│   ├── audio/          # (Reserved for future audio-reactive nodes)
+│   ├── audio/          # AKUSPACE prompt and CLIP-conditioning nodes
 │   └── image/          # SIDKIT Edition
 │       ├── binary/     # Threshold + hex export
 │       ├── dither/     # Bayer, Floyd-Steinberg, Atkinson, Halftone
@@ -199,6 +212,16 @@ Image → ░▒░ KN Greyscale → ░▀░ KN Dither → ░▒░ KN SIDKIT
 ▄█▄ Glitch Candies → ░▀░ Koshi Effects (scanlines) → ░▒░ KN Sprite Sheet
 ```
 
+**AKUSPACE modular prompt:**
+```
+Base Prompt → ◉ AKUSPACE Prompt → CLIP Text Encode → Conditioning
+```
+
+**AKUSPACE integrated encode:**
+```
+LoRA-patched CLIP + Text → ◉ AKUSPACE Text Encode → Conditioning
+```
+
 ## Dependencies
 
 **Required:** `torch`, `numpy`, `pillow`
@@ -215,3 +238,4 @@ Image → ░▒░ KN Greyscale → ░▀░ KN Dither → ░▒░ KN SIDKIT
 - [alien.js](https://github.com/alienkitty/alien.js) by Patrick Schroen - Chromatic aberration, bloom shaders (MIT)
 - Hologram based on [CreaturesSite](https://github.com/koshimazaki/CreaturesSite)
 - SIDKIT Edition for [SIDKIT Synthesizer](https://github.com/koshimazaki/SIDKIT)
+- AKUSPACE WebGL controller uses Vue and Three.js; see [third-party notices](./THIRD_PARTY_NOTICES.md)
