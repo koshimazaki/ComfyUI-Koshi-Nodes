@@ -1,0 +1,297 @@
+{
+  "version": 4,
+  "release": {
+    "display_version": "0.5",
+    "stage": "pre-alpha"
+  },
+  "trigger": "AKUSPACE",
+  "default_model_profile": "ltx25_audio",
+  "model_profiles": [
+    {
+      "id": "ltx25_audio",
+      "label": "LTX-2.5 Audio",
+      "trigger": "AKUSPACE",
+      "status": "active",
+      "supported_modes": [
+        "dry",
+        "room",
+        "outside",
+        "sfx"
+      ]
+    }
+  ],
+  "control_schema": {
+    "modes": [
+      {
+        "value": "dry",
+        "label": "Off"
+      },
+      {
+        "value": "room",
+        "label": "Room"
+      },
+      {
+        "value": "outside",
+        "label": "Space"
+      },
+      {
+        "value": "sfx",
+        "label": "Sound effects"
+      }
+    ],
+    "room_presets": [
+      "small_room",
+      "empty_club",
+      "medium_room",
+      "cathedral"
+    ],
+    "reverb_levels": [
+      "low",
+      "mid",
+      "high"
+    ],
+    "outdoor_times": [
+      "day",
+      "night"
+    ],
+    "outdoor_level": "low",
+    "sfx_presets": [
+      "dual_delay"
+    ],
+    "sfx_levels": [
+      "low",
+      "high"
+    ]
+  },
+  "levels": {
+    "low": {
+      "label": "Low",
+      "caption_word": "gentle",
+      "relative_db": -25,
+      "visual_amount": 0.28
+    },
+    "mid": {
+      "label": "Moderate",
+      "caption_word": "moderate",
+      "relative_db": -12,
+      "visual_amount": 0.58
+    },
+    "high": {
+      "label": "Heavy",
+      "caption_word": "heavy",
+      "relative_db": 0,
+      "visual_amount": 1.0
+    }
+  },
+  "source_types": [
+    {
+      "value": "male spoken voice",
+      "label": "Male spoken voice",
+      "coverage": "trained"
+    },
+    {
+      "value": "female spoken voice",
+      "label": "Female spoken voice",
+      "coverage": "trained"
+    },
+    {
+      "value": "electronic rhythm loop",
+      "label": "Beat / music loop",
+      "coverage": "trained"
+    },
+    {
+      "value": "handclaps",
+      "label": "Handclaps",
+      "coverage": "trained"
+    },
+    {
+      "value": "solo piano phrase",
+      "label": "Piano phrase",
+      "coverage": "trained"
+    },
+    {
+      "value": "piano and saxophone phrase",
+      "label": "Piano + saxophone",
+      "coverage": "trained"
+    },
+    {
+      "value": "citola string phrase",
+      "label": "String phrase",
+      "coverage": "trained"
+    },
+    {
+      "value": "granular sound effect",
+      "label": "Granular SFX",
+      "coverage": "experimental"
+    }
+  ],
+  "presets": {
+    "dry": {
+      "mode": "dry",
+      "label": "Dry / off",
+      "short_label": "Dry",
+      "description": "Bypass the LoRA and keep the reference dry.",
+      "acoustic_fingerprint": "dry reference · no reverb",
+      "dimensions_m": [
+        4.0,
+        5.0,
+        2.8
+      ],
+      "estimated_rt60": 0.08,
+      "estimated_predelay_ms": 1.0,
+      "palette": [
+        "#d7ded9",
+        "#202522"
+      ]
+    },
+    "small_room": {
+      "mode": "room",
+      "label": "Small room",
+      "short_label": "Small",
+      "description": "Bathroom-scale space with bright, close reflections.",
+      "acoustic_fingerprint": "trained caption 0.67 s · source setting ≈1.07 s",
+      "dimensions_m": [
+        2.4,
+        3.2,
+        2.5
+      ],
+      "caption_where": "in a small bathroom-like room",
+      "caption_character": "bright close reflections and a short 0.67-second reverb decay",
+      "caption_tail": "no background ambience",
+      "estimated_rt60": 0.67,
+      "estimated_predelay_ms": 4.0,
+      "palette": [
+        "#8edcff",
+        "#173344"
+      ]
+    },
+    "medium_room": {
+      "mode": "room",
+      "label": "Medium room",
+      "short_label": "Medium",
+      "description": "Balanced room scale with a smooth 1.9-second decay.",
+      "acoustic_fingerprint": "trained caption 1.90 s · source setting ≈1.92 s",
+      "dimensions_m": [
+        7.0,
+        9.0,
+        3.6
+      ],
+      "caption_where": "in a medium reverberant room",
+      "caption_character": "smooth reflections and a 1.9-second reverb decay",
+      "caption_tail": "no background ambience",
+      "estimated_rt60": 1.9,
+      "estimated_predelay_ms": 11.0,
+      "palette": [
+        "#82f5c2",
+        "#15372e"
+      ]
+    },
+    "empty_club": {
+      "mode": "room",
+      "label": "Empty club",
+      "short_label": "Club",
+      "description": "Filtered hard-surface reflections with a shorter, tighter 1.2-second decay.",
+      "acoustic_fingerprint": "1.20 s decay · device size 6.8",
+      "dimensions_m": [
+        16.0,
+        24.0,
+        6.0
+      ],
+      "caption_where": "in an empty club",
+      "caption_character": "broad hard-surface reflections and a 1.2-second reverb decay",
+      "caption_tail": "no crowd",
+      "estimated_rt60": 1.2,
+      "estimated_predelay_ms": 18.0,
+      "palette": [
+        "#ffb86f",
+        "#422918"
+      ]
+    },
+    "cathedral": {
+      "mode": "room",
+      "label": "Cathedral",
+      "short_label": "Cathedral",
+      "description": "Monumental synthetic space with a long diffuse tail.",
+      "acoustic_fingerprint": "synthetic cathedral · 506 ms delay setting",
+      "dimensions_m": [
+        26.0,
+        78.0,
+        29.0
+      ],
+      "caption_where": "through synthetic cathedral reverb",
+      "caption_character": "wide diffuse reflections and a long decaying tail",
+      "caption_tail": "no background ambience",
+      "estimated_rt60": 4.8,
+      "estimated_predelay_ms": 38.0,
+      "palette": [
+        "#d6adff",
+        "#392c4e"
+      ]
+    },
+    "dual_delay": {
+      "mode": "sfx",
+      "effect_type": "modular_dual_delay",
+      "coverage": "experimental",
+      "label": "Dual Delay",
+      "short_label": "Dual Delay",
+      "description": "Experimental modular dual-delay patch captioned during training as a modular granular delay.",
+      "acoustic_fingerprint": "modular dual delay · modular granular training caption",
+      "dimensions_m": [
+        10.0,
+        16.0,
+        4.0
+      ],
+      "caption_where": "through a modular granular delay",
+      "caption_character": "scattered grains and unpredictable modulated echoes",
+      "caption_tail": "no background ambience",
+      "estimated_rt60": 0.0,
+      "estimated_predelay_ms": 0.0,
+      "palette": [
+        "#ff78e8",
+        "#43183e"
+      ]
+    },
+    "outdoor_day": {
+      "mode": "outside",
+      "time_of_day": "day",
+      "label": "Outside · day",
+      "short_label": "Day",
+      "description": "Open-air acoustics with a continuous birdsong bed.",
+      "acoustic_fingerprint": "day birds · fixed trained ambience",
+      "dimensions_m": [
+        60.0,
+        120.0,
+        30.0
+      ],
+      "caption_where": "outdoors in daytime",
+      "caption_character": "open-air acoustics with continuous birdsong ambience",
+      "estimated_rt60": 0.08,
+      "estimated_predelay_ms": 2.0,
+      "palette": [
+        "#ffc95c",
+        "#3d331d"
+      ]
+    },
+    "outdoor_night": {
+      "mode": "outside",
+      "time_of_day": "night",
+      "label": "Outside · night",
+      "short_label": "Night",
+      "description": "Open-air acoustics with crickets and distant cars.",
+      "acoustic_fingerprint": "night crickets + cars · fixed trained ambience",
+      "dimensions_m": [
+        60.0,
+        120.0,
+        30.0
+      ],
+      "caption_where": "outdoors at night",
+      "caption_character": "open-air acoustics with crickets and distant car ambience",
+      "estimated_rt60": 0.1,
+      "estimated_predelay_ms": 2.0,
+      "palette": [
+        "#8f9cff",
+        "#141a3b"
+      ]
+    }
+  }
+}

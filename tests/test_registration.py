@@ -19,6 +19,8 @@ _SUFFIXES = [
     "GlitchCandies", "ShapeMorph", "NoiseDisplace", "Raymarcher",
     # Utility
     "Metadata",
+    # Space / Conditioning
+    "AKUSPACEPrompt", "AKUSPACETextEncode",
     # Flux Motion
     "Schedule", "MotionEngine", "Feedback",
 ]
@@ -34,10 +36,11 @@ def _gather_class_map():
     from nodes.export import NODE_CLASS_MAPPINGS as exp
     from nodes.generators import NODE_CLASS_MAPPINGS as gen
     from nodes.utility import NODE_CLASS_MAPPINGS as util
+    from nodes.audio import NODE_CLASS_MAPPINGS as audio
     from nodes.flux_motion import NODE_CLASS_MAPPINGS as fm
 
     combined = {}
-    for m in [dither, greyscale, binary, effects, exp, gen, util, fm]:
+    for m in [dither, greyscale, binary, effects, exp, gen, util, audio, fm]:
         combined.update(m)
     return combined
 
@@ -51,10 +54,11 @@ def _gather_name_map():
     from nodes.export import NODE_DISPLAY_NAME_MAPPINGS as exp
     from nodes.generators import NODE_DISPLAY_NAME_MAPPINGS as gen
     from nodes.utility import NODE_DISPLAY_NAME_MAPPINGS as util
+    from nodes.audio import NODE_DISPLAY_NAME_MAPPINGS as audio
     from nodes.flux_motion import NODE_DISPLAY_NAME_MAPPINGS as fm
 
     combined = {}
-    for m in [dither, greyscale, binary, effects, exp, gen, util, fm]:
+    for m in [dither, greyscale, binary, effects, exp, gen, util, audio, fm]:
         combined.update(m)
     return combined
 
@@ -75,7 +79,7 @@ class TestNodeRegistration:
 
     def test_minimum_count(self):
         mapping = _gather_class_map()
-        assert len(mapping) >= 18, f"Only {len(mapping)} registered, expected >=18"
+        assert len(mapping) >= 20, f"Only {len(mapping)} registered, expected >=20"
 
 
 class TestNodeInterface:
