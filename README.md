@@ -257,3 +257,9 @@ LoRA-patched CLIP + Text → ◉ AKUSPACE Text Encode → Conditioning
 - Hologram based on [CreaturesSite](https://github.com/koshimazaki/CreaturesSite)
 - SIDKIT Edition for [SIDKIT Synthesizer](https://github.com/koshimazaki/SIDKIT)
 - AKUSPACE WebGL controller uses Vue and Three.js; see [third-party notices](./THIRD_PARTY_NOTICES.md)
+
+## License
+
+Apache License 2.0 — see [`LICENSE`](./LICENSE) and [`NOTICE`](./NOTICE).
+Third-party components and their licenses are listed in
+[`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md).
