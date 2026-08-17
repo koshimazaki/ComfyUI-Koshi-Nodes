@@ -11,7 +11,20 @@ import numpy as np
 import torch
 import math
 
-from ..utils.preview import save_images_for_preview
+try:
+    from ..utils.preview import save_images_for_preview
+except ImportError:
+    # The pack's __init__ loads each category by file path, so `effects` has no
+    # parent package and `..utils` is "beyond top-level". Load the shared helper
+    # by path instead of silently dropping the node.
+    import importlib.util as _ilu
+    import os as _os
+
+    _preview_path = _os.path.join(_os.path.dirname(__file__), "..", "utils", "preview.py")
+    _spec = _ilu.spec_from_file_location("koshi_utils_preview", _preview_path)
+    _preview = _ilu.module_from_spec(_spec)
+    _spec.loader.exec_module(_preview)
+    save_images_for_preview = _preview.save_images_for_preview
 
 
 class GlitchShaderNode:
