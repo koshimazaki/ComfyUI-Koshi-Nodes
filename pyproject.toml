@@ -1,14 +1,18 @@
 [project]
 name = "comfyui-koshi-nodes"
-version = "0.2.0"
-description = "Koshi ComfyUI Nodes - Image processing, FLUX motion, audio, and more"
+version = "0.3.0"
+description = "Focused ComfyUI nodes: Flux Motion (Deforum-style latent animation, audio-driven schedules), Effects, Generators, AKUSPACE spatial-audio conditioning, SIDKIT OLED export, metadata"
 readme = "README.md"
-license = {text = "MIT"}
+license = {file = "LICENSE"}
 requires-python = ">=3.10"
+classifiers = [
+    "Operating System :: OS Independent",
+]
 
 dependencies = [
     "torch>=2.0",
     "numpy",
+    "Pillow",
 ]
 
 [project.optional-dependencies]
@@ -30,14 +34,13 @@ all = [
     "comfyui-koshi-nodes[flux,audio]",
 ]
 
-[tool.comfyui]
+[project.urls]
+Repository = "https://github.com/koshimazaki/ComfyUI-Koshi-Nodes"
+Documentation = "https://github.com/koshimazaki/ComfyUI-Koshi-Nodes#readme"
+
+# Read by the ComfyUI Registry (registry.comfy.org). The table must be
+# [tool.comfy]; the registry ignores [tool.comfyui].
+[tool.comfy]
 PublisherId = "koshi"
 DisplayName = "Koshi Nodes"
-Icon = ""
-
-[tool.comfyui.dependencies]
-# Core always available
-# Optional flux_motion only if [flux] installed
-
-[[tool.comfyui.models]]
-# Optional model definitions
+Icon = "https://avatars.githubusercontent.com/u/18751916"
