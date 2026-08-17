@@ -1,7 +1,7 @@
 """Feature-curve -> motion-schedule mapping for Koshi audio nodes.
 
 Pure-numpy bridge that turns per-frame feature tracks (see ``features.py``) into a
-``KOSHI_MOTION_SCHEDULE`` consumable by ``KoshiMotionEngine``
+``KOSHI_SCHEDULE`` consumable by ``KoshiMotionEngine``
 (``nodes/flux_motion/motion_engine.py``).
 
 The motion-frame objects reuse the canonical ``MotionFrame`` dataclass from
@@ -228,7 +228,7 @@ def build_motion_schedule(
     strength_gain: float = 0.0,
     smoothing: float = 0.2,
 ) -> Tuple[dict, List[float]]:
-    """Map feature tracks to a KOSHI_MOTION_SCHEDULE.
+    """Map feature tracks to a KOSHI_SCHEDULE.
 
     Mapping (all band energies are 0..1, scaled by the corresponding gain):
         zoom         = base_zoom     + low       * zoom_gain        (bass -> push-in)

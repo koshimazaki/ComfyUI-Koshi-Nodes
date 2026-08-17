@@ -4,7 +4,7 @@ Audio/video → motion for the Koshi pipeline.
 
 ## ▄▀▄ KN Audio → Motion (`Koshi_AudioMotionSchedule`)
 
-Turns audio (or video) features into a **`KOSHI_MOTION_SCHEDULE`** that plugs
+Turns audio (or video) features into a **`KOSHI_SCHEDULE`** that plugs
 straight into **KN Motion Engine** (`Koshi_MotionEngine`), plus a Deforum-style
 zoom string for use elsewhere.
 
@@ -18,7 +18,7 @@ Koshi's latent-space motion.
 
 | | |
 |---|---|
-| **Output** `motion_schedule` | `KOSHI_MOTION_SCHEDULE` → wire to `Koshi_MotionEngine.motion_schedule` |
+| **Output** `motion_schedule` | `KOSHI_SCHEDULE` → wire to `Koshi_MotionEngine.motion_schedule` |
 | **Output** `zoom_schedule_string` | `STRING`, e.g. `0:(1.0), 5:(1.16), ...` (Deforum-compatible) |
 
 ### Three sources (the `source` widget)
@@ -57,7 +57,7 @@ or `markers` (sparse impacts interpolated as keyframes — for beat/drum-times).
 [BFL dashboard analysis JSON]
         │ (paste into analysis_json)
         ▼
- KN Audio → Motion ──KOSHI_MOTION_SCHEDULE──▶ KN Motion Engine ──LATENT──▶ sampler/VAE
+ KN Audio → Motion ──KOSHI_SCHEDULE──▶ KN Motion Engine ──LATENT──▶ sampler/VAE
         └────────────zoom_schedule_string────▶ (optional: external Deforum tools)
 ```
 
@@ -74,9 +74,10 @@ dashboard so this is one click.
 
 ### Notes / follow-ups
 
-- `KoshiSchedule` emits type `KOSHI_SCHEDULE`, but `KoshiMotionEngine` expects
-  `KOSHI_MOTION_SCHEDULE` — they don't currently connect. This node emits the
-  latter directly; a tiny bridge/rename would reconcile the two existing nodes.
+- Wire type is `KOSHI_SCHEDULE`, shared with `KoshiSchedule`. The engine's
+  `motion_schedule` input accepts both payload shapes: this node's per-frame
+  `motion_frames` (zoom + angle + translation together) and `KoshiSchedule`'s
+  single-parameter `{name, values}`.
 - `video` mode is implemented but untested where `opencv-python` is broken under
   NumPy 2.x; it raises a clear error and the other modes still work.
 - Tests: `tests/test_audio_motion_schedule.py` (run with `python tests/test_audio_motion_schedule.py`).

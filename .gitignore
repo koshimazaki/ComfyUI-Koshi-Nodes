@@ -143,3 +143,10 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# macOS
+.DS_Store
+
+# Claude Code local state (per-user settings, in-repo worktrees)
+.claude/settings.local.json
+.claude/worktrees/

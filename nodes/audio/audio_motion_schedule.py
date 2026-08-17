@@ -1,6 +1,6 @@
 """KN Audio -> Motion Schedule node.
 
-Bridges audio/video features into a ``KOSHI_MOTION_SCHEDULE`` for
+Bridges audio/video features into a ``KOSHI_SCHEDULE`` for
 ``KoshiMotionEngine`` (plus a Deforum-style zoom schedule string). It does NOT
 re-implement audio analysis that already exists in the community -- instead it
 ingests the BFL dashboard's analysis JSON or Fill-Nodes' JSON and maps those
@@ -25,7 +25,11 @@ class KoshiAudioMotionSchedule:
 
     CATEGORY = "Koshi/Audio"
     FUNCTION = "generate"
-    RETURN_TYPES = ("KOSHI_MOTION_SCHEDULE", "STRING")
+    # Same wire type KoshiSchedule emits, so this plugs straight into
+    # KoshiMotionEngine.motion_schedule. The payload is the richer
+    # motion_frames shape (zoom + angle + translation per frame), which the
+    # engine's _resolve_schedule handles alongside single-parameter schedules.
+    RETURN_TYPES = ("KOSHI_SCHEDULE", "STRING")
     RETURN_NAMES = ("motion_schedule", "zoom_schedule_string")
 
     @classmethod

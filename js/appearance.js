@@ -3,10 +3,10 @@
  * Sets node colors based on category
  * Orange + Graphite theme for Nodes 2.0 (Vue) and LiteGraph canvas
  *
- * Groups (20 nodes):
+ * Groups (21 nodes):
  * - Effects (4):      ░▀░ KN — Bloom, Chromatic Aberration, Glitch, Effects
  * - Generators (4):   ▄█▄    — Glitch Candies, Shape Morph, Noise Displace, Raymarcher
- * - Flux Motion (3):  ▄▀▄ KN — Schedule, Motion Engine, Feedback
+ * - Flux Motion (4):  ▄▀▄ KN — Schedule, Motion Engine, Feedback, Audio → Motion
  * - SIDKIT (6):       ░▒░ KN — SIDKIT OLED, Sprite Sheet, Binary, Greyscale, Dither, Dithering Filter
  * - Utility (1):      ◊      — Metadata
  * - Space (2):        ◉      — AKUSPACE Prompt, AKUSPACE Text Encode
@@ -46,6 +46,7 @@ const NODE_CATEGORIES = {
     "Koshi_Metadata": "utility",
     "Koshi_AKUSPACEPrompt": "space",
     "Koshi_AKUSPACETextEncode": "space",
+    "Koshi_AudioMotionSchedule": "motion",
 };
 
 // Default node width — ~50% wider than ComfyUI default 225px

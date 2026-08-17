@@ -2,9 +2,15 @@
 
 import logging
 
-from .akuspace import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
+from .akuspace import NODE_CLASS_MAPPINGS as _akuspace_nodes
+from .akuspace import NODE_DISPLAY_NAME_MAPPINGS as _akuspace_names
 
 logger = logging.getLogger("koshi.audio")
+
+# Copy rather than alias so merging further nodes below never mutates the
+# submodule's own mappings.
+NODE_CLASS_MAPPINGS = dict(_akuspace_nodes)
+NODE_DISPLAY_NAME_MAPPINGS = dict(_akuspace_names)
 
 try:
     from .audio_motion_schedule import NODE_CLASS_MAPPINGS as _ams_nodes

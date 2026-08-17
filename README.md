@@ -12,7 +12,7 @@
 
 # ComfyUI-Koshi-Nodes
 
-**20 focused nodes** for ComfyUI: **Motion** (Deforum-style animation), **Effects** (unified effects + standalone bloom/glitch/chromatic), **Generators** (procedural patterns, raymarched 3D), **Space / Conditioning** (AKUSPACE prompt and CLIP encoding), **SIDKIT** (OLED/embedded display export), and **Utility** (metadata capture).
+**21 focused nodes** for ComfyUI: **Motion** (Deforum-style animation, audio-driven schedules), **Effects** (unified effects + standalone bloom/glitch/chromatic), **Generators** (procedural patterns, raymarched 3D), **Space / Conditioning** (AKUSPACE prompt and CLIP encoding), **SIDKIT** (OLED/embedded display export), and **Utility** (metadata capture).
 
 > Consolidated from 40 nodes down to 18 — same functionality, cleaner interface, fewer clicks — plus two AKUSPACE spatial-audio conditioning nodes.
 
@@ -53,13 +53,13 @@ Nodes are prefixed by category for easy identification:
 | Prefix | Category | Nodes |
 |--------|----------|-------|
 | `░▀░` | Effects | Koshi Effects (unified), Bloom, Chromatic, Glitch, Dither, Dithering Filter |
-| `▄▀▄` | Motion | Schedule, Motion Engine, Feedback |
+| `▄▀▄` | Motion | Schedule, Motion Engine, Feedback, Audio → Motion |
 | `▄█▄` | Generators | Glitch Candies, Shape Morph, Noise Displace, Raymarcher |
 | `░▒░` | SIDKIT/Export | SIDKIT Binary, Greyscale, SIDKIT OLED, Sprite Sheet |
 | `◊` | Utility | Metadata |
 | `◉` | Space / Conditioning | AKUSPACE Prompt, AKUSPACE Text Encode |
 
-## All 20 Nodes
+## All 21 Nodes
 
 ### Effects (6 nodes)
 Post-processing effects based on [alien.js](https://github.com/alienkitty/alien.js) and custom shaders.
@@ -73,14 +73,15 @@ Post-processing effects based on [alien.js](https://github.com/alienkitty/alien.
 | `░▀░ KN Dither` | Bayer, floyd-steinberg, atkinson, halftone |
 | `░▀░ KN Dithering Filter` | GPU-accelerated dithering filter |
 
-### Motion (3 nodes)
+### Motion (4 nodes)
 Deforum-inspired animation engine for FLUX models.
 
 **Pipeline:**
 ```
-▄▀▄ Schedule → ▄▀▄ Motion Engine → KSampler
-                                      ↓
-                              ▄▀▄ Feedback (loop)
+▄▀▄ Schedule ─────────┐
+                      ├→ ▄▀▄ Motion Engine → KSampler
+▄▀▄ Audio → Motion ───┘            ↓
+                           ▄▀▄ Feedback (loop)
 ```
 
 | Node | Description |
@@ -88,6 +89,7 @@ Deforum-inspired animation engine for FLUX models.
 | `▄▀▄ KN Schedule` | Parse keyframe strings (`0:(1.0), 30:(0.5)`) with interpolation and easing |
 | `▄▀▄ KN Motion Engine` | Apply motion transforms to latents (zoom, angle, translation) |
 | `▄▀▄ KN Feedback` | Frame-to-frame coherence: color match, sharpen, noise, auto-correct |
+| `▄▀▄ KN Audio → Motion` | Map audio/video features (BFL dashboard JSON, Fill-Nodes JSON, AUDIO input, or MP4) onto a motion schedule: bass → zoom, highs → rotation, mids → drift. See [`nodes/audio/README.md`](./nodes/audio/README.md) |
 
 ### Generators (4 nodes)
 Procedural patterns, fractals, and raymarched 3D shapes.
@@ -156,7 +158,7 @@ ComfyUI-Koshi-Nodes/
 │   ├── generators/     # Glitch Candies, shape morph, noise displace, raymarcher
 │   ├── utility/        # Metadata (unified capture/display/save)
 │   ├── utils/          # Shared utilities (tensor ops, metadata)
-│   ├── audio/          # AKUSPACE prompt and CLIP-conditioning nodes
+│   ├── audio/          # AKUSPACE conditioning + Audio → Motion schedule bridge
 │   └── image/          # SIDKIT Edition
 │       ├── binary/     # Threshold + hex export
 │       ├── dither/     # Bayer, Floyd-Steinberg, Atkinson, Halftone
@@ -201,6 +203,11 @@ In `workflows/`:
 ▄▀▄ Schedule → ▄▀▄ Motion Engine → KSampler
                                       ↓
                               ▄▀▄ Feedback (loop)
+```
+
+**Audio-driven motion:**
+```
+LoadAudio → ▄▀▄ Audio → Motion → ▄▀▄ Motion Engine (frame_index per frame) → KSampler
 ```
 
 **Stacked Effects:**

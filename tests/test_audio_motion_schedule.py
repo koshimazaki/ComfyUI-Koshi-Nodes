@@ -212,5 +212,24 @@ def main():
     return 0
 
 
+def test_audio_motion_schedule_suite():
+    """Run the standalone suite under pytest so it is part of the normal run."""
+    assert main() == 0
+
+
+def test_wires_to_motion_engine():
+    """The audio node's schedule output must be the type the engine accepts."""
+    audio_pkg = load_audio_package()
+    node_cls = audio_pkg.NODE_CLASS_MAPPINGS["Koshi_AudioMotionSchedule"]
+
+    sys.path.insert(0, REPO)
+    from nodes.flux_motion.motion_engine import KoshiMotionEngine
+    from nodes.flux_motion.schedule import KoshiSchedule
+
+    engine_in = KoshiMotionEngine.INPUT_TYPES()["optional"]["motion_schedule"][0]
+    assert node_cls.RETURN_TYPES[0] == engine_in
+    assert KoshiSchedule.RETURN_TYPES[0] == engine_in
+
+
 if __name__ == "__main__":
     raise SystemExit(main())
