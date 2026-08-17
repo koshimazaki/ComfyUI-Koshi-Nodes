@@ -100,6 +100,7 @@ class TestCategoryImports:
         assert set(NODE_CLASS_MAPPINGS) == {
             "Koshi_AKUSPACEPrompt",
             "Koshi_AKUSPACETextEncode",
+            "Koshi_AudioMotionSchedule",
         }
 
 
