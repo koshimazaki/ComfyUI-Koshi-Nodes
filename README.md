@@ -12,9 +12,9 @@
 
 # ComfyUI-Koshi-Nodes
 
-**21 focused nodes** for ComfyUI: **Motion** (Deforum-style animation, audio-driven schedules), **Effects** (unified effects + standalone bloom/glitch/chromatic), **Generators** (procedural patterns, raymarched 3D), **Space / Conditioning** (AKUSPACE prompt and CLIP encoding), **SIDKIT** (OLED/embedded display export), and **Utility** (metadata capture).
+**22 focused nodes** for ComfyUI: **Motion** (Deforum-style animation, audio-driven schedules), **Effects** (unified effects + standalone bloom/glitch/chromatic), **Generators** (procedural patterns, raymarched 3D), **Space / Conditioning** (AKUSPACE prompt, CLIP encoding and time-aligned reference audio), **SIDKIT** (OLED/embedded display export), and **Utility** (metadata capture).
 
-> Consolidated from 40 nodes down to 18 — same functionality, cleaner interface, fewer clicks — plus two AKUSPACE spatial-audio conditioning nodes.
+> Consolidated from 40 nodes down to 18 — same functionality, cleaner interface, fewer clicks — plus three AKUSPACE spatial-audio nodes.
 
 https://github.com/user-attachments/assets/8c9f2c39-71c7-405a-bb94-10b0b9e96c32
 
@@ -57,9 +57,9 @@ Nodes are prefixed by category for easy identification:
 | `▄█▄` | Generators | Glitch Candies, Shape Morph, Noise Displace, Raymarcher |
 | `░▒░` | SIDKIT/Export | SIDKIT Binary, Greyscale, SIDKIT OLED, Sprite Sheet |
 | `◊` | Utility | Metadata |
-| `◉` | Space / Conditioning | AKUSPACE Prompt, AKUSPACE Text Encode |
+| `◉` | Space / Conditioning | AKUSPACE Prompt, AKUSPACE Text Encode, AKUSPACE Reference Audio (aligned) |
 
-## All 21 Nodes
+## All 22 Nodes
 
 ### Effects (6 nodes)
 Post-processing effects based on [alien.js](https://github.com/alienkitty/alien.js) and custom shaders.
@@ -130,17 +130,29 @@ Nodes for [SIDKIT](https://sidkit.pages.dev/) synthesizer OLED displays (SSD1306
 |------|-------------|
 | `◊ Koshi Metadata` | **Unified metadata node** — capture workflow settings, display, and save as JSON/text. Extracts seed, steps, cfg, model, LoRAs, prompts. |
 
-### Space / Conditioning (2 nodes)
+### Space / Conditioning (3 nodes)
 
 AKUSPACE provides a shared WebGL spatial controller for an experimental LTX
 audio LoRA. The LoRA checkpoint is external and is not bundled with this node
-pack. See the [AKUSPACE guide](./docs/AKUSPACE.md) and
-[interactive project page](https://audiolora.dev/).
+pack — get it from [KoshiMazaki/akuspace-ltx25](https://huggingface.co/KoshiMazaki/akuspace-ltx25).
+See the [AKUSPACE guide](./docs/AKUSPACE.md) and
+[interactive project page](https://akuspace.pages.dev).
 
 | Node | Description |
 |------|-------------|
 | `◉ AKUSPACE Prompt` | Modular Prompt → Prompt treatment node, compatible with camera and other string controls. |
 | `◉ AKUSPACE Text Encode` | CLIP + editable Text → Conditioning convenience node; the AKUSPACE suffix is appended on Run. |
+| `◉ AKUSPACE Reference Audio (aligned)` | Feeds a dry recording into an LTX-AV render as a **time-aligned** in-context reference, so an a2a IC-LoRA runs inside the generation. Core's `LTXVReferenceAudio` uses the ID-LoRA negative-time convention instead; this one matches how the LTX trainer positions the reference. |
+
+Ten runnable LTX-2.5 workflows using these nodes ship in
+[`workflows/akuspace/`](./workflows/akuspace/) — image+audio→video,
+first/last-frame+audio→video, the one-node A/B between the two reference
+conventions, a LoRA-off control, the two-pass graph, a subgraph-style variant,
+a **split-chain** graph that generates video and audio as two separate passes so
+the adapter reads the trained caption alone, and a **room-first** pair that runs
+the adapter on your own recording and then locks the video to the roomed result
+(one per conditioning node — with CLIP and without). See the
+[AKUSPACE guide](./docs/AKUSPACE.md#workflows).
 
 The WebGL controller is a ~980KB prebuilt bundle (Vue + Three.js) that loads on
 demand the first time an AKUSPACE node appears, so graphs without these nodes
@@ -165,6 +177,7 @@ ComfyUI-Koshi-Nodes/
 │       └── greyscale/  # Quantization, algorithms
 ├── shaders/            # GLSL shaders (bloom, chromatic aberration)
 ├── workflows/          # Example workflow JSONs
+│   └── akuspace/       # Five runnable LTX-2.5 AKUSPACE graphs
 └── js/                 # Live preview, orbital controls, Nodes 2.0 theme
 ```
 
@@ -239,6 +252,16 @@ Optional text inspection follows the standard camera-control pattern:
 ```
 LoRA-patched CLIP + Text → ◉ AKUSPACE Text Encode → Conditioning
 ```
+
+**AKUSPACE one-pass audio** — the adapter runs *inside* an LTX-AV render:
+```
+UNETLoader → Load LoRA (AKUSPACE) → ◉ AKUSPACE Reference Audio (aligned) → LTXV Dual CFG Guider
+                                     ↑ dry recording, trimmed to the clip length
+LTXV Empty Latent Audio ───────────→ Concat A/V Latent    ← the audio target must be EMPTY
+```
+Pinning the audio and running the adapter are mutually exclusive: a noise mask
+that holds the audio fixed leaves nothing to transform. Ready-made graphs are in
+[`workflows/akuspace/`](./workflows/akuspace/).
 
 ## Dependencies
 

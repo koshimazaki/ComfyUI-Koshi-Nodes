@@ -7,6 +7,7 @@ from .conditioning import (
     OUTDOOR_TIMES,
     ROOM_PRESETS,
     SFX_LEVELS,
+    SOURCE_VALUES,
     build_caption,
     compose_prompt,
     encode_conditioning,
@@ -18,6 +19,13 @@ logger = logging.getLogger(__name__)
 
 MODE_OPTIONS = ["Off", "Room", "Space", "Sound effects"]
 APPLICATION_OPTIONS = ["Off", "Low", "Moderate", "Heavy", "Day", "Night", "High"]
+# The trained caption grammar starts with what the dry recording IS:
+# "AKUSPACE female spoken voice in a small bathroom-like room, ...". The node
+# shipped without that word (effect-only captions); `source_type` restores it as
+# an OPTIONAL control so existing graphs keep their widget layout. "none" keeps
+# the effect-only caption.
+SOURCE_NONE = "none"
+SOURCE_OPTIONS = [SOURCE_NONE, *SOURCE_VALUES]
 MODE_VALUES = {
     "Off": "dry",
     "Room": "room",
@@ -72,6 +80,30 @@ def _controls():
     }
 
 
+def _source_control():
+    return {
+        "source_type": (
+            SOURCE_OPTIONS,
+            {
+                "default": SOURCE_NONE,
+                "display_name": "Source",
+                "tooltip": (
+                    "What the dry recording is. Trained captions begin with it "
+                    "('AKUSPACE female spoken voice in ...'); 'none' keeps the "
+                    "effect-only caption."
+                ),
+            },
+        ),
+    }
+
+
+def _normalise_source(source_type):
+    if source_type is None:
+        return ""
+    source_type = str(source_type).strip()
+    return "" if source_type == SOURCE_NONE else source_type
+
+
 def _resolve_application(mode, application, effect_level, outdoor_time, sfx_level):
     """Fold the compact Application control into the level widget `mode` uses.
 
@@ -111,6 +143,7 @@ def _conditioned_prompt(
     effect_level,
     outdoor_time,
     sfx_level,
+    source_type=SOURCE_NONE,
 ):
     mode = MODE_VALUES.get(space_mode, "room")
     effect_level, outdoor_time, sfx_level = _resolve_application(
@@ -125,7 +158,7 @@ def _conditioned_prompt(
         room_preset=room_preset,
         outdoor_time=outdoor_time,
         effect_level=effect_level,
-        source_type="",
+        source_type=_normalise_source(source_type),
         sfx_level=sfx_level,
     )
     return compose_prompt(text, caption, enabled=mode != "dry")
@@ -142,6 +175,9 @@ class KoshiAKUSPACEPrompt:
         return {
             "required": _controls(),
             "optional": {
+                # Optional so the six required widgets keep their positions in
+                # graphs saved before this control existed; it lands last.
+                **_source_control(),
                 "prompt": (
                     "STRING",
                     {
@@ -162,6 +198,7 @@ class KoshiAKUSPACEPrompt:
         effect_level,
         outdoor_time,
         sfx_level,
+        source_type=SOURCE_NONE,
         prompt="",
     ):
         return (
@@ -173,6 +210,7 @@ class KoshiAKUSPACEPrompt:
                 effect_level,
                 outdoor_time,
                 sfx_level,
+                source_type,
             ),
         )
 
@@ -202,6 +240,7 @@ class KoshiAKUSPACETextEncode:
                 ),
                 **_controls(),
             },
+            "optional": _source_control(),
         }
 
     def execute(
@@ -214,6 +253,7 @@ class KoshiAKUSPACETextEncode:
         effect_level,
         outdoor_time,
         sfx_level,
+        source_type=SOURCE_NONE,
     ):
         prompt = _conditioned_prompt(
             text,
@@ -223,6 +263,7 @@ class KoshiAKUSPACETextEncode:
             effect_level,
             outdoor_time,
             sfx_level,
+            source_type,
         )
         return (encode_conditioning(clip, prompt),)
 

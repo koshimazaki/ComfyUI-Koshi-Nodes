@@ -26,7 +26,10 @@ _SUFFIXES = [
     # Flux Motion
     "Schedule", "MotionEngine", "Feedback",
 ]
-EXPECTED = {_PFX + s for s in _SUFFIXES}
+# Deliberately unprefixed: the id has to match the standalone copy shipped in
+# the AKUSPACE session kit, so a graph built against either resolves in both.
+_UNPREFIXED = {"AKUSPACEReferenceAudioAligned"}
+EXPECTED = {_PFX + s for s in _SUFFIXES} | _UNPREFIXED
 
 
 def _gather_class_map():
@@ -81,7 +84,7 @@ class TestNodeRegistration:
 
     def test_minimum_count(self):
         mapping = _gather_class_map()
-        assert len(mapping) >= 21, f"Only {len(mapping)} registered, expected >=21"
+        assert len(mapping) >= 22, f"Only {len(mapping)} registered, expected >=22"
 
 
 def _load_pack_like_comfyui():

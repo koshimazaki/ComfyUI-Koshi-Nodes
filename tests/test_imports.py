@@ -101,6 +101,8 @@ class TestCategoryImports:
             "Koshi_AKUSPACEPrompt",
             "Koshi_AKUSPACETextEncode",
             "Koshi_AudioMotionSchedule",
+            # Unprefixed on purpose — matches the standalone session-kit node id.
+            "AKUSPACEReferenceAudioAligned",
         }
 
 

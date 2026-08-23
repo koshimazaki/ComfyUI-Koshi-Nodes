@@ -20,4 +20,12 @@ try:
 except ImportError as exc:
     logger.debug("Failed to load audio motion schedule node: %s", exc)
 
+try:
+    from .aligned_ref import NODE_CLASS_MAPPINGS as _aligned_nodes
+    from .aligned_ref import NODE_DISPLAY_NAME_MAPPINGS as _aligned_names
+    NODE_CLASS_MAPPINGS.update(_aligned_nodes)
+    NODE_DISPLAY_NAME_MAPPINGS.update(_aligned_names)
+except ImportError as exc:
+    logger.debug("Failed to load AKUSPACE aligned reference node: %s", exc)
+
 __all__ = ["NODE_CLASS_MAPPINGS", "NODE_DISPLAY_NAME_MAPPINGS"]

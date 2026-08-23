@@ -8,9 +8,12 @@ from nodes.audio.akuspace import (
     MODE_OPTIONS,
     MODE_VALUES,
     NODE_DISPLAY_NAME_MAPPINGS,
+    SOURCE_NONE,
+    SOURCE_OPTIONS,
     KoshiAKUSPACEPrompt,
     KoshiAKUSPACETextEncode,
 )
+from nodes.audio.conditioning import SOURCE_VALUES
 
 
 class FakeClip:
@@ -142,3 +145,67 @@ def test_no_mode_application_pair_raises():
     for space_mode in MODE_OPTIONS:
         for application in APPLICATION_OPTIONS:
             assert isinstance(_caption(space_mode=space_mode, application=application), str)
+
+
+# ---------------------------------------------------------------------------
+# source_type — the trained caption grammar starts with what the source IS
+# ---------------------------------------------------------------------------
+
+
+def test_source_type_defaults_to_effect_only_caption():
+    """Graphs saved before this control existed must be byte-identical."""
+
+    assert KoshiAKUSPACEPrompt().execute(prompt="a portrait", **DEFAULTS)[0] == (
+        KoshiAKUSPACEPrompt().execute(prompt="a portrait", source_type="none", **DEFAULTS)[0]
+    )
+
+
+@pytest.mark.parametrize(
+    ("source_type", "expected"),
+    [
+        (
+            "female spoken voice",
+            "AKUSPACE female spoken voice in a medium reverberant room, "
+            "moderate smooth reflections and a 1.9-second reverb decay, no background ambience",
+        ),
+        (
+            "electronic rhythm loop",
+            "AKUSPACE electronic rhythm loop in a medium reverberant room, "
+            "moderate smooth reflections and a 1.9-second reverb decay, no background ambience",
+        ),
+    ],
+)
+def test_source_type_leads_the_trained_caption(source_type, expected):
+    assert _caption(source_type=source_type) == expected
+
+
+def test_source_options_are_the_trained_vocabulary_plus_none():
+    assert SOURCE_OPTIONS[0] == SOURCE_NONE
+    assert "female spoken voice" in SOURCE_OPTIONS
+    assert "male spoken voice" in SOURCE_OPTIONS
+    # Every option past "none" comes from presets.json, never hand-typed.
+    assert SOURCE_OPTIONS[1:] == SOURCE_VALUES
+
+
+def test_source_type_survives_a_bypass_and_a_dry_caption():
+    off = KoshiAKUSPACEPrompt().execute(
+        prompt="a portrait",
+        source_type="handclaps",
+        **{**DEFAULTS, "space_mode": "Off"},
+    )[0]
+    assert off == "a portrait"
+
+
+def test_source_type_is_optional_on_both_nodes():
+    for cls in (KoshiAKUSPACEPrompt, KoshiAKUSPACETextEncode):
+        spec = cls.INPUT_TYPES()
+        assert "source_type" not in spec["required"], f"{cls.__name__}: must not shift widget order"
+        assert "source_type" in spec["optional"], f"{cls.__name__}: source_type missing"
+
+
+def test_text_encode_passes_source_type_through_to_clip():
+    clip = FakeClip()
+    KoshiAKUSPACETextEncode().execute(
+        clip=clip, text="a portrait", source_type="solo piano phrase", **DEFAULTS
+    )
+    assert clip.prompt.startswith("a portrait, AKUSPACE solo piano phrase in a medium")
