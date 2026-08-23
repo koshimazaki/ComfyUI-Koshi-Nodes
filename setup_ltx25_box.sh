@@ -139,6 +139,11 @@ NODE_REPOS=(
 # The two nodes the aligned arm cannot run without.
 REQUIRED_NODES=("AKUSPACEReferenceAudioAligned" "Koshi_AKUSPACEPrompt")
 
+# LoadImage/LoadAudio resolve names against ComfyUI's own input/ dir, NOT refs/.
+# These are the literal filenames baked into the graphs, so a rename on the Mac
+# is a render failure on the box.
+REQUIRED_INPUTS=("anchor_dj.png" "dj_small_moderate.wav")
+
 print_banner
 printf "    workspace  ${BOLD}%s${NC}\n" "$WORKSPACE"
 printf "    comfy      ${BOLD}%s${NC}\n" "$COMFY_DIR"
@@ -164,6 +169,15 @@ verify_nodes() {
             print_ok "$n registered"
         else
             print_err "$n MISSING"
+            missing=$((missing + 1))
+        fi
+    done
+
+    for f in "${REQUIRED_INPUTS[@]}"; do
+        if [ -f "$COMFY_DIR/input/$f" ]; then
+            print_ok "input/$f"
+        else
+            print_err "input/$f MISSING — LoadImage/LoadAudio will fail"
             missing=$((missing + 1))
         fi
     done
@@ -314,6 +328,26 @@ if [ "$INSTALL_MODELS" = true ]; then
     else
         print_err "--lora=$LORA_SRC is neither a file nor hf:REPO/FILE"
     fi
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# STAGE INPUTS
+# ═══════════════════════════════════════════════════════════════════════════════
+# refs/ is the box mirror of FinalShowcase/refs on the Mac, but LoadImage and
+# LoadAudio resolve bare filenames against ComfyUI's input/ dir. Copy rather
+# than symlink: ComfyUI's path check rejects links that escape input/.
+if [ -d "$REFS_DIR" ]; then
+    print_step "5/5" "Staging inputs into ComfyUI"
+    mkdir -p "$COMFY_DIR/input"
+    for f in "${REQUIRED_INPUTS[@]}"; do
+        if [ -f "$COMFY_DIR/input/$f" ]; then
+            print_skip "$f (already staged)"
+        elif [ -f "$REFS_DIR/$f" ]; then
+            cp "$REFS_DIR/$f" "$COMFY_DIR/input/$f" && print_ok "$f"
+        else
+            print_warn "$f not in $REFS_DIR — copy it up from FinalShowcase/refs/"
+        fi
+    done
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
