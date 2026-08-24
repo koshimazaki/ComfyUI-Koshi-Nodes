@@ -1,0 +1,448 @@
+{
+ "1": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors",
+   "weight_dtype": "default"
+  }
+ },
+ "2": {
+  "class_type": "LoraLoaderModelOnly",
+  "inputs": {
+   "lora_name": "akuspace-ltx25-v0.5.safetensors",
+   "strength_model": 1.0,
+   "model": [
+    "1",
+    0
+   ]
+  }
+ },
+ "3": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors",
+   "type": "ltxv"
+  }
+ },
+ "4": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "ltx-2.5-video-vae-bf16.safetensors"
+  }
+ },
+ "5": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "ltx-2.5-audio-vae-bf16.safetensors"
+  }
+ },
+ "12": {
+  "class_type": "Koshi_AKUSPACETextEncode",
+  "inputs": {
+   "clip": [
+    "3",
+    0
+   ],
+   "text": "A locked-off static medium-wide shot frames a woman in her late twenties with very short cropped dark hair, warm brown skin, black over-ear headphones resting around her neck, an open black leather biker jacket over a black top, loose black cargo trousers and black boots standing centred in a cramped DJ booth tiled floor to ceiling in glossy warm lime yellow square tiles, a single vertical neon tube glowing on the left wall, two turntables and a mixer on the counter in front of her and a closed steel door in the back wall, lit by cool practical light with a bright yellow cast from the tiles. Facing the camera, decks in front of her ready to play. An ambient pulsing techno beat plays softly from the decks with a low driving synth bassline. She nods subtly to the rhythm with one hand resting on the mixer, then looks directly into the camera and says clearly: \"Introducing Acoustic Space LTX2.5 LoRA. I am playing in this small room but can you hear the reverb here, damn I need to move to a bigger room. Let's check what's behind these doors.\" She gestures to the glossy tiled walls, glances toward the closed steel door, looks back into the camera and beckons the viewer to follow. She turns, walks to the door and pulls it open, and a cathedral is revealed behind it as warm light spills into the booth. Photorealistic, film-grade colour grading, stable exposure and sharp detail.",
+   "space_mode": "Room",
+   "application": "Moderate",
+   "room_preset": "small_room",
+   "effect_level": "mid",
+   "outdoor_time": "day",
+   "sfx_level": "low",
+   "source_type": "female spoken voice"
+  }
+ },
+ "13": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "zoom, push-in, dolly, camera movement, handheld, cut, shot change, scene change, warped face, deformed hands, extra fingers, text, captions, watermark, distorted, clipped, metallic, unintelligible speech",
+   "clip": [
+    "3",
+    0
+   ]
+  }
+ },
+ "31": {
+  "class_type": "PrimitiveFloat",
+  "inputs": {
+   "value": 24
+  }
+ },
+ "15": {
+  "class_type": "LTXVConditioning",
+  "inputs": {
+   "frame_rate": [
+    "31",
+    0
+   ],
+   "positive": [
+    "12",
+    0
+   ],
+   "negative": [
+    "13",
+    0
+   ]
+  }
+ },
+ "26": {
+  "class_type": "PrimitiveInt",
+  "inputs": {
+   "value": 832
+  }
+ },
+ "27": {
+  "class_type": "PrimitiveInt",
+  "inputs": {
+   "value": 464
+  }
+ },
+ "30": {
+  "class_type": "PrimitiveInt",
+  "inputs": {
+   "value": 337
+  }
+ },
+ "35": {
+  "class_type": "EmptyLTXVLatentVideo",
+  "inputs": {
+   "width": [
+    "26",
+    0
+   ],
+   "height": [
+    "27",
+    0
+   ],
+   "length": [
+    "30",
+    0
+   ],
+   "batch_size": 1
+  }
+ },
+ "45": {
+  "class_type": "LTXVEmptyLatentAudio",
+  "inputs": {
+   "frames_number": [
+    "30",
+    0
+   ],
+   "frame_rate": [
+    "31",
+    0
+   ],
+   "batch_size": 1,
+   "audio_vae": [
+    "5",
+    0
+   ]
+  }
+ },
+ "40": {
+  "class_type": "LoadAudio",
+  "inputs": {
+   "audio": "dj_dry_voice.wav"
+  }
+ },
+ "41": {
+  "class_type": "TrimAudioDuration",
+  "inputs": {
+   "start_index": 0.0,
+   "duration": 14.041666666666666,
+   "audio": [
+    "40",
+    0
+   ]
+  }
+ },
+ "42": {
+  "class_type": "AKUSPACEReferenceAudioAligned",
+  "inputs": {
+   "reference_guidance_scale": 0.0,
+   "model": [
+    "2",
+    0
+   ],
+   "positive": [
+    "15",
+    0
+   ],
+   "negative": [
+    "15",
+    1
+   ],
+   "reference_audio": [
+    "41",
+    0
+   ],
+   "audio_vae": [
+    "5",
+    0
+   ]
+  }
+ },
+ "39": {
+  "class_type": "LTXVConcatAVLatent",
+  "inputs": {
+   "video_latent": [
+    "35",
+    0
+   ],
+   "audio_latent": [
+    "45",
+    0
+   ]
+  }
+ },
+ "50": {
+  "class_type": "RandomNoise",
+  "inputs": {
+   "noise_seed": 558811532553686
+  }
+ },
+ "51": {
+  "class_type": "LTXVDualCFGGuider",
+  "inputs": {
+   "video_cfg": 1.0,
+   "audio_cfg": 1.0,
+   "model": [
+    "42",
+    0
+   ],
+   "positive": [
+    "42",
+    1
+   ],
+   "negative": [
+    "42",
+    2
+   ]
+  }
+ },
+ "52": {
+  "class_type": "KSamplerSelect",
+  "inputs": {
+   "sampler_name": "euler_ancestral"
+  }
+ },
+ "53": {
+  "class_type": "ManualSigmas",
+  "inputs": {
+   "sigmas": "1.0, 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875, 0.0"
+  }
+ },
+ "54": {
+  "class_type": "SamplerCustomAdvanced",
+  "inputs": {
+   "noise": [
+    "50",
+    0
+   ],
+   "guider": [
+    "51",
+    0
+   ],
+   "sampler": [
+    "52",
+    0
+   ],
+   "sigmas": [
+    "53",
+    0
+   ],
+   "latent_image": [
+    "39",
+    0
+   ]
+  }
+ },
+ "60": {
+  "class_type": "LTXVSeparateAVLatent",
+  "inputs": {
+   "av_latent": [
+    "54",
+    0
+   ]
+  }
+ },
+ "70": {
+  "class_type": "LatentUpscaleModelLoader",
+  "inputs": {
+   "model_name": "ltx-2.5-latent-spatial-upscaler-x2-bf16-1.0.safetensors"
+  }
+ },
+ "71": {
+  "class_type": "LTXVLatentUpsampler",
+  "inputs": {
+   "samples": [
+    "60",
+    0
+   ],
+   "upscale_model": [
+    "70",
+    0
+   ],
+   "vae": [
+    "4",
+    0
+   ]
+  }
+ },
+ "72": {
+  "class_type": "LTXVConcatAVLatent",
+  "inputs": {
+   "video_latent": [
+    "71",
+    0
+   ],
+   "audio_latent": [
+    "60",
+    1
+   ]
+  }
+ },
+ "80": {
+  "class_type": "RandomNoise",
+  "inputs": {
+   "noise_seed": 42
+  }
+ },
+ "81": {
+  "class_type": "LTXVDualCFGGuider",
+  "inputs": {
+   "video_cfg": 1.0,
+   "audio_cfg": 1.0,
+   "model": [
+    "42",
+    0
+   ],
+   "positive": [
+    "42",
+    1
+   ],
+   "negative": [
+    "42",
+    2
+   ]
+  }
+ },
+ "82": {
+  "class_type": "KSamplerSelect",
+  "inputs": {
+   "sampler_name": "euler_ancestral"
+  }
+ },
+ "83": {
+  "class_type": "ManualSigmas",
+  "inputs": {
+   "sigmas": "0.85, 0.7250, 0.4219, 0.0"
+  }
+ },
+ "84": {
+  "class_type": "SamplerCustomAdvanced",
+  "inputs": {
+   "noise": [
+    "80",
+    0
+   ],
+   "guider": [
+    "81",
+    0
+   ],
+   "sampler": [
+    "82",
+    0
+   ],
+   "sigmas": [
+    "83",
+    0
+   ],
+   "latent_image": [
+    "72",
+    0
+   ]
+  }
+ },
+ "85": {
+  "class_type": "LTXVSeparateAVLatent",
+  "inputs": {
+   "av_latent": [
+    "84",
+    0
+   ]
+  }
+ },
+ "62": {
+  "class_type": "VAEDecodeTiled",
+  "inputs": {
+   "tile_size": 512,
+   "overlap": 64,
+   "temporal_size": 64,
+   "temporal_overlap": 8,
+   "samples": [
+    "85",
+    0
+   ],
+   "vae": [
+    "4",
+    0
+   ]
+  }
+ },
+ "63": {
+  "class_type": "LTXVAudioVAEDecode",
+  "inputs": {
+   "samples": [
+    "85",
+    1
+   ],
+   "audio_vae": [
+    "5",
+    0
+   ]
+  }
+ },
+ "64": {
+  "class_type": "CreateVideo",
+  "inputs": {
+   "bit_depth": 8,
+   "fps": [
+    "31",
+    0
+   ],
+   "images": [
+    "62",
+    0
+   ],
+   "audio": [
+    "63",
+    0
+   ]
+  }
+ },
+ "65": {
+  "class_type": "SaveVideo",
+  "inputs": {
+   "filename_prefix": "video/NAT_dj_smallroom",
+   "format": "auto",
+   "codec": "auto",
+   "video": [
+    "64",
+    0
+   ]
+  }
+ },
+ "66": {
+  "class_type": "SaveAudioAdvanced",
+  "inputs": {
+   "filename_prefix": "video/NAT_dj_smallroom_audio",
+   "format": "flac",
+   "audio": [
+    "63",
+    0
+   ]
+  }
+ }
+}

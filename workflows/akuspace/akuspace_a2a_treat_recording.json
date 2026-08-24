@@ -1,0 +1,272 @@
+{
+ "1": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "ltx-2.5-22b-distilled-transformer-comfy-int8-convrot.safetensors",
+   "weight_dtype": "default"
+  }
+ },
+ "80": {
+  "class_type": "LoraLoaderModelOnly",
+  "inputs": {
+   "lora_name": "akuspace-ltx25-v0.5.safetensors",
+   "strength_model": 1.0,
+   "model": [
+    "1",
+    0
+   ]
+  }
+ },
+ "81": {
+  "class_type": "LTXVAudioOnlyModel",
+  "inputs": {
+   "model": [
+    "80",
+    0
+   ]
+  }
+ },
+ "3": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "gemma4-12b-with-proj-ltx-2.5-comfy-int8-convrot.safetensors",
+   "type": "ltxv"
+  }
+ },
+ "5": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "ltx-2.5-audio-vae-bf16.safetensors"
+  }
+ },
+ "84": {
+  "class_type": "Koshi_AKUSPACETextEncode",
+  "inputs": {
+   "clip": [
+    "3",
+    0
+   ],
+   "text": "A woman speaks to camera in a vast stone cathedral.",
+   "space_mode": "Room",
+   "application": "Low",
+   "room_preset": "cathedral",
+   "effect_level": "low",
+   "outdoor_time": "day",
+   "sfx_level": "low",
+   "source_type": "female spoken voice"
+  }
+ },
+ "89": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "distorted, clipped, metallic, unintelligible speech, changed words, changed rhythm",
+   "clip": [
+    "3",
+    0
+   ]
+  }
+ },
+ "31": {
+  "class_type": "PrimitiveFloat",
+  "inputs": {
+   "value": 24
+  }
+ },
+ "90": {
+  "class_type": "LTXVConditioning",
+  "inputs": {
+   "frame_rate": [
+    "31",
+    0
+   ],
+   "positive": [
+    "84",
+    0
+   ],
+   "negative": [
+    "89",
+    0
+   ]
+  }
+ },
+ "72": {
+  "class_type": "LoadAudio",
+  "inputs": {
+   "audio": "submission_dry_voice.wav"
+  }
+ },
+ "73": {
+  "class_type": "TrimAudioDuration",
+  "inputs": {
+   "start_index": 0.0,
+   "duration": 8.041666666666666,
+   "audio": [
+    "72",
+    0
+   ]
+  }
+ },
+ "85": {
+  "class_type": "AKUSPACEReferenceAudioAligned",
+  "inputs": {
+   "reference_guidance_scale": 0.0,
+   "model": [
+    "81",
+    0
+   ],
+   "positive": [
+    "90",
+    0
+   ],
+   "negative": [
+    "90",
+    1
+   ],
+   "reference_audio": [
+    "73",
+    0
+   ],
+   "audio_vae": [
+    "5",
+    0
+   ]
+  }
+ },
+ "30": {
+  "class_type": "PrimitiveInt",
+  "inputs": {
+   "value": 289
+  }
+ },
+ "86": {
+  "class_type": "LTXVAudioOnlyEmptyVideoLatent",
+  "inputs": {}
+ },
+ "87": {
+  "class_type": "LTXVEmptyLatentAudio",
+  "inputs": {
+   "frames_number": [
+    "30",
+    0
+   ],
+   "frame_rate": [
+    "31",
+    0
+   ],
+   "batch_size": 1,
+   "audio_vae": [
+    "5",
+    0
+   ]
+  }
+ },
+ "88": {
+  "class_type": "LTXVConcatAVLatent",
+  "inputs": {
+   "video_latent": [
+    "86",
+    0
+   ],
+   "audio_latent": [
+    "87",
+    0
+   ]
+  }
+ },
+ "50": {
+  "class_type": "RandomNoise",
+  "inputs": {
+   "noise_seed": 424242
+  }
+ },
+ "51": {
+  "class_type": "LTXVDualCFGGuider",
+  "inputs": {
+   "video_cfg": 1.0,
+   "audio_cfg": 1.0,
+   "model": [
+    "85",
+    0
+   ],
+   "positive": [
+    "85",
+    1
+   ],
+   "negative": [
+    "85",
+    2
+   ]
+  }
+ },
+ "52": {
+  "class_type": "SamplerEulerAncestral",
+  "inputs": {
+   "eta": 0.0,
+   "s_noise": 1.0
+  }
+ },
+ "53": {
+  "class_type": "ManualSigmas",
+  "inputs": {
+   "sigmas": "1.0, 0.99375, 0.9875, 0.98125, 0.975, 0.909375, 0.725, 0.421875, 0.0"
+  }
+ },
+ "54": {
+  "class_type": "SamplerCustomAdvanced",
+  "inputs": {
+   "noise": [
+    "50",
+    0
+   ],
+   "guider": [
+    "51",
+    0
+   ],
+   "sampler": [
+    "52",
+    0
+   ],
+   "sigmas": [
+    "53",
+    0
+   ],
+   "latent_image": [
+    "88",
+    0
+   ]
+  }
+ },
+ "60": {
+  "class_type": "LTXVSeparateAVLatent",
+  "inputs": {
+   "av_latent": [
+    "54",
+    0
+   ]
+  }
+ },
+ "63": {
+  "class_type": "LTXVAudioVAEDecode",
+  "inputs": {
+   "samples": [
+    "60",
+    1
+   ],
+   "audio_vae": [
+    "5",
+    0
+   ]
+  }
+ },
+ "66": {
+  "class_type": "SaveAudioAdvanced",
+  "inputs": {
+   "filename_prefix": "video/SUB_submission_cathedral_subtle",
+   "format": "flac",
+   "audio": [
+    "63",
+    0
+   ]
+  }
+ }
+}
