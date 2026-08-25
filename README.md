@@ -20,8 +20,6 @@
 <video src="https://github.com/user-attachments/assets/bb66a14c-a72c-4c68-a7bd-dd11d3cd0772" width="320" autoplay loop muted></video>
   <em>AKUSPACE LoRA node with UI </em>
 
-*Glitch Candies shaders, OLED emulation and binary export.*
-
 ## Installation
 
 **One-liner** (existing ComfyUI):
@@ -114,6 +112,8 @@ All patterns support `loop_frames` for seamless animation loops.
 **3D Camera Controls:** Raymarched shapes have `rotation_x`, `rotation_y`, and `camera_distance` inputs for orbital control.
 
 https://github.com/user-attachments/assets/8c9f2c39-71c7-405a-bb94-10b0b9e96c32
+
+*Glitch Candies shaders, OLED emulation and binary export.*
 
 
 ### SIDKIT / Export (4 nodes)
