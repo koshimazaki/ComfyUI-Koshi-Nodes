@@ -1,6 +1,23 @@
-# Koshi Audio Nodes
+# Koshi audio and conditioning nodes
 
-Audio/video → motion for the Koshi pipeline.
+This module registers four nodes: one Audio → Motion bridge and three AKUSPACE
+nodes for LTX spatial-audio conditioning.
+
+## AKUSPACE (3 nodes)
+
+| node | role |
+|---|---|
+| `◉ AKUSPACE Prompt` | Appends the selected acoustic treatment to a reusable prompt string. |
+| `◉ AKUSPACE Text Encode` | Accepts CLIP + text and returns the treated conditioning directly. |
+| `◉ AKUSPACE Reference Audio (aligned)` | Places dry reference tokens at the same times used during LTX audio-adapter training. |
+
+Prompt and Text Encode are the without-CLIP / with-CLIP conditioning pair. The
+aligned reference-audio helper is the third node and is what lets the LoRA act
+inside a joint LTX audio/video render.
+
+The Source selector is intentionally limited to Female voice and Male voice.
+See the [AKUSPACE guide](../../docs/AKUSPACE.md) and
+[public workflows](../../workflows/akuspace/README.md) for the full wiring.
 
 ## ▄▀▄ KN Audio → Motion (`Koshi_AudioMotionSchedule`)
 

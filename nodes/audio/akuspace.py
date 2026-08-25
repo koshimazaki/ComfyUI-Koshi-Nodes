@@ -19,13 +19,13 @@ logger = logging.getLogger(__name__)
 
 MODE_OPTIONS = ["Off", "Room", "Space", "Sound effects"]
 APPLICATION_OPTIONS = ["Off", "Low", "Moderate", "Heavy", "Day", "Night", "High"]
-# The trained caption grammar starts with what the dry recording IS:
+# The caption grammar starts with what the dry recording IS:
 # "AKUSPACE female spoken voice in a small bathroom-like room, ...". The node
 # shipped without that word (effect-only captions); `source_type` restores it as
 # an OPTIONAL control so existing graphs keep their widget layout. "none" keeps
 # the effect-only caption.
 SOURCE_NONE = "none"
-SOURCE_OPTIONS = [SOURCE_NONE, *SOURCE_VALUES]
+SOURCE_OPTIONS = list(SOURCE_VALUES)
 MODE_VALUES = {
     "Off": "dry",
     "Room": "room",
@@ -85,12 +85,11 @@ def _source_control():
         "source_type": (
             SOURCE_OPTIONS,
             {
-                "default": SOURCE_NONE,
+                "default": SOURCE_OPTIONS[0],
                 "display_name": "Source",
                 "tooltip": (
-                    "What the dry recording is. Trained captions begin with it "
-                    "('AKUSPACE female spoken voice in ...'); 'none' keeps the "
-                    "effect-only caption."
+                    "What the dry recording is. Captions begin with it "
+                    "('AKUSPACE female spoken voice in ...')."
                 ),
             },
         ),

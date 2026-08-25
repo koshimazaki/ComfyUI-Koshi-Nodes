@@ -1,13 +1,11 @@
 #!/bin/bash
 # ComfyUI + LTX-2.5 + AKUSPACE Setup Script  (Vast.ai / RunPod session box)
 #
-# Interactive: ./setup_ltx25_box.sh
-# Non-interactive: ./setup_ltx25_box.sh --vast --token=hf_xxx --lora=/workspace/akuspace-ltx25-v0.5.safetensors
+# Interactive: scripts/akuspace/setup_ltx25_box.sh
+# Non-interactive: scripts/akuspace/setup_ltx25_box.sh --vast --token=hf_xxx --lora=/workspace/akuspace-ltx25-v0.5.safetensors
 #
-# Provisions the box the AKUSPACE A/B actually runs on. The paths below are the
-# ones run_batch.sh and run_ab.sh already default to (COMFY=/workspace/ComfyUI-ltx,
-# GRAPHS=/workspace/graphs, PORT=8189) -- change them here and you change them
-# there too, so don't drift them apart.
+# Provisions a box for the public AKUSPACE workflows and tools. The runner
+# scripts default to the same ComfyUI port (8189).
 #
 # Two things this script exists to get right, because both fail SILENTLY:
 #
@@ -85,7 +83,7 @@ for arg in "$@"; do
         --nodes-only)   INSTALL_COMFY=false; INSTALL_MODELS=false ;;
         --verify)       VERIFY_ONLY=true ;;
         --help|-h)
-            printf "\n${BOLD}setup_ltx25_box.sh${NC} — provision a session box for the AKUSPACE A/B\n\n"
+            printf "\n${BOLD}setup_ltx25_box.sh${NC} — provision a session box for AKUSPACE workflows\n\n"
             printf "  --vast          Vast.ai environment\n"
             printf "  --runpod        RunPod environment\n"
             printf "  --token=XXX     HuggingFace token (LTX-2.5 is gated)\n"
@@ -102,18 +100,16 @@ for arg in "$@"; do
 done
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SET PATHS  — these mirror run_batch.sh / run_ab.sh defaults
+# SET PATHS
 # ═══════════════════════════════════════════════════════════════════════════════
 if [ -z "$WORKSPACE" ]; then
     if [ -d /workspace ]; then WORKSPACE="/workspace"; else WORKSPACE="$HOME/workspace"; fi
 fi
 
-COMFY_DIR="$WORKSPACE/ComfyUI-ltx"       # COMFY= in run_batch.sh
-GRAPHS_DIR="$WORKSPACE/graphs"           # GRAPHS=
-REFS_DIR="$WORKSPACE/refs"               # REFS=
-KIT_DIR="$WORKSPACE/kit"                 # KIT=
-TRUTH_DIR="$WORKSPACE/truth"             # TRUTH=
-PORT="${PORT:-8189}"                     # PORT=
+COMFY_DIR="$WORKSPACE/ComfyUI-ltx"
+GRAPHS_DIR="$WORKSPACE/graphs"
+REFS_DIR="$WORKSPACE/refs"
+PORT="${PORT:-8189}"
 PY="$COMFY_DIR/.venv/bin/python"
 
 LTX_REPO="Lightricks/LTX-2.5"
@@ -136,13 +132,13 @@ NODE_REPOS=(
     "https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git|ComfyUI-VideoHelperSuite"
 )
 
-# The two nodes the aligned arm cannot run without.
-REQUIRED_NODES=("AKUSPACEReferenceAudioAligned" "Koshi_AKUSPACEPrompt")
+# All three AKUSPACE nodes used across the shipped workflows.
+REQUIRED_NODES=("AKUSPACEReferenceAudioAligned" "Koshi_AKUSPACEPrompt" "Koshi_AKUSPACETextEncode")
 
 # LoadImage/LoadAudio resolve names against ComfyUI's own input/ dir, NOT refs/.
 # These are the literal filenames baked into the graphs, so a rename on the Mac
 # is a render failure on the box.
-REQUIRED_INPUTS=("anchor_dj.png" "dj_small_moderate.wav")
+REQUIRED_INPUTS=("submission_dry_voice.wav" "dj_dry_voice.wav" "dry-base-generated-voice.mp3")
 
 print_banner
 printf "    workspace  ${BOLD}%s${NC}\n" "$WORKSPACE"
@@ -210,7 +206,7 @@ verify_nodes() {
     [ "$badfiles" -gt 0 ] && return 1
 
     printf "\n"
-    print_ok "Box is ready for run_ab.sh"
+    print_ok "Box is ready for the AKUSPACE runner scripts"
     return 0
 }
 
@@ -223,7 +219,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 if [ "$INSTALL_COMFY" = true ]; then
     print_step "1/4" "ComfyUI"
-    mkdir -p "$WORKSPACE" "$GRAPHS_DIR" "$REFS_DIR" "$KIT_DIR" "$TRUTH_DIR"
+    mkdir -p "$WORKSPACE" "$GRAPHS_DIR" "$REFS_DIR"
 
     if [ ! -d "$COMFY_DIR" ]; then
         git clone -q https://github.com/comfyanonymous/ComfyUI.git "$COMFY_DIR" \
@@ -273,6 +269,13 @@ if [ "$INSTALL_NODES" = true ]; then
     else
         print_ok "aligned_ref.py present"
     fi
+
+    if compgen -G "Koshi-Nodes/workflows/akuspace/*.json" >/dev/null; then
+        cp Koshi-Nodes/workflows/akuspace/*.json "$GRAPHS_DIR/" \
+            && print_ok "AKUSPACE workflows staged in $GRAPHS_DIR"
+    else
+        print_warn "no public AKUSPACE workflows found to stage"
+    fi
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -315,7 +318,7 @@ if [ "$INSTALL_MODELS" = true ]; then
     LORA_DEST="$COMFY_DIR/models/loras/akuspace-ltx25-v0.5.safetensors"
     mkdir -p "$(dirname "$LORA_DEST")"
     if [ -z "$LORA_SRC" ]; then
-        print_warn "no --lora given — the aligned and stock arms need it"
+        print_warn "no --lora given — the AKUSPACE workflows need it"
         printf "    ${DIM}scp it up:  scp akuspace-ltx25-v0.5.safetensors box:%s${NC}\n" "$LORA_DEST"
         printf "    ${DIM}or:         --lora=hf:KoshiMazaki/akuspace-ltx25/akuspace-ltx25-v0.5.safetensors${NC}\n"
     elif [ -f "$LORA_SRC" ]; then
@@ -355,7 +358,7 @@ fi
 # ═══════════════════════════════════════════════════════════════════════════════
 cat > "$COMFY_DIR/run.sh" << RUNEOF
 #!/bin/bash
-# Port $PORT is what run_batch.sh and run_ab.sh talk to.
+# Port $PORT is what the AKUSPACE runner scripts use by default.
 cd "$COMFY_DIR"
 exec .venv/bin/python main.py --listen 0.0.0.0 --port $PORT "\$@"
 RUNEOF
@@ -363,10 +366,10 @@ chmod +x "$COMFY_DIR/run.sh"
 
 print_done
 printf "    ComfyUI: $COMFY_DIR\n"
-printf "    Graphs:  $GRAPHS_DIR ${DIM}(copy workflows/api/*.json here)${NC}\n"
+printf "    Graphs:  $GRAPHS_DIR ${DIM}(public API-format workflows)${NC}\n"
 printf "    Models:  $COMFY_DIR/models/\n\n"
 printf "    ${BOLD}Start it${NC}\n"
 printf "      $COMFY_DIR/run.sh\n\n"
 printf "    ${BOLD}Then confirm the aligned node actually registered${NC}\n"
-printf "      ./setup_ltx25_box.sh --verify\n\n"
+printf "      scripts/akuspace/setup_ltx25_box.sh --verify\n\n"
 printf "    ${DIM}Skipping --verify is how a broken aligned arm reaches a paid GPU hour.${NC}\n\n"

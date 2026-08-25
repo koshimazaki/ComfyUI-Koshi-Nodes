@@ -6,6 +6,11 @@ __pycache__/
 .Python
 *.egg-info/
 .eggs/
+.pytest_cache/
+.ruff_cache/
+.benchmarks/
+.coverage
+htmlcov/
 
 # Logs
 logs
@@ -150,6 +155,11 @@ dist
 # Claude Code local state (per-user settings, in-repo worktrees)
 .claude/settings.local.json
 .claude/worktrees/
+
+# Local review and memory exports (not public project documentation)
+CODE_REVIEW_*.md
+research_*.md
+memories.json
 
 # comfy node pack output
 node.zip

@@ -1,6 +1,7 @@
 # AKUSPACE workflows — LTX-2.5 acoustic space control
 
-Three graphs, API format. Drop into ComfyUI and queue, or POST to `/prompt`.
+Three graphs in ComfyUI API format. Queue them with the public runner scripts or
+POST them directly to `/prompt`.
 
 | workflow | what it does | nodes | time |
 |---|---|---|---|
@@ -68,7 +69,38 @@ audible treatment until that is resolved.
 
 ## Inputs
 
-`LoadImage` and `LoadAudio` resolve bare filenames against ComfyUI's own `input/`
-directory. **Copy files there — do not symlink.** ComfyUI's path check rejects links
-that escape `input/`, then drops the output nodes and still reports the job as
-`success` with zero outputs in about 0.09 s.
+`LoadAudio` resolves bare filenames against ComfyUI's own `input/` directory.
+**Copy files there — do not symlink.** ComfyUI's path check rejects links that
+escape `input/`, then drops the output nodes and can still report the job as
+`success` with zero outputs.
+
+The default graphs reference:
+
+- `submission_dry_voice.wav`
+- `dj_dry_voice.wav`
+- `dry-base-generated-voice.mp3`
+
+Override those node inputs with `--set NODE_ID.audio=filename.wav`, or edit a
+copy of the graph.
+
+## Verify and run
+
+From the repository root:
+
+```bash
+python3 scripts/akuspace/verify_workflows.py
+python3 scripts/akuspace/run_batch.py --dry-run
+python3 scripts/akuspace/run_ab.py --dry-run
+```
+
+When ComfyUI is running on the LTX setup script's default port:
+
+```bash
+export COMFY_URL=http://127.0.0.1:8189
+python3 scripts/akuspace/run_batch.py
+python3 scripts/akuspace/run_ab.py
+```
+
+The A/B uses the native one-pass graph by default. It changes only the
+`LoraLoaderModelOnly.strength_model` value (`1` versus `0`) and output prefixes;
+the seed, prompt, reference, sampler, and every other graph input remain equal.
