@@ -18,7 +18,7 @@
 > Consolidated from 40 nodes down to 18 — same functionality, cleaner interface, fewer clicks — plus three AKUSPACE spatial-audio nodes.
 
 <video src="https://github.com/user-attachments/assets/bb66a14c-a72c-4c68-a7bd-dd11d3cd0772" width="320" autoplay loop muted></video>
-  <em>AKUSPACE LoRA node with UI </em>
+  <em>AKUSPACE LoRA node with prompt manipulation/UI </em>
 
 ## Installation
 
