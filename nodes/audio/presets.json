@@ -1,5 +1,5 @@
 {
-  "version": 4,
+  "version": 5,
   "release": {
     "display_version": "0.5",
     "stage": "pre-alpha"
@@ -85,44 +85,14 @@
   },
   "source_types": [
     {
-      "value": "male spoken voice",
-      "label": "Male spoken voice",
-      "coverage": "trained"
-    },
-    {
       "value": "female spoken voice",
-      "label": "Female spoken voice",
+      "label": "Female voice",
       "coverage": "trained"
     },
     {
-      "value": "electronic rhythm loop",
-      "label": "Beat / music loop",
+      "value": "male spoken voice",
+      "label": "Male voice",
       "coverage": "trained"
-    },
-    {
-      "value": "handclaps",
-      "label": "Handclaps",
-      "coverage": "trained"
-    },
-    {
-      "value": "solo piano phrase",
-      "label": "Piano phrase",
-      "coverage": "trained"
-    },
-    {
-      "value": "piano and saxophone phrase",
-      "label": "Piano + saxophone",
-      "coverage": "trained"
-    },
-    {
-      "value": "citola string phrase",
-      "label": "String phrase",
-      "coverage": "trained"
-    },
-    {
-      "value": "granular sound effect",
-      "label": "Granular SFX",
-      "coverage": "experimental"
     }
   ],
   "presets": {

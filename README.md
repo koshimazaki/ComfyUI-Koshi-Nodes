@@ -1,4 +1,3 @@
-
 ```
 ██╗  ██╗ ██████╗ ███████╗██╗  ██╗██╗    ███╗   ██╗ ██████╗ ██████╗ ███████╗███████╗
 ██║ ██╔╝██╔═══██╗██╔════╝██║  ██║██║    ████╗  ██║██╔═══██╗██╔══██╗██╔════╝██╔════╝
@@ -15,7 +14,7 @@
 
 **22 focused nodes** for ComfyUI: **Motion** (Deforum-style animation, audio-driven schedules), **Effects** (unified effects + standalone bloom/glitch/chromatic), **Generators** (procedural patterns, raymarched 3D), **Space / Conditioning** (AKUSPACE prompt, CLIP encoding and time-aligned reference audio), **SIDKIT** (OLED/embedded display export), and **Utility** (metadata capture).
 
-> Consolidated from 40 nodes down to 18 — same functionality, cleaner interface, fewer clicks — plus three AKUSPACE spatial-audio nodes.
+> Consolidated from 40 nodes down to 18 — same functionality, cleaner interface, fewer clicks — then extended with Audio → Motion, two AKUSPACE conditioning nodes, and one aligned reference-audio helper.
 
 <video src="https://github.com/user-attachments/assets/bb66a14c-a72c-4c68-a7bd-dd11d3cd0772" width="320" autoplay loop muted></video>
   <em>AKUSPACE LoRA node with prompt manipulation/UI </em>
@@ -39,7 +38,7 @@ cd Koshi-Nodes && pip install -r requirements.txt
 Full setup with ComfyUI + FLUX Q4 GGUF + Koshi Nodes (~6GB VRAM):
 
 ```bash
-curl -sL https://raw.githubusercontent.com/koshimazaki/ComfyUI-Koshi-Nodes/main/setup_comfyui_flux.sh | bash -s -- --runpod --gguf
+curl -sL https://raw.githubusercontent.com/koshimazaki/ComfyUI-Koshi-Nodes/main/scripts/setup_comfyui_flux.sh | bash -s -- --runpod --gguf
 ```
 
 Includes: ComfyUI, Koshi Nodes, ComfyUI-Manager, VideoHelperSuite, ComfyUI-GGUF, FLUX Dev Q4
@@ -115,7 +114,6 @@ https://github.com/user-attachments/assets/8c9f2c39-71c7-405a-bb94-10b0b9e96c32
 
 *Glitch Candies shaders, OLED emulation and binary export.*
 
-
 ### SIDKIT / Export (4 nodes)
 Nodes for [SIDKIT](https://sidkit.pages.dev/) synthesizer OLED displays (SSD1306, SSD1363) and export.
 
@@ -149,42 +147,22 @@ See the [AKUSPACE guide](./docs/AKUSPACE.md) and
 | `◉ AKUSPACE Text Encode` | CLIP + editable Text → Conditioning convenience node; the AKUSPACE suffix is appended on Run. |
 | `◉ AKUSPACE Reference Audio (aligned)` | Feeds a dry recording into an LTX-AV render as a **time-aligned** in-context reference, so an a2a IC-LoRA runs inside the generation. Core's `LTXVReferenceAudio` uses the ID-LoRA negative-time convention instead; this one matches how the LTX trainer positions the reference. |
 
-Ten runnable LTX-2.5 workflows using these nodes ship in
-[`workflows/akuspace/`](./workflows/akuspace/) — image+audio→video,
-first/last-frame+audio→video, the one-node A/B between the two reference
-conventions, a LoRA-off control, the two-pass graph, a subgraph-style variant,
-a **split-chain** graph that generates video and audio as two separate passes so
-the adapter reads the trained caption alone, and a **room-first** pair that runs
-the adapter on your own recording and then locks the video to the roomed result
-(one per conditioning node — with CLIP and without). See the
-[AKUSPACE guide](./docs/AKUSPACE.md#workflows).
+Three tested LTX-2.5 API workflows ship in
+[`workflows/akuspace/`](./workflows/akuspace/): audio treatment, native one-pass
+text-to-video, and a two-stage high-quality render. The workflow README lists
+the required models and inputs; the public scripts add offline verification,
+batch execution, and a controlled LoRA-on/off A/B.
 
 The WebGL controller is a ~980KB prebuilt bundle (Vue + Three.js) that loads on
 demand the first time an AKUSPACE node appears, so graphs without these nodes
 pay nothing at startup.
 
-## Project Structure
+## Documentation
 
-```
-ComfyUI-Koshi-Nodes/
-├── nodes/
-│   ├── effects/        # Koshi Effects (unified), bloom, glitch, chromatic aberration, raymarcher
-│   ├── export/         # SIDKIT OLED, sprite sheet
-│   ├── flux_motion/    # Schedule, motion engine, feedback
-│   │   └── core/       # Interpolation, easing, transforms
-│   ├── generators/     # Glitch Candies, shape morph, noise displace, raymarcher
-│   ├── utility/        # Metadata (unified capture/display/save)
-│   ├── utils/          # Shared utilities (tensor ops, metadata)
-│   ├── audio/          # AKUSPACE conditioning + Audio → Motion schedule bridge
-│   └── image/          # SIDKIT Edition
-│       ├── binary/     # Threshold + hex export
-│       ├── dither/     # Bayer, Floyd-Steinberg, Atkinson, Halftone
-│       └── greyscale/  # Quantization, algorithms
-├── shaders/            # GLSL shaders (bloom, chromatic aberration)
-├── workflows/          # Example workflow JSONs
-│   └── akuspace/       # Five runnable LTX-2.5 AKUSPACE graphs
-└── js/                 # Live preview, orbital controls, Nodes 2.0 theme
-```
+- [AKUSPACE nodes and conditioning](./docs/AKUSPACE.md)
+- [Example workflows and quick pipelines](./docs/WORKFLOWS.md)
+- [Project structure](./docs/PROJECT_STRUCTURE.md)
+- [Setup, A/B, batch, and verification scripts](./scripts/README.md)
 
 ## Live Preview & WebGL
 
@@ -203,70 +181,11 @@ Most nodes include **inline live preview** directly in the node UI - no Preview 
 - **Scroll** to zoom (`camera_distance`, range 1-10)
 - **Reset View** button to restore defaults
 
-## Example Workflows
+## Workflows and recipes
 
-In `workflows/`:
-- `koshi_v2v_ultimate.json` - Full V2V with motion + temporal + color match
-- `koshi_v2v_complete.json` - Complete V2V pipeline
-- `koshi_v2v_motion.json` - Motion-focused V2V
-- `koshi_v2v_temporal.json` - Temporal coherence V2V
-- `koshi_v2v_pure.json` - Minimal V2V setup
-- `koshi_oled_sprite_pipeline.json` - Image → dither → OLED preview → export
-- `koshi_sprite_sheet.json` - Video → sprite sheet for game dev
-
-## Quick Pipelines
-
-**Motion Animation:**
-```
-▄▀▄ Schedule → ▄▀▄ Motion Engine → KSampler
-                                      ↓
-                              ▄▀▄ Feedback (loop)
-```
-
-**Audio-driven motion:**
-```
-LoadAudio → ▄▀▄ Audio → Motion → ▄▀▄ Motion Engine (frame_index per frame) → KSampler
-```
-
-**Stacked Effects:**
-```
-Image → ░▀░ Koshi Effects (hologram) → ░▀░ Koshi Effects (chromatic) → ░▀░ KN Bloom
-```
-
-**SIDKIT OLED Export:**
-```
-Image → ░▒░ KN Greyscale → ░▀░ KN Dither → ░▒░ KN SIDKIT OLED → ░▒░ KN Sprite Sheet
-```
-
-**Generator → Effect → Export:**
-```
-▄█▄ Glitch Candies → ░▀░ Koshi Effects (scanlines) → ░▒░ KN Sprite Sheet
-```
-
-**AKUSPACE modular prompt:**
-```
-Base Prompt → ◉ AKUSPACE Prompt → CLIP Text Encode → Conditioning
-```
-
-Optional text inspection follows the standard camera-control pattern:
-```
-◉ AKUSPACE Prompt → Preview as Text
-```
-
-**AKUSPACE integrated encode:**
-```
-LoRA-patched CLIP + Text → ◉ AKUSPACE Text Encode → Conditioning
-```
-
-**AKUSPACE one-pass audio** — the adapter runs *inside* an LTX-AV render:
-```
-UNETLoader → Load LoRA (AKUSPACE) → ◉ AKUSPACE Reference Audio (aligned) → LTXV Dual CFG Guider
-                                     ↑ dry recording, trimmed to the clip length
-LTXV Empty Latent Audio ───────────→ Concat A/V Latent    ← the audio target must be EMPTY
-```
-Pinning the audio and running the adapter are mutually exclusive: a noise mask
-that holds the audio fixed leaves nothing to transform. Ready-made graphs are in
-[`workflows/akuspace/`](./workflows/akuspace/).
+The graph catalogue and quick wiring recipes now live in
+[`docs/WORKFLOWS.md`](./docs/WORKFLOWS.md). Keeping them out of this page makes
+the installation and node catalogue easier to scan.
 
 ## Dependencies
 
@@ -284,10 +203,9 @@ that holds the audio fixed leaves nothing to transform. Ready-made graphs are in
 - [alien.js](https://github.com/alienkitty/alien.js) by Patrick Schroen - Chromatic aberration, bloom shaders (MIT)
 - Hologram based on [CreaturesSite](https://github.com/koshimazaki/CreaturesSite)
 - SIDKIT Edition for [SIDKIT Synthesizer](https://github.com/koshimazaki/SIDKIT)
-- AKUSPACE WebGL controller uses Vue and Three.js; see [third-party notices](./THIRD_PARTY_NOTICES.md)
+- AKUSPACE WebGL controller uses Vue and Three.js; see [third-party licences](./docs/THIRD_PARTY_LICENSES.md)
 
 ## License
 
-Apache License 2.0 — see [`LICENSE`](./LICENSE) and [`NOTICE`](./NOTICE).
-Third-party components and their licenses are listed in
-[`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md).
+Apache License 2.0 — see [`LICENSE`](./LICENSE). Third-party components and
+their licences are listed in [`docs/THIRD_PARTY_LICENSES.md`](./docs/THIRD_PARTY_LICENSES.md).

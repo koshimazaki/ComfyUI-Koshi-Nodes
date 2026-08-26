@@ -87,14 +87,11 @@ the adapter transforming anything.
 - **Room**: Small, Club, Medium, Cathedral plus Low, Moderate, Heavy dry/wet.
 - **Space**: Day or Night ambience.
 - **SFX**: experimental Dual Delay at Low or High.
-- **Source** *(optional)*: what the dry recording is. The trained captions
-  begin with it — `AKUSPACE female spoken voice in a small bathroom-like
-  room, …` — so setting it puts the caption fully in distribution. It defaults
-  to `none`, which keeps the effect-only caption and leaves graphs saved before
-  this control existed byte-identical. Options come from `presets.json`, so they
-  cannot drift from the trained vocabulary: male/female spoken voice, electronic
-  rhythm loop, handclaps, solo piano phrase, piano and saxophone phrase, citola
-  string phrase, and granular sound effect (marked experimental).
+- **Source** *(optional)*: what the dry recording is. Captions begin with it —
+  `AKUSPACE female spoken voice in a small bathroom-like room, …`. The public
+  selector stays deliberately small: Female voice and Male voice. Both preserve
+  the training vocabulary. Older graphs that omit this optional control still
+  use the effect-only caption, preserving their previous behaviour.
 
 **Space mode always reads *gentle*.** Outdoor cells were only trained gentle and
 heavy, and an ambience bed is a recording rather than a reverb tail, so it
@@ -137,59 +134,37 @@ Load3D extension. The `.mjs` extension is deliberate: it keeps the bundle out
 of ComfyUI's `**/*.js` extension auto-load glob.
 
 Third-party licences for the bundled libraries are listed in
-[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).
+[THIRD_PARTY_LICENSES.md](./THIRD_PARTY_LICENSES.md).
 
 ## Workflows
 
-Ten runnable LTX-2.5 graphs ship in [`workflows/akuspace/`](../workflows/akuspace/).
-Drag any of them into ComfyUI.
+Three tested, API-format LTX-2.5 graphs ship in
+[`workflows/akuspace/`](../workflows/akuspace/).
 
 | file | shape | audio | adapter |
 |---|---|---|---|
-| `akuspace_ltx25_i_a2v_aligned` | image + audio → video | dry reference, **empty** target | AKUSPACE, aligned node |
-| `akuspace_ltx25_flf_a2v_aligned` | first + last frame + audio → video | dry reference, **empty** target | AKUSPACE, aligned node |
-| `akuspace_ltx25_flf_a2v_stock` | ↑ identical | ↑ identical | AKUSPACE, core `LTXVReferenceAudio` |
-| `akuspace_ltx25_flf_a2v_nolora` | ↑ identical | ↑ identical | none |
-| `akuspace_ltx25_flf_twopass` | first + last frame + audio | already roomed, **pinned** | none |
-| `akuspace_ltx25_flf_split_chain` | first + last frame, **separate audio pass** | dry reference, empty target, audio-only model | AKUSPACE, aligned node |
-| `akuspace_ltx25_t2v_split_chain` | **text to video** — no image input at all | dry from the render, empty target, audio-only pass | AKUSPACE, aligned node |
-| `akuspace_ltx25_ia2v_roomed_prompt` | image + audio → video, **roomed first** | AKUSPACE rooms it, then it is pinned | AKUSPACE, audio-only pass |
-| `akuspace_ltx25_ia2v_roomed_encode` | ↑ identical, one-node conditioning | ↑ identical | ↑ identical |
-| `video_ltx25_AKUSPACE_flf_ia2v` | first + last frame + your audio (subgraph style) | supplied, pinned | none |
+| `akuspace_a2a_treat_recording.json` | your recording → treated audio | dry reference, **empty** target | Text Encode + aligned reference |
+| `akuspace_t2v_native_onepass.json` | native text → joint video/audio | dry reference, **empty** target | Text Encode + aligned reference |
+| `akuspace_t2v_2stage_hq.json` | two-stage text → joint video/audio | dry reference, **empty** target | Prompt + aligned reference |
 
-The `ia2v_roomed_*` pair answers "can the image+audio→video path go through the
-LoRA?" — not directly, because a pinned audio latent is never denoised, so the
-adapter would have nothing to act on. Instead the adapter runs **first** in its
-own audio-only pass and the video is pinned to its **output**, so the picture
-lip-syncs to the audio you actually ship. The prompt is written from the anchor
-image by `TextGenerateLTX2Prompt`, with the AKUSPACE caption appended *after* the
-enhancer (it paraphrases the trigger and the level words). The two variants
-differ only in which conditioning node is used: `_prompt` uses
-`◉ AKUSPACE Prompt` → a stock `CLIP Text Encode`, `_encode` uses
-`◉ AKUSPACE Text Encode` → CONDITIONING in one node.
+The two conditioning nodes form the pair you see in the node UI: Prompt emits a
+string for a stock encoder; Text Encode accepts CLIP and returns conditioning.
+The aligned reference-audio helper is the third AKUSPACE node and is used by all
+three graphs.
 
-`akuspace_ltx25_flf_split_chain` is the one that uses **both** AKUSPACE nodes.
-The video and audio are generated as two separate passes in one graph, so the
-audio chain reads the trained caption **alone** — no shot grammar, nothing the
-adapter did not see in training — while the treatment still appears in the video
-prompt so the picture agrees about the space. `◉ AKUSPACE Prompt` holds the
-selection (no Prompt input → the caption alone) and `◉ AKUSPACE Text Encode` at
-**Mode = Off** encodes it verbatim for the audio chain. The audio pass runs
-through `LTXVAudioOnlyModel`, which severs the audio↔video cross-attention the
-LoRA does not patch — so the treatment should land harder there than in a joint
-render. One queue produces the BEFORE video, the AFTER video and both audio
-files.
+The public tools are self-contained and do not require the private workflow
+builder repository:
 
-Rows 2–4 are the same graph one node apart — the A/B described above, plus a
-LoRA-off control. Render all three and correlate each output against the dry
-input: r 0.5–0.75 at ≈ −20 ms means the adapter followed the reference **and**
-transformed it; r ≈ 0 means the reference was ignored; r ≈ 1 means the dry was
-copied. That settles the question by measurement rather than by ear.
+```bash
+python3 scripts/akuspace/verify_workflows.py
+python3 scripts/akuspace/run_batch.py --dry-run
+python3 scripts/akuspace/run_ab.py --dry-run
+```
 
-They are generated and checked by
-[`build_akuspace_workflows.py`](https://github.com/koshimazaki/AUDIO-LTX-LORA)
-in the AKUSPACE repo, which validates every class, socket and combo value
-against a live `object_info` dump before writing anything.
+`run_ab.py` keeps every prompt, seed, and graph input identical while changing
+only the AKUSPACE LoRA strength from `1` to `0`. It also separates the output
+prefixes, so the control cannot overwrite the treated arm. See the
+[workflow README](../workflows/akuspace/README.md) for models and input files.
 
 ## Model and demo
 

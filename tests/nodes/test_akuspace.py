@@ -169,8 +169,8 @@ def test_source_type_defaults_to_effect_only_caption():
             "moderate smooth reflections and a 1.9-second reverb decay, no background ambience",
         ),
         (
-            "electronic rhythm loop",
-            "AKUSPACE electronic rhythm loop in a medium reverberant room, "
+            "male spoken voice",
+            "AKUSPACE male spoken voice in a medium reverberant room, "
             "moderate smooth reflections and a 1.9-second reverb decay, no background ambience",
         ),
     ],
@@ -179,18 +179,19 @@ def test_source_type_leads_the_trained_caption(source_type, expected):
     assert _caption(source_type=source_type) == expected
 
 
-def test_source_options_are_the_trained_vocabulary_plus_none():
-    assert SOURCE_OPTIONS[0] == SOURCE_NONE
-    assert "female spoken voice" in SOURCE_OPTIONS
-    assert "male spoken voice" in SOURCE_OPTIONS
-    # Every option past "none" comes from presets.json, never hand-typed.
-    assert SOURCE_OPTIONS[1:] == SOURCE_VALUES
+def test_source_options_are_the_public_subset():
+    assert SOURCE_OPTIONS == [
+        "female spoken voice",
+        "male spoken voice",
+    ]
+    # Every displayed option comes from presets.json, never hand-typed.
+    assert SOURCE_OPTIONS == SOURCE_VALUES
 
 
 def test_source_type_survives_a_bypass_and_a_dry_caption():
     off = KoshiAKUSPACEPrompt().execute(
         prompt="a portrait",
-        source_type="handclaps",
+        source_type="female spoken voice",
         **{**DEFAULTS, "space_mode": "Off"},
     )[0]
     assert off == "a portrait"
@@ -206,6 +207,6 @@ def test_source_type_is_optional_on_both_nodes():
 def test_text_encode_passes_source_type_through_to_clip():
     clip = FakeClip()
     KoshiAKUSPACETextEncode().execute(
-        clip=clip, text="a portrait", source_type="solo piano phrase", **DEFAULTS
+        clip=clip, text="a portrait", source_type="male spoken voice", **DEFAULTS
     )
-    assert clip.prompt.startswith("a portrait, AKUSPACE solo piano phrase in a medium")
+    assert clip.prompt.startswith("a portrait, AKUSPACE male spoken voice in a medium")

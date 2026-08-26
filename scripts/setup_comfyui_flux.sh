@@ -1,8 +1,8 @@
 #!/bin/bash
 # ComfyUI + FLUX + Koshi Nodes Setup Script
 #
-# Interactive: ./setup_comfyui_flux.sh
-# Non-interactive: ./setup_comfyui_flux.sh --runpod --klein --token=hf_xxx
+# Interactive: scripts/setup_comfyui_flux.sh
+# Non-interactive: scripts/setup_comfyui_flux.sh --runpod --klein --token=hf_xxx
 #
 set -e
 
@@ -88,7 +88,7 @@ for arg in "$@"; do
         --token=*) HF_TOKEN="${arg#*=}" ;;
         --authkey=*) TS_AUTHKEY="${arg#*=}" ;;
         --help)
-            printf "Usage: ./setup_comfyui_flux.sh [OPTIONS]\n\n"
+            printf "Usage: scripts/setup_comfyui_flux.sh [OPTIONS]\n\n"
             printf "Presets:\n"
             printf "  --klein         FLUX.2-klein-4B (~13GB)\n"
             printf "  --minimal       Schnell + FP8 T5 (~17GB)\n"
