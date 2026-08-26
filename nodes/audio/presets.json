@@ -55,6 +55,10 @@
       "night"
     ],
     "outdoor_level": "low",
+    "outdoor_levels": [
+      "low",
+      "high"
+    ],
     "sfx_presets": [
       "dual_delay"
     ],

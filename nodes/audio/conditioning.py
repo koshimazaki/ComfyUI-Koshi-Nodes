@@ -26,6 +26,8 @@ SPACE_MODES = [item["value"] for item in CONTROL_SCHEMA["modes"]]
 ROOM_PRESETS = list(CONTROL_SCHEMA["room_presets"])
 OUTDOOR_TIMES = list(CONTROL_SCHEMA["outdoor_times"])
 OUTDOOR_LEVEL_DEFAULT = CONTROL_SCHEMA["outdoor_level"]
+# .get() so an older presets.json without the key still loads.
+OUTDOOR_LEVELS = list(CONTROL_SCHEMA.get("outdoor_levels", [OUTDOOR_LEVEL_DEFAULT]))
 SFX_PRESETS = list(CONTROL_SCHEMA["sfx_presets"])
 SFX_LEVELS = list(CONTROL_SCHEMA["sfx_levels"])
 EFFECT_LEVELS = list(CONTROL_SCHEMA["reverb_levels"])
@@ -63,7 +65,11 @@ def resolve_level_key(
     """Resolve only level values represented by the v0.5 training manifest."""
 
     if space_mode == "outside":
-        return OUTDOOR_LEVEL_DEFAULT
+        # Outdoor trained BOTH gentle and heavy — outdoor_day_birds/{low,high}
+        # and outdoor_night/{low,high}, 14 rows and a separate audio dir each —
+        # but no "mid" cell. Clamp to the trained pair rather than pinning every
+        # outdoor request to one level, which made the other unreachable.
+        return effect_level if effect_level in OUTDOOR_LEVELS else OUTDOOR_LEVEL_DEFAULT
     if space_mode == "sfx":
         return sfx_level if sfx_level in SFX_LEVELS else SFX_LEVELS[0]
     return effect_level if effect_level in EFFECT_LEVELS else "mid"
