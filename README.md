@@ -16,8 +16,10 @@
 
 > Consolidated from 40 nodes down to 18 — same functionality, cleaner interface, fewer clicks — then extended with Audio → Motion, two AKUSPACE conditioning nodes, and one aligned reference-audio helper.
 
+<div align="center">
 <video src="https://github.com/user-attachments/assets/bb66a14c-a72c-4c68-a7bd-dd11d3cd0772" width="320" autoplay loop muted></video>
   <em>AKUSPACE LoRA node with prompt manipulation/UI </em>
+</div>
 
 ## Installation
 
@@ -110,9 +112,12 @@ All patterns support `loop_frames` for seamless animation loops.
 
 **3D Camera Controls:** Raymarched shapes have `rotation_x`, `rotation_y`, and `camera_distance` inputs for orbital control.
 
-https://github.com/user-attachments/assets/8c9f2c39-71c7-405a-bb94-10b0b9e96c32
+<div align="center">
+<video src="https://github.com/user-attachments/assets/8c9f2c39-71c7-405a-bb94-10b0b9e96c32" width="320" autoplay loop muted></video>
+<em>Glitch Candies shaders, OLED emulation and binary export.</em>
+</div>
 
-*Glitch Candies shaders, OLED emulation and binary export.*
+
 
 ### SIDKIT / Export (4 nodes)
 Nodes for [SIDKIT](https://sidkit.pages.dev/) synthesizer OLED displays (SSD1306, SSD1363) and export.
