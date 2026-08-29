@@ -12,7 +12,7 @@
 
 # ComfyUI-Koshi-Nodes
 
-**22 focused nodes** for ComfyUI: **Motion** (Deforum-style animation, audio-driven schedules), **Effects** (unified effects + standalone bloom/glitch/chromatic), **Generators** (procedural patterns, raymarched 3D), **Space / Conditioning** (AKUSPACE prompt, CLIP encoding and time-aligned reference audio), **SIDKIT** (OLED/embedded display export), and **Utility** (metadata capture).
+**22 focused nodes** for ComfyUI: **Motion** (Deforum-style animation, audio-driven schedules), **Effects** (unified effects + standalone bloom/glitch/chromatic), **Generators** (procedural patterns, raymarched 3D), **Space / Conditioning** (AKUSPACE  prompt, CLIP encoding and time-aligned reference audio for LTX2.5), **SIDKIT** (OLED/embedded display export), and **Utility** (metadata capture).
 
 > Consolidated from 40 nodes down to 18 — same functionality, cleaner interface, fewer clicks — then extended with Audio → Motion, two AKUSPACE conditioning nodes, and one aligned reference-audio helper.
 
@@ -58,7 +58,7 @@ Nodes are prefixed by category for easy identification:
 | `▄█▄` | Generators | Glitch Candies, Shape Morph, Noise Displace, Raymarcher |
 | `░▒░` | SIDKIT/Export | SIDKIT Binary, Greyscale, SIDKIT OLED, Sprite Sheet |
 | `◊` | Utility | Metadata |
-| `◉` | Space / Conditioning | AKUSPACE Prompt, AKUSPACE Text Encode, AKUSPACE Reference Audio (aligned) |
+| `◉` | Space / Conditioning for LTX2.5 | AKUSPACE Prompt, AKUSPACE Text Encode, AKUSPACE Reference Audio (aligned) |
 
 ## All 22 Nodes
 
