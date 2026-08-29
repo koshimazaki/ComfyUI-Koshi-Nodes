@@ -18,7 +18,7 @@
 
 <div align="center">
 <video src="https://github.com/user-attachments/assets/bb66a14c-a72c-4c68-a7bd-dd11d3cd0772" width="320" autoplay loop muted></video>
-  <em>AKUSPACE LoRA node with prompt manipulation/UI </em>
+  <em>AKUSPACE LTX2.5 LoRA node with prompt manipulation/UI </em>
 </div>
 
 ## Installation
