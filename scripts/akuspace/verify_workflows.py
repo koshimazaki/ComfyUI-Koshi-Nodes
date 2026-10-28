@@ -73,12 +73,14 @@ def verify_graph(path: Path, graph: dict) -> tuple[list[str], list[str]]:
         errors.append("LoRA loader does not name an AKUSPACE checkpoint")
 
     aligned = find_nodes(graph, "AKUSPACEReferenceAudioAligned")
-    if len(aligned) != 1:
-        errors.append(f"expected one aligned reference node, found {len(aligned)}")
+    if not aligned:
+        errors.append("expected at least one aligned reference node, found none")
     elif len(lora_nodes) == 1:
-        model = graph[aligned[0]]["inputs"].get("model")
-        if not is_link(model) or lora_nodes[0] not in upstream_nodes(graph, model[0]):
-            errors.append("aligned reference node does not receive the LoRA-patched model")
+        # The rooms chain has one aligned reference per segment; each must see the LoRA.
+        for node_id in aligned:
+            model = graph[node_id]["inputs"].get("model")
+            if not is_link(model) or lora_nodes[0] not in upstream_nodes(graph, model[0]):
+                errors.append(f"aligned reference node {node_id} does not receive the LoRA-patched model")
 
     if "LTXVEmptyLatentAudio" not in classes:
         errors.append("audio target is not empty; a pinned target cannot exercise the LoRA")
@@ -114,19 +116,32 @@ def main() -> int:
     parser.add_argument("--json", action="store_true", help="machine-readable report")
     args = parser.parse_args()
 
-    paths = sorted(args.workflow_dir.glob("*.json"))
-    missing = sorted(EXPECTED_FILES - {path.name for path in paths})
+    # UI-format graphs (saved from the canvas) keep their API twin under api/.
+    paths = []
+    for path in sorted(args.workflow_dir.glob("*.json")):
+        if "nodes" in json.loads(path.read_text(encoding="utf-8")):
+            twin = args.workflow_dir / "api" / f"{path.stem}_api.json"
+            if not twin.exists():
+                paths.append((path, f"UI-format graph without api/{twin.name}"))
+            continue
+        paths.append((path, None))
+    paths += [(path, None) for path in sorted((args.workflow_dir / "api").glob("*.json"))]
+    missing = sorted(EXPECTED_FILES - {path.name for path, _ in paths})
     report: dict[str, dict[str, list[str]]] = {}
     if missing:
         report["<catalogue>"] = {"errors": [f"missing: {', '.join(missing)}"], "notes": []}
 
-    for path in paths:
+    for path, problem in paths:
+        name = str(path.relative_to(args.workflow_dir))
+        if problem:
+            report[name] = {"errors": [problem], "notes": []}
+            continue
         try:
             graph = read_workflow(path)
             errors, notes = verify_graph(path, graph)
         except ValueError as exc:
             errors, notes = [str(exc)], []
-        report[path.name] = {"errors": errors, "notes": notes}
+        report[name] = {"errors": errors, "notes": notes}
 
     if args.json:
         print(json.dumps(report, indent=2))
