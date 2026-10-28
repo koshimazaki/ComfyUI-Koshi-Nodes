@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import time
 from pathlib import Path
@@ -21,8 +22,18 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_WORKFLOW_DIR = REPO_ROOT / "workflows" / "akuspace"
 
 
+def _is_ui_graph(path: Path) -> bool:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False  # read_workflow reports the real error
+    return isinstance(data, dict) and isinstance(data.get("nodes"), list)
+
+
 def select_workflows(directory: Path, patterns: list[str]) -> list[Path]:
-    paths = sorted(directory.glob("*.json"))
+    # UI-format graphs (canvas saves) are skipped; their API twins live in api/ and run
+    # only when asked for: --workflow-dir workflows/akuspace/api rooms_chain
+    paths = [path for path in sorted(directory.glob("*.json")) if not _is_ui_graph(path)]
     if patterns:
         paths = [path for path in paths if any(p in path.stem for p in patterns)]
     if not paths:

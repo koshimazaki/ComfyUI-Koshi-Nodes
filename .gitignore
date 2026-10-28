@@ -155,6 +155,7 @@ dist
 # Claude Code local state (per-user settings, in-repo worktrees)
 .claude/settings.local.json
 .claude/worktrees/
+.worktrees/
 
 # Local review and memory exports (not public project documentation)
 CODE_REVIEW_*.md
