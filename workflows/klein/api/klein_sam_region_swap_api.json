@@ -1,0 +1,552 @@
+{
+ "1": {
+  "class_type": "UNETLoader",
+  "inputs": {
+   "unet_name": "flux3-image-klein-int8-convrot.safetensors",
+   "weight_dtype": "default"
+  },
+  "_meta": {
+   "title": "Klein diffusion model (distilled)"
+  }
+ },
+ "2": {
+  "class_type": "CLIPLoader",
+  "inputs": {
+   "clip_name": "qwen3vl_4b_int8_convrot.safetensors",
+   "type": "flux3",
+   "device": "default"
+  },
+  "_meta": {
+   "title": "Klein text encoder"
+  }
+ },
+ "3": {
+  "class_type": "VAELoader",
+  "inputs": {
+   "vae_name": "flux2-vae.safetensors"
+  },
+  "_meta": {
+   "title": "VAELoader"
+  }
+ },
+ "4": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "Cinematic medium shot of a young woman sitting at a sunlit cafe table by a window, holding a tall glass of iced coffee in her right hand at chest height, relaxed smile, soft natural light from the left, shallow depth of field, 35mm film look. No text, no logos, no watermark.",
+   "clip": [
+    "2",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "AGENT · base prompt"
+  }
+ },
+ "5": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "",
+   "clip": [
+    "2",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Negative (empty, as in the template)"
+  }
+ },
+ "6": {
+  "class_type": "EmptyFlux2LatentImage",
+  "inputs": {
+   "width": 1024,
+   "height": 1024,
+   "batch_size": 1
+  },
+  "_meta": {
+   "title": "EmptyFlux2LatentImage"
+  }
+ },
+ "7": {
+  "class_type": "KSampler",
+  "inputs": {
+   "seed": 20261028,
+   "steps": 16,
+   "cfg": 1.0,
+   "sampler_name": "euler",
+   "scheduler": "simple",
+   "denoise": 1.0,
+   "model": [
+    "1",
+    0
+   ],
+   "positive": [
+    "4",
+    0
+   ],
+   "negative": [
+    "5",
+    0
+   ],
+   "latent_image": [
+    "6",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Klein sampler · base (seed exposed)"
+  }
+ },
+ "8": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "7",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "VAEDecode"
+  }
+ },
+ "11": {
+  "class_type": "ComfySwitchNode",
+  "inputs": {
+   "switch": false,
+   "on_false": [
+    "8",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Base source · false = Klein, true = loaded image"
+  }
+ },
+ "9": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "filename_prefix": "klein_sam/base",
+   "images": [
+    "11",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "SaveImage"
+  }
+ },
+ "20": {
+  "class_type": "CheckpointLoaderSimple",
+  "inputs": {
+   "ckpt_name": "sam3.1_multiplex_fp16.safetensors"
+  },
+  "_meta": {
+   "title": "SAM 3.1 checkpoint"
+  }
+ },
+ "21": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "text": "drink",
+   "clip": [
+    "20",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "AGENT · element name"
+  }
+ },
+ "22": {
+  "class_type": "SAM3_Detect",
+  "inputs": {
+   "threshold": 0.5,
+   "refine_iterations": 2,
+   "individual_masks": false,
+   "model": [
+    "20",
+    0
+   ],
+   "image": [
+    "11",
+    0
+   ],
+   "conditioning": [
+    "21",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "SAM3_Detect"
+  }
+ },
+ "23": {
+  "class_type": "GrowMask",
+  "inputs": {
+   "expand": 24,
+   "tapered_corners": true,
+   "mask": [
+    "22",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Grow mask (room for the new object)"
+  }
+ },
+ "24": {
+  "class_type": "MaskToImage",
+  "inputs": {
+   "mask": [
+    "23",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "MaskToImage"
+  }
+ },
+ "25": {
+  "class_type": "ImageBlur",
+  "inputs": {
+   "blur_radius": 15,
+   "sigma": 6.0,
+   "image": [
+    "24",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Feather edge (blur)"
+  }
+ },
+ "26": {
+  "class_type": "ImageToMask",
+  "inputs": {
+   "channel": "red",
+   "image": [
+    "25",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Feathered mask"
+  }
+ },
+ "27": {
+  "class_type": "ImageBlend",
+  "inputs": {
+   "blend_factor": 0.45,
+   "blend_mode": "screen",
+   "image1": [
+    "11",
+    0
+   ],
+   "image2": [
+    "24",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Mask over base"
+  }
+ },
+ "28": {
+  "class_type": "DrawBBoxes",
+  "inputs": {
+   "bboxes": [
+    "22",
+    1
+   ],
+   "image": [
+    "27",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "DrawBBoxes"
+  }
+ },
+ "29": {
+  "class_type": "PreviewImage",
+  "inputs": {
+   "images": [
+    "28",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Preview · mask + box"
+  }
+ },
+ "30": {
+  "class_type": "PreviewAny",
+  "inputs": {
+   "source": [
+    "22",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "Box as STRING (x, y, width, height, score)"
+  }
+ },
+ "40": {
+  "class_type": "PrimitiveStringMultiline",
+  "inputs": {
+   "value": "hold a banana instead of the drink"
+  },
+  "_meta": {
+   "title": "AGENT · instruction"
+  }
+ },
+ "41": {
+  "class_type": "StringConcatenate",
+  "inputs": {
+   "string_a": "In <ref_image_0>, edit only the region <obj_1>:",
+   "delimiter": " ",
+   "string_b": [
+    "40",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Prefix: bind the edit to <obj_1>"
+  }
+ },
+ "42": {
+  "class_type": "StringConcatenate",
+  "inputs": {
+   "string_b": "Match the existing lighting, shadows, skin tone and grip of the hand. Keep everything outside <obj_1> exactly as it is: same person, pose, framing and background.",
+   "delimiter": " ",
+   "string_a": [
+    "41",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Suffix: keep the rest"
+  }
+ },
+ "43": {
+  "class_type": "GetImageSize",
+  "inputs": {
+   "image": [
+    "11",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "GetImageSize"
+  }
+ },
+ "44": {
+  "class_type": "CreateBoundingBoxes",
+  "inputs": {
+   "editor_state": {
+    "__value__": []
+   },
+   "last_incoming": {
+    "__value__": []
+   },
+   "background": [
+    "11",
+    0
+   ],
+   "bboxes": [
+    "22",
+    1
+   ],
+   "width": [
+    "43",
+    0
+   ],
+   "height": [
+    "43",
+    1
+   ]
+  },
+  "_meta": {
+   "title": "SAM box → FLUX 3 layout element"
+  }
+ },
+ "45": {
+  "class_type": "Flux3LayoutPrompt",
+  "inputs": {
+   "prompt": [
+    "42",
+    0
+   ],
+   "element": [
+    "44",
+    2
+   ]
+  },
+  "_meta": {
+   "title": "Flux3LayoutPrompt"
+  }
+ },
+ "46": {
+  "class_type": "PreviewAny",
+  "inputs": {
+   "source": [
+    "45",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Final edit prompt"
+  }
+ },
+ "47": {
+  "class_type": "CLIPTextEncode",
+  "inputs": {
+   "clip": [
+    "2",
+    0
+   ],
+   "text": [
+    "45",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Edit prompt encode"
+  }
+ },
+ "48": {
+  "class_type": "ConditioningZeroOut",
+  "inputs": {
+   "conditioning": [
+    "47",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "ConditioningZeroOut"
+  }
+ },
+ "50": {
+  "class_type": "ReferenceMultiLatent",
+  "inputs": {
+   "resolution": "resize",
+   "resolution.megapixels": 1.0,
+   "positive": [
+    "47",
+    0
+   ],
+   "negative": [
+    "48",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ],
+   "images.image0": [
+    "11",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Set Reference Multi Latent (base = <ref_image_0>)"
+  }
+ },
+ "51": {
+  "class_type": "KSampler",
+  "inputs": {
+   "seed": 20261029,
+   "steps": 16,
+   "cfg": 1.0,
+   "sampler_name": "euler",
+   "scheduler": "simple",
+   "denoise": 1.0,
+   "model": [
+    "1",
+    0
+   ],
+   "positive": [
+    "50",
+    0
+   ],
+   "negative": [
+    "50",
+    1
+   ],
+   "latent_image": [
+    "50",
+    2
+   ]
+  },
+  "_meta": {
+   "title": "Klein sampler · edit"
+  }
+ },
+ "52": {
+  "class_type": "VAEDecode",
+  "inputs": {
+   "samples": [
+    "51",
+    0
+   ],
+   "vae": [
+    "3",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "VAEDecode"
+  }
+ },
+ "53": {
+  "class_type": "PreviewImage",
+  "inputs": {
+   "images": [
+    "52",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Preview · raw Klein edit (before composite)"
+  }
+ },
+ "54": {
+  "class_type": "ImageCompositeMasked",
+  "inputs": {
+   "x": 0,
+   "y": 0,
+   "resize_source": true,
+   "destination": [
+    "11",
+    0
+   ],
+   "source": [
+    "52",
+    0
+   ],
+   "mask": [
+    "26",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "Composite edit over base with the SAM mask"
+  }
+ },
+ "55": {
+  "class_type": "SaveImage",
+  "inputs": {
+   "filename_prefix": "klein_sam/swap",
+   "images": [
+    "54",
+    0
+   ]
+  },
+  "_meta": {
+   "title": "SaveImage"
+  }
+ }
+}
