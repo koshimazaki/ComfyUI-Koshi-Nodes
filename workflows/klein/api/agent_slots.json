@@ -1,0 +1,36 @@
+{
+ "workflow": "klein_sam_region_swap_api.json",
+ "text": {
+  "base_prompt": {"node": "4", "input": "text"},
+  "element_name": {"node": "21", "input": "text"},
+  "instruction": {"node": "40", "input": "value"}
+ },
+ "seeds": {
+  "base": {"node": "7", "input": "seed"},
+  "edit": {"node": "51", "input": "seed"}
+ },
+ "optional_images": {
+  "external_base_image": {
+   "add_node": {"10": {"class_type": "LoadImage", "inputs": {"image": "<uploaded file name>"}}},
+   "set": [
+    {"node": "11", "input": "on_true", "value": ["10", 0]},
+    {"node": "11", "input": "switch", "value": true}
+   ]
+  },
+  "reference_image": {
+   "add_node": {"49": {"class_type": "LoadImage", "inputs": {"image": "<uploaded file name>"}}},
+   "set": [
+    {"node": "50", "input": "images.image1", "value": ["49", 0]}
+   ],
+   "prompt_token": "<ref_image_1>"
+  }
+ },
+ "outputs": {
+  "base_image": "9",
+  "mask_and_box_preview": "29",
+  "box_string": "30",
+  "final_edit_prompt": "46",
+  "raw_edit": "53",
+  "swapped_image": "55"
+ }
+}
